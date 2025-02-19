@@ -36,11 +36,12 @@ impl FieldType {
 
         if let Some(open_bracket_pos) = name.find('[') {
             let close_bracket_pos = name.find(']').unwrap();
-            count = match &name[(open_bracket_pos + 1)..close_bracket_pos] {
-                "MAX_ITEM_STOCKS" => Some(8),
-                "MAX_ABILITY_DRAFT_ABILITIES" => Some(48),
-                s => Some(s.parse::<i32>().unwrap()),
-            };
+            count = Some(match &name[(open_bracket_pos + 1)..close_bracket_pos] {
+                "MAX_ITEM_STOCKS" => 8,
+                "MAX_ABILITY_DRAFT_ABILITIES" => 48,
+                "DOTA_ABILITY_DRAFT_HEROES_PER_GAME" => 10,
+                s => s.parse::<i32>().unwrap(),
+            });
             base_end = open_bracket_pos;
         }
 

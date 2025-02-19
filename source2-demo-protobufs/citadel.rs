@@ -66,6 +66,10 @@ pub struct CCitadelUserMessageBulletHit {
     pub pellet: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "3", default = "-1")]
     pub hit_entindex: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "4", default = "-1")]
+    pub weapon_entindex: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "5")]
+    pub is_predicted: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -90,6 +94,8 @@ pub struct CCitadelUserMessageCurrencyChanged {
     pub playsound: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "9")]
     pub ability_id: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "10")]
+    pub new_value: ::core::option::Option<u32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -136,6 +142,12 @@ pub struct CCitadelUserMessageDamage {
     pub hits: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "20")]
     pub health_lost: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "21")]
+    pub hitgroup_id: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "22", default = "-1")]
+    pub entindex_attacking_object: ::core::option::Option<i32>,
+    #[prost(message, optional, tag = "23")]
+    pub damage_direction: ::core::option::Option<CMsgVector>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -146,6 +158,16 @@ pub struct CCitadelUserMessageGameOver {
     pub winning_team: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "2")]
     pub just_a_test: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMessageMeleeHit {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub hit_entindex: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "2")]
+    pub heavy: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -175,12 +197,10 @@ pub struct CCitadelUserMessageObjectiveMask {
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CCitadelUserMsgAbilitiesChanged {
     #[prost(int32, optional, tag = "1", default = "-1")]
-    pub entindex_purchaser: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2", default = "-1")]
-    pub entindex_ability: ::core::option::Option<i32>,
-    #[prost(uint32, optional, tag = "3")]
+    pub purchaser_player_slot: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "2")]
     pub ability_id: ::core::option::Option<u32>,
-    #[prost(enumeration = "c_citadel_user_msg_abilities_changed::Change", optional, tag = "4", default = "EInvalid")]
+    #[prost(enumeration = "c_citadel_user_msg_abilities_changed::Change", optional, tag = "3", default = "EInvalid")]
     pub change: ::core::option::Option<i32>,
 }
 
@@ -229,19 +249,43 @@ pub struct CCitadelUserMsgAbilityPing {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgBossDamaged {
+    #[prost(int32, required, tag = "1")]
+    pub objective_team: i32,
+    #[prost(int32, required, tag = "2")]
+    pub objective_id: i32,
+    #[prost(uint32, required, tag = "3", default = "16777215")]
+    pub entity_damaged: u32,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CCitadelUserMsgBossKilled {
     #[prost(int32, optional, tag = "1")]
     pub objective_team: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2")]
     pub objective_mask_change: ::core::option::Option<i32>,
-    #[prost(uint32, required, tag = "3", default = "16777215")]
-    pub entity_killed: u32,
-    #[prost(int32, required, tag = "4")]
-    pub entity_killed_class: i32,
-    #[prost(uint32, required, tag = "5", default = "16777215")]
-    pub entity_killer: u32,
-    #[prost(float, required, tag = "6")]
-    pub gametime: f32,
+    #[prost(uint32, optional, tag = "3", default = "16777215")]
+    pub entity_killed: ::core::option::Option<u32>,
+    #[prost(int32, optional, tag = "4")]
+    pub entity_killed_class: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "5", default = "16777215")]
+    pub entity_killer: ::core::option::Option<u32>,
+    #[prost(float, optional, tag = "6")]
+    pub gametime: ::core::option::Option<f32>,
+    #[prost(int32, optional, tag = "7")]
+    pub bosses_remaining: ::core::option::Option<i32>,
+    #[prost(message, optional, tag = "8")]
+    pub entity_position: ::core::option::Option<CMsgVector>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgCallCheaterVote {
+    #[prost(int32, required, tag = "1", default = "-1")]
+    pub player_slot: i32,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -254,12 +298,16 @@ pub struct CCitadelUserMsgCameraController {
     pub operation: ::core::option::Option<i32>,
     #[prost(enumeration = "CameraParam", optional, tag = "3", default = "KEParamClearAllOps")]
     pub param: ::core::option::Option<i32>,
+    #[prost(enumeration = "CameraParamMode", optional, tag = "12", default = "KEParamModeAllowInOneContext")]
+    pub param_mode: ::core::option::Option<i32>,
     #[prost(float, optional, tag = "4")]
     pub delay: ::core::option::Option<f32>,
     #[prost(bool, optional, tag = "11")]
     pub relative_values: ::core::option::Option<bool>,
     #[prost(uint32, optional, tag = "5")]
     pub context_symbol_id: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "13", default = "1")]
+    pub priority: ::core::option::Option<u32>,
     #[prost(message, optional, tag = "6")]
     pub maintain: ::core::option::Option<c_citadel_user_msg_camera_controller::Maintain>,
     #[prost(message, optional, tag = "7")]
@@ -333,6 +381,16 @@ pub struct CCitadelUserMsgDeathReplayData {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgFlexSlotUnlocked {
+    #[prost(int32, optional, tag = "1")]
+    pub team_number: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub flexslot_unlocked: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CCitadelUserMsgForceShopClosed {}
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -375,6 +433,20 @@ pub struct CCitadelUserMsgHeroKilled {
     pub entindex_scorer: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "6")]
     pub respawn_reason: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "7")]
+    pub victim_team_number: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgKillStreak {
+    #[prost(uint32, required, tag = "1", default = "16777215")]
+    pub player_pawn: u32,
+    #[prost(int32, required, tag = "2")]
+    pub num_kills: i32,
+    #[prost(bool, required, tag = "3")]
+    pub is_first_blood: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -408,6 +480,11 @@ pub struct CCitadelUserMsgMapPing {
     #[prost(bool, optional, tag = "8")]
     pub is_blind_ping: ::core::option::Option<bool>,
 }
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgMidBossSpawned {}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -490,6 +567,16 @@ pub struct CCitadelUserMsgPlayerLifetimeStatInfo {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgPlayerRespawned {
+    #[prost(uint32, required, tag = "1", default = "16777215")]
+    pub player_pawn: u32,
+    #[prost(float, required, tag = "2")]
+    pub facing_yaw: f32,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CCitadelUserMsgPostMatchDetails {
     #[prost(bytes = "vec", optional, tag = "1")]
@@ -555,6 +642,20 @@ pub struct CCitadelUserMsgRecentDamageSummary {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgRejuvStatus {
+    #[prost(int32, optional, tag = "1")]
+    pub killing_team: ::core::option::Option<i32>,
+    #[prost(uint32, required, tag = "2", default = "16777215")]
+    pub player_pawn: u32,
+    #[prost(int32, required, tag = "3")]
+    pub user_team: i32,
+    #[prost(int32, required, tag = "4")]
+    pub event_type: i32,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CCitadelUserMsgReturnIdol {
     #[prost(int32, optional, tag = "1")]
     pub location_index: ::core::option::Option<i32>,
@@ -562,6 +663,16 @@ pub struct CCitadelUserMsgReturnIdol {
     pub return_location: ::core::option::Option<CMsgVector>,
     #[prost(bool, optional, tag = "3")]
     pub location_enabled: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgSeasonalAchievementUnlocked {
+    #[prost(uint32, optional, tag = "1")]
+    pub account_id: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "2")]
+    pub hero_id: ::core::option::Option<u32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -590,6 +701,20 @@ pub struct CCitadelUserMsgStaminaDrained {
     pub entindex_victim: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2")]
     pub stamina_drained: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCitadelUserMsgTeamMsg {
+    #[prost(int32, required, tag = "1")]
+    pub event_type: i32,
+    #[prost(int32, required, tag = "2")]
+    pub team_number: i32,
+    #[prost(int32, required, tag = "3")]
+    pub lane_color: i32,
+    #[prost(uint32, required, tag = "4", default = "16777215")]
+    pub player_controller: u32,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1065,6 +1190,16 @@ pub struct CMsgFireBullets {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CMsgGcAccountData {
+    #[prost(uint32, optional, tag = "1")]
+    pub account_id: ::core::option::Option<u32>,
+    #[prost(float, optional, tag = "2")]
+    pub cheater_report_score: ::core::option::Option<f32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CMsgGcAssertJobData {
     #[prost(string, optional, tag = "1")]
@@ -1324,7 +1459,7 @@ pub struct CMsgHeroSelectionMatchInfo {
 pub enum CMsgLaneColor {
     KELaneColorInvalid = 0,
     KELaneColorYellow = 1,
-    KELaneColorOrange = 3,
+    KELaneColorGreen = 3,
     KELaneColorBlue = 4,
     KELaneColorPurple = 6,
 }
@@ -1717,12 +1852,14 @@ pub struct CMsgStartFindingMatchInfo {
     pub match_mode: ::core::option::Option<i32>,
     #[prost(enumeration = "ECitadelGameMode", optional, tag = "5", default = "KECitadelGameModeInvalid")]
     pub game_mode: ::core::option::Option<i32>,
-    #[prost(bool, optional, tag = "6")]
-    pub solo_match: ::core::option::Option<bool>,
     #[prost(enumeration = "ECitadelBotDifficulty", optional, tag = "7", default = "KECitadelBotDifficultyNone")]
     pub bot_difficulty: ::core::option::Option<i32>,
     #[prost(enumeration = "ECitadelRegionMode", optional, tag = "8", default = "KECitadelRegionModeRow")]
     pub region_mode: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "9")]
+    pub prefer_solo_only: ::core::option::Option<bool>,
+    #[prost(enumeration = "ECitadelMmPreference", optional, tag = "10", default = "KECitadelMmPreferenceInvalid")]
+    pub mm_preference: ::core::option::Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2123,6 +2260,13 @@ pub enum CameraParam {
     KEParamHorizOffset = 6,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum CameraParamMode {
+    KEParamModeAllowInOneContext = 0,
+    KEParamModeAllowInMultipleContexts = 1,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2362,6 +2506,16 @@ pub enum CitadelUserMessageIds {
     KEUserMsgCurrencyChanged = 345,
     KEUserMsgGameOver = 346,
     KEUserMsgBossKilled = 347,
+    KEUserMsgBossDamaged = 348,
+    KEUserMsgMidBossSpawned = 349,
+    KEUserMsgRejuvStatus = 350,
+    KEUserMsgKillStreak = 351,
+    KEUserMsgTeamMsg = 352,
+    KEUserMsgPlayerRespawned = 353,
+    KEUserMsgCallCheaterVote = 354,
+    KEUserMsgMeleeHit = 355,
+    KEUserMsgFlexSlotUnlocked = 356,
+    KEUserMsgSeasonalAchievementUnlocked = 357,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2394,6 +2548,8 @@ pub struct CsoCitadelLobby {
     pub server_version: ::core::option::Option<u32>,
     #[prost(bool, optional, tag = "14")]
     pub safe_to_abandon: ::core::option::Option<bool>,
+    #[prost(bool, optional, tag = "15")]
+    pub match_punishes_abandons: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2428,6 +2584,23 @@ pub struct CsoCitadelParty {
     pub chat_mode: ::core::option::Option<i32>,
     #[prost(enumeration = "ECitadelRegionMode", optional, tag = "15", default = "KECitadelRegionModeRow")]
     pub region_mode: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "16")]
+    pub is_private_lobby: ::core::option::Option<bool>,
+    #[prost(message, optional, tag = "17")]
+    pub private_lobby_settings: ::core::option::Option<cso_citadel_party::PrivateLobbySettings>,
+    #[prost(bool, optional, tag = "18")]
+    pub desires_laning_together: ::core::option::Option<bool>,
+    #[prost(enumeration = "ECitadelMmPreference", optional, tag = "19", default = "KECitadelMmPreferenceInvalid")]
+    pub mm_preference: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum EBannedFeature {
+    KEBannedFeatureInvalid = 0,
+    KEBannedFeatureLowPriorityMatchmaking = 1,
+    KEBannedFeatureCommsRestricted = 2,
+    KEBannedFeatureReportingDisabled = 3,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2465,6 +2638,7 @@ pub enum ECitadelChatMessage {
     CitadelChatMessageCantpauseyet = 10,
     CitadelChatMessagePregameCountdown = 11,
     CitadelChatMessageNoteampausesleft = 12,
+    CitadelChatMessageCommsRestricted = 13,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2493,6 +2667,17 @@ pub enum ECitadelGameMode {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+pub enum ECitadelLeaderboardRegion {
+    KECitadelLeaderboardRegionNone = 0,
+    KECitadelLeaderboardRegionEurope = 1,
+    KECitadelLeaderboardRegionAsia = 2,
+    KECitadelLeaderboardRegionNAmerica = 3,
+    KECitadelLeaderboardRegionSAmerica = 4,
+    KECitadelLeaderboardRegionOceania = 5,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
 pub enum ECitadelLobbyTeam {
     KECitadelLobbyTeamTeam0 = 0,
     KECitadelLobbyTeamTeam1 = 1,
@@ -2509,6 +2694,15 @@ pub enum ECitadelMatchMode {
     KECitadelMatchModeRanked = 4,
     KECitadelMatchModeServerTest = 5,
     KECitadelMatchModeTutorial = 6,
+    KECitadelMatchModeHeroLabs = 7,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ECitadelMmPreference {
+    KECitadelMmPreferenceInvalid = 0,
+    KECitadelMmPreferenceCasual = 1,
+    KECitadelMmPreferenceSerious = 2,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2583,12 +2777,32 @@ pub enum ECitadelTeamObjective {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+pub enum EFeatureBanReason {
+    KEFeatureBanReasonInvalid = 0,
+    KEFeatureBanReasonDevCommand = 1,
+    KEFeatureBanReasonPlayerReports = 2,
+    KEFeatureBanReasonMatchAbandons = 3,
+    KEFeatureBanReasonExcessivePlayerReports = 4,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
 pub enum ELobbyServerState {
     KELobbyServerStateAssign = 0,
     KELobbyServerStateInGame = 1,
     KELobbyServerStatePostMatch = 2,
     KELobbyServerStateSignedOut = 3,
     KELobbyServerStateAbandoned = 4,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum EProtoDebugVisiblity {
+    KEProtoDebugVisibilityAlways = 0,
+    KEProtoDebugVisibilityServer = 70,
+    KEProtoDebugVisibilityValveServer = 80,
+    KEProtoDebugVisibilityGc = 90,
+    KEProtoDebugVisibilityNever = 100,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2817,7 +3031,7 @@ pub mod c_citadel_user_msg_camera_controller {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, Copy, PartialEq, ::prost::Message)]
     pub struct Maintain {
-        #[prost(float, optional, tag = "1", default = "1")]
+        #[prost(float, optional, tag = "1", default = "0")]
         pub duration: ::core::option::Option<f32>,
     }
     #[derive(serde::Serialize, serde::Deserialize)]
@@ -2885,6 +3099,8 @@ pub mod c_citadel_user_msg_camera_controller {
         pub max_speed: ::core::option::Option<f32>,
         #[prost(float, optional, tag = "4")]
         pub spring_strength: ::core::option::Option<f32>,
+        #[prost(bool, optional, tag = "5", default = "true")]
+        pub increase_spring_strength_to_keep_target_on_screen: ::core::option::Option<bool>,
     }
 }
 
@@ -3430,6 +3646,16 @@ pub mod c_msg_match_meta_data_contents {
         pub objectives_mask_team1: ::core::option::Option<u64>,
         #[prost(message, repeated, tag = "19")]
         pub mid_boss: ::prost::alloc::vec::Vec<MidBoss>,
+        #[prost(bool, optional, tag = "20")]
+        pub is_high_skill_range_parties: ::core::option::Option<bool>,
+        #[prost(bool, optional, tag = "21")]
+        pub low_pri_pool: ::core::option::Option<bool>,
+        #[prost(bool, optional, tag = "22")]
+        pub new_player_pool: ::core::option::Option<bool>,
+        #[prost(uint32, optional, tag = "23")]
+        pub average_badge_team0: ::core::option::Option<u32>,
+        #[prost(uint32, optional, tag = "24")]
+        pub average_badge_team1: ::core::option::Option<u32>,
     }
     #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
@@ -3447,6 +3673,7 @@ pub mod c_msg_match_meta_data_contents {
         KETreasure = 5,
         KEAssists = 6,
         KEDenies = 7,
+        KETeamBonus = 8,
     }
 }
 
@@ -4101,6 +4328,45 @@ pub mod cgc_to_gc_msg_master_startup_complete {
 }
 
 pub mod cso_citadel_party {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct PrivateLobbySlot {
+        #[prost(uint32, optional, tag = "1")]
+        pub slot_id: ::core::option::Option<u32>,
+        #[prost(uint32, optional, tag = "2")]
+        pub player_account_id: ::core::option::Option<u32>,
+    }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct ServerRegion {
+        #[prost(uint32, optional, tag = "1")]
+        pub region_id: ::core::option::Option<u32>,
+    }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct PrivateLobbySettings {
+        #[prost(uint32, optional, tag = "1")]
+        pub min_roster_size: ::core::option::Option<u32>,
+        #[prost(message, repeated, tag = "2")]
+        pub match_slots: ::prost::alloc::vec::Vec<PrivateLobbySlot>,
+        #[prost(bool, optional, tag = "3")]
+        pub randomize_lanes: ::core::option::Option<bool>,
+        #[prost(uint32, optional, tag = "4")]
+        pub server_region: ::core::option::Option<u32>,
+        #[prost(bool, optional, tag = "6")]
+        pub is_publicly_visible: ::core::option::Option<bool>,
+        #[prost(bool, optional, tag = "7")]
+        pub cheats_enabled: ::core::option::Option<bool>,
+        #[prost(message, repeated, tag = "8")]
+        pub available_regions: ::prost::alloc::vec::Vec<ServerRegion>,
+        #[prost(bool, optional, tag = "9")]
+        pub duplicate_heroes_enabled: ::core::option::Option<bool>,
+        #[prost(bool, optional, tag = "10")]
+        pub experimental_heroes_enabled: ::core::option::Option<bool>,
+    }
     #[derive(serde::Serialize, serde::Deserialize)]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]

@@ -35,6 +35,7 @@ fn main() -> std::io::Result<()> {
                 "./protos/citadel/citadel_gcmessages_common.proto",
                 "./protos/citadel/citadel_usermessages.proto",
                 "./protos/citadel/base_modifier.proto",
+                "./protos/citadel/valveextensions.proto",
             ],
             &["./protos/common", "./protos/citadel"],
         )?;

@@ -45,6 +45,16 @@ enum CitadelUserMessageIds {
 	k_EUserMsg_CurrencyChanged = 345;
 	k_EUserMsg_GameOver = 346;
 	k_EUserMsg_BossKilled = 347;
+	k_EUserMsg_BossDamaged = 348;
+	k_EUserMsg_MidBossSpawned = 349;
+	k_EUserMsg_RejuvStatus = 350;
+	k_EUserMsg_KillStreak = 351;
+	k_EUserMsg_TeamMsg = 352;
+	k_EUserMsg_PlayerRespawned = 353;
+	k_EUserMsg_CallCheaterVote = 354;
+	k_EUserMsg_MeleeHit = 355;
+	k_EUserMsg_FlexSlotUnlocked = 356;
+	k_EUserMsg_SeasonalAchievementUnlocked = 357;
 }
 
 enum CitadelEntityMessageIds {
@@ -77,6 +87,11 @@ enum CameraParam {
 	k_EParam_HorizOffset = 6;
 }
 
+enum CameraParamMode {
+	k_EParamMode_AllowInOneContext = 0;
+	k_EParamMode_AllowInMultipleContexts = 1;
+}
+
 enum CameraAction {
 	k_EAction_AddOp = 0;
 	k_EAction_ClearAllOps = 1;
@@ -96,6 +111,7 @@ enum ECitadelChatMessage {
 	CITADEL_CHAT_MESSAGE_CANTPAUSEYET = 10;
 	CITADEL_CHAT_MESSAGE_PREGAME_COUNTDOWN = 11;
 	CITADEL_CHAT_MESSAGE_NOTEAMPAUSESLEFT = 12;
+	CITADEL_CHAT_MESSAGE_COMMS_RESTRICTED = 13;
 }
 
 enum PostProcessingGameStates {
@@ -130,6 +146,9 @@ message CCitadelUserMessage_Damage {
 	optional int32 victim_shield_new = 18;
 	optional int32 hits = 19;
 	optional int32 health_lost = 20;
+	optional int32 hitgroup_id = 21;
+	optional int32 entindex_attacking_object = 22 [default = -1];
+	optional .CMsgVector damage_direction = 23;
 }
 
 message PingCommonData {
@@ -202,10 +221,9 @@ message CCitadelUserMsg_AbilitiesChanged {
 		ESwappedActivatedAbility = 3;
 	}
 
-	optional int32 entindex_purchaser = 1 [default = -1];
-	optional int32 entindex_ability = 2 [default = -1];
-	optional uint32 ability_id = 3;
-	optional .CCitadelUserMsg_AbilitiesChanged.Change change = 4 [default = EInvalid];
+	optional int32 purchaser_player_slot = 1 [default = -1];
+	optional uint32 ability_id = 2;
+	optional .CCitadelUserMsg_AbilitiesChanged.Change change = 3 [default = EInvalid];
 }
 
 message CCitadelUserMsg_AbilityInterrupted {
@@ -292,7 +310,7 @@ message CCitadelUserMsg_GoldHistory {
 
 message CCitadelUserMsg_CameraController {
 	message Maintain {
-		optional float duration = 1 [default = 1];
+		optional float duration = 1 [default = 0];
 	}
 
 	message Approach {
@@ -328,14 +346,17 @@ message CCitadelUserMsg_CameraController {
 		optional float lag_time = 2;
 		optional float max_speed = 3;
 		optional float spring_strength = 4;
+		optional bool increase_spring_strength_to_keep_target_on_screen = 5 [default = true];
 	}
 
 	required .CameraAction action = 1 [default = k_EAction_AddOp];
 	optional .CameraOperation operation = 2 [default = k_ECameraOp_Maintain];
 	optional .CameraParam param = 3 [default = k_EParam_ClearAllOps];
+	optional .CameraParamMode param_mode = 12 [default = k_EParamMode_AllowInOneContext];
 	optional float delay = 4;
 	optional bool relative_values = 11;
 	optional uint32 context_symbol_id = 5;
+	optional uint32 priority = 13 [default = 1];
 	optional .CCitadelUserMsg_CameraController.Maintain maintain = 6;
 	optional .CCitadelUserMsg_CameraController.Approach approach = 7;
 	optional .CCitadelUserMsg_CameraController.Spring spring = 8;
@@ -360,6 +381,7 @@ message CCitadelUserMsg_HeroKilled {
 	repeated int32 entindex_assisters = 4;
 	optional int32 entindex_scorer = 5 [default = -1];
 	optional int32 respawn_reason = 6;
+	optional int32 victim_team_number = 7;
 }
 
 message CCitadelEntityMsg_BreakablePropSpawnDebris {
@@ -383,6 +405,8 @@ message CCitadelUserMessage_BulletHit {
 	optional int32 shotid = 1;
 	optional int32 pellet = 2;
 	optional int32 hit_entindex = 3 [default = -1];
+	optional int32 weapon_entindex = 4 [default = -1];
+	optional bool is_predicted = 5;
 }
 
 message CCitadelUserMessage_ObjectiveMask {
@@ -466,6 +490,7 @@ message CCitadelUserMessage_CurrencyChanged {
 	optional .CMsgVector victim_pos = 7;
 	optional int32 playsound = 8;
 	optional uint32 ability_id = 9;
+	optional uint32 new_value = 10;
 }
 
 message CCitadelUserMessage_GameOver {
@@ -513,8 +538,63 @@ message CCitadelUserMsg_ParticipantSetLibraryStackFields {
 message CCitadelUserMsg_BossKilled {
 	optional int32 objective_team = 1;
 	optional int32 objective_mask_change = 2;
-	required uint32 entity_killed = 3 [default = 16777215];
-	required int32 entity_killed_class = 4;
-	required uint32 entity_killer = 5 [default = 16777215];
-	required float gametime = 6;
+	optional uint32 entity_killed = 3 [default = 16777215];
+	optional int32 entity_killed_class = 4;
+	optional uint32 entity_killer = 5 [default = 16777215];
+	optional float gametime = 6;
+	optional int32 bosses_remaining = 7;
+	optional .CMsgVector entity_position = 8;
+}
+
+message CCitadelUserMsg_BossDamaged {
+	required int32 objective_team = 1;
+	required int32 objective_id = 2;
+	required uint32 entity_damaged = 3 [default = 16777215];
+}
+
+message CCitadelUserMsg_MidBossSpawned {
+}
+
+message CCitadelUserMsg_RejuvStatus {
+	optional int32 killing_team = 1;
+	required uint32 player_pawn = 2 [default = 16777215];
+	required int32 user_team = 3;
+	required int32 event_type = 4;
+}
+
+message CCitadelUserMsg_KillStreak {
+	required uint32 player_pawn = 1 [default = 16777215];
+	required int32 num_kills = 2;
+	required bool is_first_blood = 3;
+}
+
+message CCitadelUserMsg_TeamMsg {
+	required int32 event_type = 1;
+	required int32 team_number = 2;
+	required int32 lane_color = 3;
+	required uint32 player_controller = 4 [default = 16777215];
+}
+
+message CCitadelUserMsg_PlayerRespawned {
+	required uint32 player_pawn = 1 [default = 16777215];
+	required float facing_yaw = 2;
+}
+
+message CCitadelUserMsg_CallCheaterVote {
+	required int32 player_slot = 1 [default = -1];
+}
+
+message CCitadelUserMessage_MeleeHit {
+	optional int32 hit_entindex = 1 [default = -1];
+	optional bool heavy = 2;
+}
+
+message CCitadelUserMsg_FlexSlotUnlocked {
+	optional int32 team_number = 1;
+	optional int32 flexslot_unlocked = 2;
+}
+
+message CCitadelUserMsg_SeasonalAchievementUnlocked {
+	optional uint32 account_id = 1;
+	optional uint32 hero_id = 2;
 }

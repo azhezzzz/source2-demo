@@ -306,6 +306,8 @@ pub struct CDotaUserMsgAbilityDraftRequestAbility {
     pub requested_ability_id: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "3")]
     pub ctrl_is_down: ::core::option::Option<bool>,
+    #[prost(int32, optional, tag = "4")]
+    pub requested_hero_id: ::core::option::Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -935,6 +937,10 @@ pub struct CDotaUserMsgFoundNeutralItem {
     pub item_tier: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "4")]
     pub tier_item_count: ::core::option::Option<u32>,
+    #[prost(int32, optional, tag = "5", default = "-1")]
+    pub enhancement_ability_id: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "6")]
+    pub enhancement_level: ::core::option::Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1192,6 +1198,22 @@ pub struct CDotaUserMsgLocationPing {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CDotaUserMsgMadstoneAlert {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub target_entindex: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub tier: ::core::option::Option<i32>,
+    #[prost(enumeration = "cdota_user_msg_madstone_alert::EMadstoneAlertType", optional, tag = "4", default = "CraftAvailable")]
+    pub madstone_alert_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "5")]
+    pub value: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CDotaUserMsgMapLine {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1332,6 +1354,11 @@ pub struct CDotaUserMsgNeutralCampAlert {
     #[prost(bool, optional, tag = "7")]
     pub stack_intention: ::core::option::Option<bool>,
 }
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CDotaUserMsgNeutralCraftAvailable {}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -2157,6 +2184,16 @@ pub struct CDotaUserMsgTeUnitAnimationEnd {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CDotaUserMsgTimerAlert {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
+    #[prost(enumeration = "ETimerAlertType", optional, tag = "2", default = "KTimerAlertTypePowerRune")]
+    pub timer_alert_type: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CDotaUserMsgTipAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
@@ -2588,6 +2625,8 @@ pub struct CMsgDotaCombatLogEntry {
     pub will_reincarnate: ::core::option::Option<bool>,
     #[prost(bool, optional, tag = "79")]
     pub uses_charges: ::core::option::Option<bool>,
+    #[prost(uint32, optional, tag = "80")]
+    pub tracked_stat_id: ::core::option::Option<u32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2863,6 +2902,9 @@ pub enum DotaChatMessage {
     ChatMessageMinibossKill = 117,
     ChatMessagePlayerInGameBanText = 118,
     ChatMessageBannerPlanted = 119,
+    ChatMessageAlchemistGrantedScepter = 120,
+    ChatMessageProtectorSpawned = 121,
+    ChatMessageCraftingXp = 122,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2921,6 +2963,7 @@ pub enum DotaCombatlogTypes {
     DotaCombatlogUnitTeleported = 41,
     DotaCombatlogKillEaterEvent = 42,
     DotaCombatlogNeutralItemEarned = 43,
+    DotaCombatlogStatTrackerPlayer = 44,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3257,6 +3300,7 @@ pub enum DotaunitorderT {
     DotaUnitOrderMoveRelative = 39,
     DotaUnitOrderCastToggleAlt = 40,
     DotaUnitOrderConsumeItem = 41,
+    DotaUnitOrderSetItemMarkForSell = 42,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3280,6 +3324,10 @@ pub enum EBadgeType {
     KEBadgeTypeTi12PlayoffsDay3 = 15,
     KEBadgeTypeTi12FinalsWeekend = 16,
     KEBadgeTypeTi12Special = 17,
+    KEBadgeTypeTi13FinalsDay1 = 18,
+    KEBadgeTypeTi13FinalsDay2 = 19,
+    KEBadgeTypeTi13FinalsDay3 = 20,
+    KEBadgeTypeTi13Special = 21,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3474,6 +3522,9 @@ pub enum EDotaUserMessages {
     DotaUmFacetPing = 624,
     DotaUmInnatePing = 625,
     DotaUmRoshanTimer = 626,
+    DotaUmNeutralCraftAvailable = 627,
+    DotaUmTimerAlert = 628,
+    DotaUmMadstoneAlert = 629,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3528,6 +3579,7 @@ pub enum EEvent {
     EventIdCrownfall = 47,
     EventIdFrostivus2023 = 48,
     EventIdInternational2024 = 49,
+    EventIdFrostivus2024 = 50,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3562,6 +3614,14 @@ pub enum EHeroStatType {
     KEHeroStatTypeCullingBladeAverageHealthCulled = 2018,
     KEHeroStatTypeCullingBladeAverageDamageAvailable = 2019,
     KEHeroStatTypeCullingBladeHeroBuffAverage = 2020,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum EItemSuggestPreference {
+    KEItemSuggestPreferenceNone = 0,
+    KEItemSuggestPreferenceLiked = 1,
+    KEItemSuggestPreferenceDisliked = 2,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3817,6 +3877,16 @@ pub enum ERankType {
     KERankTypeBehaviorPrivate = 100,
     KERankTypeBehaviorPublic = 101,
     KERankTypeMax = 102,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ETimerAlertType {
+    KTimerAlertTypePowerRune = 1,
+    KTimerAlertTypeBountyRune = 2,
+    KTimerAlertTypeWisdomShrine = 3,
+    KTimerAlertTypeJungleCamps = 4,
+    KTimerAlertTypeLotusPool = 5,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -4127,6 +4197,16 @@ pub mod cdota_user_msg_guild_challenge_progress {
     }
 }
 
+pub mod cdota_user_msg_madstone_alert {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[repr(i32)]
+    pub enum EMadstoneAlertType {
+        CraftAvailable = 0,
+        NeedMadstone = 1,
+        WaitingForNextTier = 2,
+    }
+}
+
 pub mod cdota_user_msg_mini_kill_cam_info {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[allow(clippy::derive_partial_eq_without_eq)]
@@ -4249,6 +4329,8 @@ pub mod cdota_user_msg_unit_event {
         pub predelay: ::core::option::Option<Interval>,
         #[prost(uint32, optional, tag = "7")]
         pub flags: ::core::option::Option<u32>,
+        #[prost(int32, optional, tag = "8")]
+        pub response_type: ::core::option::Option<i32>,
     }
     #[derive(serde::Serialize, serde::Deserialize)]
     #[allow(clippy::derive_partial_eq_without_eq)]

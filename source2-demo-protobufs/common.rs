@@ -279,6 +279,26 @@ pub struct CDemoSpawnGroups {
     #[prost(bytes = "vec", repeated, tag = "3")]
     pub msgs: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CDemoRecovery {
+    #[prost(message, optional, tag = "1")]
+    pub initial_spawn_group: ::core::option::Option<c_demo_recovery::DemoInitialSpawnGroupEntry>,
+    #[prost(bytes = "vec", optional, tag = "2")]
+    pub spawn_group_message: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+}
+pub mod c_demo_recovery {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct DemoInitialSpawnGroupEntry {
+        #[prost(uint32, optional, tag = "1")]
+        pub spawngrouphandle: ::core::option::Option<u32>,
+        #[prost(bool, optional, tag = "2")]
+        pub was_created: ::core::option::Option<bool>,
+    }
+}
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum EDemoCommands {
@@ -301,7 +321,8 @@ pub enum EDemoCommands {
     DemSpawnGroups = 15,
     DemAnimationData = 16,
     DemAnimationHeader = 17,
-    DemMax = 18,
+    DemRecovery = 18,
+    DemMax = 19,
     DemIsCompressed = 64,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -426,6 +447,8 @@ pub enum ENetworkDisconnectionReason {
     NetworkDisconnectKickedNosteamlogin = 160,
     NetworkDisconnectKickedNosteamticket = 161,
     NetworkDisconnectKickedInputautomation = 162,
+    NetworkDisconnectKickedVacnetabnormalbehavior = 163,
+    NetworkDisconnectKickedInsecureclient = 164,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -556,18 +579,12 @@ pub struct CNetMsgSplitScreenUser {
 pub struct CNetMsgTick {
     #[prost(uint32, optional, tag = "1")]
     pub tick: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "2")]
-    pub host_frametime: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "3")]
-    pub host_frametime_std_deviation: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "4")]
     pub host_computationtime: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "5")]
     pub host_computationtime_std_deviation: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "6")]
-    pub host_framestarttime_std_deviation: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "7")]
-    pub host_loss: ::core::option::Option<u32>,
+    pub legacy_host_loss: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "8")]
     pub host_unfiltered_frametime: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "9")]
@@ -577,7 +594,9 @@ pub struct CNetMsgTick {
     #[prost(string, optional, tag = "11")]
     pub expected_long_tick_reason: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(uint32, optional, tag = "12")]
-    pub jitter: ::core::option::Option<u32>,
+    pub host_frame_dropped_pct_x10: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "13")]
+    pub host_frame_irregular_arrival_pct_x10: ::core::option::Option<u32>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -1255,6 +1274,8 @@ pub struct CMsgSource2VProfLiteReportItem {
     pub name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(uint32, optional, tag = "2")]
     pub active_samples: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub active_samples_1secmax: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "3")]
     pub usec_max: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "11")]
@@ -1269,6 +1290,22 @@ pub struct CMsgSource2VProfLiteReportItem {
     pub usec_p50_all: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "23")]
     pub usec_p99_all: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "31")]
+    pub usec_1secmax_avg_active: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "32")]
+    pub usec_1secmax_p50_active: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "33")]
+    pub usec_1secmax_p95_active: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "34")]
+    pub usec_1secmax_p99_active: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "41")]
+    pub usec_1secmax_avg_all: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "42")]
+    pub usec_1secmax_p50_all: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "43")]
+    pub usec_1secmax_p95_all: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "44")]
+    pub usec_1secmax_p99_all: ::core::option::Option<u32>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -1280,6 +1317,69 @@ pub struct CMsgSource2VProfLiteReport {
     pub items: ::prost::alloc::vec::Vec<CMsgSource2VProfLiteReportItem>,
     #[prost(uint32, optional, tag = "3")]
     pub discarded_frames: ::core::option::Option<u32>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CMsgSource2NetworkFlowQuality {
+    #[prost(uint32, optional, tag = "1")]
+    pub duration: ::core::option::Option<u32>,
+    #[prost(uint64, optional, tag = "5")]
+    pub bytes_total: ::core::option::Option<u64>,
+    #[prost(uint64, optional, tag = "6")]
+    pub bytes_total_reliable: ::core::option::Option<u64>,
+    #[prost(uint64, optional, tag = "7")]
+    pub bytes_total_voice: ::core::option::Option<u64>,
+    #[prost(uint32, optional, tag = "10")]
+    pub bytes_sec_p95: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "11")]
+    pub bytes_sec_p99: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "20")]
+    pub enginemsgs_total: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "21")]
+    pub enginemsgs_sec_p95: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "22")]
+    pub enginemsgs_sec_p99: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "40")]
+    pub ticks_total: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "41")]
+    pub ticks_good: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "42")]
+    pub ticks_good_almost_late: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "43")]
+    pub ticks_fixed_dropped: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "44")]
+    pub ticks_fixed_late: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "45")]
+    pub ticks_bad_dropped: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "46")]
+    pub ticks_bad_late: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "47")]
+    pub ticks_bad_other: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "50")]
+    pub tick_missrate_samples_total: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "51")]
+    pub tick_missrate_samples_perfect: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "52")]
+    pub tick_missrate_samples_perfectnet: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "53")]
+    pub tick_missratenet_p75_x10: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "54")]
+    pub tick_missratenet_p95_x10: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "55")]
+    pub tick_missratenet_p99_x10: ::core::option::Option<u32>,
+    #[prost(sint32, optional, tag = "61")]
+    pub recvmargin_p1: ::core::option::Option<i32>,
+    #[prost(sint32, optional, tag = "62")]
+    pub recvmargin_p5: ::core::option::Option<i32>,
+    #[prost(sint32, optional, tag = "63")]
+    pub recvmargin_p25: ::core::option::Option<i32>,
+    #[prost(sint32, optional, tag = "64")]
+    pub recvmargin_p50: ::core::option::Option<i32>,
+    #[prost(sint32, optional, tag = "65")]
+    pub recvmargin_p75: ::core::option::Option<i32>,
+    #[prost(sint32, optional, tag = "66")]
+    pub recvmargin_p95: ::core::option::Option<i32>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -1649,7 +1749,7 @@ pub struct CSvcMsgPacketEntities {
     #[prost(message, repeated, tag = "15")]
     pub alternate_baselines: ::prost::alloc::vec::Vec<csvc_msg_packet_entities::AlternateBaselineT>,
     #[prost(uint32, optional, tag = "16")]
-    pub has_pvs_vis_bits: ::core::option::Option<u32>,
+    pub has_pvs_vis_bits_deprecated: ::core::option::Option<u32>,
     #[prost(sint32, repeated, tag = "22")]
     pub cmd_recv_status: ::prost::alloc::vec::Vec<i32>,
     #[prost(message, optional, tag = "19")]
@@ -1941,6 +2041,27 @@ pub struct CBidirMsgRebroadcastSource {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CBidirMsgPredictionEvent {
+    #[prost(uint32, required, tag = "1")]
+    pub event_id: u32,
+    #[prost(bytes = "vec", required, tag = "2")]
+    pub event_data: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint32, optional, tag = "3")]
+    pub sync_type: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub sync_val_uint32: ::core::option::Option<u32>,
+}
+pub mod c_bidir_msg_prediction_event {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[repr(i32)]
+    pub enum ESyncType {
+        StTick = 0,
+        StUserCmdNum = 1,
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CMsgServerNetworkStats {
     #[prost(bool, optional, tag = "1")]
     pub dedicated: ::core::option::Option<bool>,
@@ -2226,6 +2347,7 @@ pub enum BidirectionalMessages {
     BiRebroadcastGameEvent = 16,
     BiRebroadcastSource = 17,
     BiGameEvent = 18,
+    BiPredictionEvent = 19,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -2724,6 +2846,12 @@ pub struct CUserMsgParticleManager {
     pub set_vdata: ::core::option::Option<c_user_msg_particle_manager::SetVData>,
     #[prost(message, optional, tag = "38")]
     pub set_material_override: ::core::option::Option<c_user_msg_particle_manager::SetMaterialOverride>,
+    #[prost(message, optional, tag = "39")]
+    pub add_fan: ::core::option::Option<c_user_msg_particle_manager::AddFan>,
+    #[prost(message, optional, tag = "40")]
+    pub update_fan: ::core::option::Option<c_user_msg_particle_manager::UpdateFan>,
+    #[prost(message, optional, tag = "41")]
+    pub set_particle_cluster_growth: ::core::option::Option<c_user_msg_particle_manager::SetParticleClusterGrowth>,
 }
 pub mod c_user_msg_particle_manager {
     #[derive(serde::Serialize, serde::Deserialize)]
@@ -3108,6 +3236,63 @@ pub mod c_user_msg_particle_manager {
         pub material_name: ::core::option::Option<::prost::alloc::string::String>,
         #[prost(bool, optional, tag = "2")]
         pub include_children: ::core::option::Option<bool>,
+    }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct AddFan {
+        #[prost(bool, optional, tag = "1")]
+        pub active: ::core::option::Option<bool>,
+        #[prost(message, optional, tag = "2")]
+        pub bounds_mins: ::core::option::Option<super::CMsgVector>,
+        #[prost(message, optional, tag = "3")]
+        pub bounds_maxs: ::core::option::Option<super::CMsgVector>,
+        #[prost(message, optional, tag = "4")]
+        pub fan_origin: ::core::option::Option<super::CMsgVector>,
+        #[prost(message, optional, tag = "5")]
+        pub fan_origin_offset: ::core::option::Option<super::CMsgVector>,
+        #[prost(message, optional, tag = "6")]
+        pub fan_direction: ::core::option::Option<super::CMsgVector>,
+        #[prost(float, optional, tag = "7")]
+        pub force: ::core::option::Option<f32>,
+        #[prost(string, optional, tag = "8")]
+        pub fan_force_curve: ::core::option::Option<::prost::alloc::string::String>,
+        #[prost(bool, optional, tag = "9")]
+        pub falloff: ::core::option::Option<bool>,
+        #[prost(bool, optional, tag = "10")]
+        pub pull_towards_point: ::core::option::Option<bool>,
+        #[prost(float, optional, tag = "11")]
+        pub curve_min_dist: ::core::option::Option<f32>,
+        #[prost(float, optional, tag = "12")]
+        pub curve_max_dist: ::core::option::Option<f32>,
+    }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct UpdateFan {
+        #[prost(bool, optional, tag = "1")]
+        pub active: ::core::option::Option<bool>,
+        #[prost(message, optional, tag = "2")]
+        pub fan_origin: ::core::option::Option<super::CMsgVector>,
+        #[prost(message, optional, tag = "3")]
+        pub fan_origin_offset: ::core::option::Option<super::CMsgVector>,
+        #[prost(message, optional, tag = "4")]
+        pub fan_direction: ::core::option::Option<super::CMsgVector>,
+        #[prost(float, optional, tag = "7")]
+        pub fan_ramp_ratio: ::core::option::Option<f32>,
+        #[prost(message, optional, tag = "5")]
+        pub bounds_mins: ::core::option::Option<super::CMsgVector>,
+        #[prost(message, optional, tag = "6")]
+        pub bounds_maxs: ::core::option::Option<super::CMsgVector>,
+    }
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct SetParticleClusterGrowth {
+        #[prost(float, optional, tag = "1")]
+        pub duration: ::core::option::Option<f32>,
+        #[prost(message, optional, tag = "2")]
+        pub origin: ::core::option::Option<super::CMsgVector>,
     }
 }
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -3575,7 +3760,6 @@ pub enum EBaseUserMessages {
     UmAnimGraphUpdate = 149,
     UmHapticsManagerPulse = 150,
     UmHapticsManagerEffect = 151,
-    UmCommandQueueState = 152,
     UmUpdateCssClasses = 153,
     UmServerFrameTime = 154,
     UmLagCompensationError = 155,
@@ -3650,6 +3834,9 @@ pub enum ParticleMessage {
     GameParticleManagerEventDestroyPhysicsSim = 33,
     GameParticleManagerEventSetVdata = 34,
     GameParticleManagerEventSetMaterialOverride = 35,
+    GameParticleManagerEventAddFan = 36,
+    GameParticleManagerEventUpdateFan = 37,
+    GameParticleManagerEventSetClusterGrowth = 38,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]

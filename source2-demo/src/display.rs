@@ -117,9 +117,9 @@ impl Display for Entity {
             let name = self.class.serializer.get_name_for_field_path(&fp);
             let value = self.state.get_value(&fp);
             if let Some(v) = value {
-                table.add_row(row![fp, name, field_type.as_string(), format!("{:?}", v)]);
+                table.add_row(row![fp, name, field_type.to_string(), format!("{:?}", v)]);
             } else {
-                table.add_row(row![fp, name, field_type.as_string(), "None"]);
+                table.add_row(row![fp, name, field_type.to_string(), "None"]);
             }
         }
 
@@ -177,5 +177,21 @@ impl Display for GameEventList {
         }
 
         write!(f, "{}", table)
+    }
+}
+
+impl Display for FieldType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut x = self.base.to_string();
+        if let Some(generic) = &self.generic {
+            x = x + "< " + &generic.to_string() + " >";
+        }
+        if self.pointer {
+            x += "*";
+        }
+        if let Some(c) = self.count {
+            x = x + "[" + &c.to_string() + "]";
+        }
+        write!(f, "{}", x)
     }
 }

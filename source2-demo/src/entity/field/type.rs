@@ -62,18 +62,4 @@ impl FieldType {
             count,
         }
     }
-
-    pub fn as_string(&self) -> String {
-        let mut x = self.base.to_string();
-        if let Some(generic) = &self.generic {
-            x = x + "< " + &generic.as_string() + " >";
-        }
-        if self.pointer {
-            x += "*";
-        }
-        if let Some(c) = self.count {
-            x = x + "[" + &c.to_string() + "]";
-        }
-        x
-    }
 }

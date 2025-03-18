@@ -75,35 +75,35 @@ impl DemoCommands for Parser<'_> {
                         high_value: current_field.high_value(),
                     };
 
-                    let model = if let Some(serializer) = current_field_serializer {
-                        if field_type.pointer {
-                            FieldModel::FixedTable(serializer)
-                        } else {
-                            FieldModel::VariableTable(serializer)
-                        }
-                    } else if field_type.count.is_some_and(|x| x > 0)
-                        && field_type.base.as_ref() != "char"
+                    let model = if field_type.pointer {
+                        FieldModel::Pointer(current_field_serializer.unwrap())
+                    } else if current_field_serializer.is_some() {
+                        FieldModel::Vector(current_field_serializer.unwrap())
+                    } else if [
+                        "CUtlVector",
+                        "CNetworkUtlVectorBase",
+                        "CUtlVectorEmbeddedNetworkVar",
+                    ]
+                    .contains(&field_type.base.as_ref())
                     {
-                        FieldModel::FixedArray
-                    } else if field_type.base.as_ref() == "CUtlVector"
-                        || field_type.base.as_ref() == "CNetworkUtlVectorBase"
-                        || field_type.base.as_ref() == "CUtlVectorEmbeddedNetworkVar"
-                    {
-                        FieldModel::VariableArray(FieldDecoder::from_field(
+                        FieldModel::ArrayVector(FieldDecoder::from_field(
                             field_type.generic.as_ref().unwrap(),
                             properties,
                         ))
+                    } else if field_type.count.is_some_and(|x| x > 0)
+                        && field_type.base.as_ref() != "char"
+                    {
+                        FieldModel::Array
                     } else {
-                        FieldModel::Simple
+                        FieldModel::Value
                     };
-
+                    
                     let decoder = match model {
-                        FieldModel::Simple | FieldModel::FixedArray => {
+                        FieldModel::Value | FieldModel::Array => {
                             FieldDecoder::from_field(&field_type, properties)
                         }
-                        FieldModel::VariableArray(_) => FieldDecoder::Unsigned32,
-                        FieldModel::FixedTable(_) => FieldDecoder::Boolean,
-                        FieldModel::VariableTable(_) => FieldDecoder::Unsigned32,
+                        FieldModel::Vector(_) | FieldModel::ArrayVector(_) => FieldDecoder::Unsigned32,
+                        FieldModel::Pointer(_) => FieldDecoder::Boolean,
                     };
 
                     let field = Field {

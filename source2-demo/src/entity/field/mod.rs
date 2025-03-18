@@ -32,10 +32,10 @@ impl Field {
     pub(crate) fn get_field_paths(&self, fp: &mut FieldPath, st: &FieldState) -> Vec<FieldPath> {
         let mut field_paths: Vec<FieldPath> = vec![];
         match &self.model {
-            FieldModel::Simple => {
+            FieldModel::Value => {
                 field_paths.push(*fp);
             }
-            FieldModel::FixedArray | FieldModel::VariableArray(_) => {
+            FieldModel::Array | FieldModel::ArrayVector(_) => {
                 if let Some(s) = st.get_field_state(fp) {
                     fp.last += 1;
                     for i in 0..s.vec.len() {
@@ -45,14 +45,7 @@ impl Field {
                     fp.last -= 1;
                 }
             }
-            FieldModel::FixedTable(serializer) => {
-                if st.get_field_state(fp).is_some() {
-                    fp.last += 1;
-                    field_paths.extend(serializer.get_field_paths(fp, st));
-                    fp.last -= 1;
-                }
-            }
-            FieldModel::VariableTable(serializer) => {
+            FieldModel::Vector(serializer) => {
                 if let Some(x) = st.get_field_state(fp) {
                     fp.last += 2;
                     for i in 0..x.vec.len() {
@@ -60,6 +53,13 @@ impl Field {
                         field_paths.extend(serializer.get_field_paths(fp, st));
                     }
                     fp.last -= 2;
+                }
+            }
+            FieldModel::Pointer(serializer) => {
+                if st.get_field_state(fp).is_some() {
+                    fp.last += 1;
+                    field_paths.extend(serializer.get_field_paths(fp, st));
+                    fp.last -= 1;
                 }
             }
         }

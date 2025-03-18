@@ -17,17 +17,11 @@ impl FieldType {
             pointer = true;
             base_end -= 1;
         } else if [
-            "PhysicsRagdollPose_t",
             "CBodyComponent",
-            "CEntityIdentity",
+            "CLightComponent",
             "CPhysicsComponent",
             "CRenderComponent",
-            "CDOTAGamerules",
-            "CDOTAGameManager",
-            "CDOTASpectatorGraphManager",
             "CPlayerLocalData",
-            "CPlayer_CameraServices",
-            "CDOTAGameRules",
         ]
         .contains(&name)
         {

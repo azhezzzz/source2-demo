@@ -21,31 +21,31 @@ impl Serializer {
             name += &current_field.var_name;
             i += 1;
             match &current_field.model {
-                FieldModel::FixedArray | FieldModel::VariableArray(_) => {
-                    if fp.last == i {
-                        name += &format!(".{:04}", fp.path[i]);
-                        break;
-                    }
-                    if fp.last + 1 == i {
-                        break;
-                    }
+                FieldModel::Array | FieldModel::ArrayVector(_) => {
+                    name += &format!(".{:04}", fp.path[i]);
+                    break;
                 }
-                FieldModel::VariableTable(serializer) => {
-                    if fp.last + 1 == i {
+                FieldModel::Vector(serializer) => {
+                    if i > fp.last {
                         break;
                     }
+
                     name += &format!(".{:04}.", fp.path[i]);
+
                     i += 1;
+
                     current_serializer = serializer;
                 }
-                FieldModel::FixedTable(serializer) => {
-                    if fp.last + 1 == i {
+                FieldModel::Pointer(serializer) => {
+                    if i > fp.last {
                         break;
                     }
+
                     name += ".";
+
                     current_serializer = serializer;
                 }
-                FieldModel::Simple => break,
+                FieldModel::Value => break,
             }
             current_field = &current_serializer.fields[fp.path[i] as usize];
         }
@@ -60,26 +60,29 @@ impl Serializer {
         loop {
             i += 1;
             match &current_field.model {
-                FieldModel::Simple | FieldModel::FixedArray => {
+                FieldModel::Value | FieldModel::Array => {
                     return current_field.field_type.as_ref()
                 }
-                FieldModel::FixedTable(serializer) => {
-                    if fp.last + 1 == i {
-                        return current_field.field_type.as_ref();
-                    }
-                    current_serializer = serializer;
-                }
-                FieldModel::VariableArray(_) => {
-                    if fp.last == i {
+                FieldModel::ArrayVector(_) => {
+                    if i == fp.last {
                         return current_field.field_type.as_ref().generic.as_ref().unwrap();
                     }
                     return current_field.field_type.as_ref();
                 }
-                FieldModel::VariableTable(serializer) => {
+                FieldModel::Vector(serializer) => {
                     if i >= fp.last {
                         return current_field.field_type.as_ref();
                     }
+
                     i += 1;
+
+                    current_serializer = serializer;
+                }
+                FieldModel::Pointer(serializer) => {
+                    if i > fp.last {
+                        return current_field.field_type.as_ref();
+                    }
+
                     current_serializer = serializer;
                 }
             }
@@ -95,24 +98,27 @@ impl Serializer {
         loop {
             i += 1;
             match &current_field.model {
-                FieldModel::Simple | FieldModel::FixedArray => return &current_field.decoder,
-                FieldModel::FixedTable(serializer) => {
-                    if fp.last + 1 == i {
-                        return &current_field.decoder;
-                    }
-                    current_serializer = serializer;
-                }
-                FieldModel::VariableArray(child_decoder) => {
-                    if fp.last == i {
-                        return child_decoder;
+                FieldModel::Value | FieldModel::Array => return &current_field.decoder,
+                FieldModel::ArrayVector(decoder) => {
+                    if i == fp.last {
+                        return decoder;
                     }
                     return &current_field.decoder;
                 }
-                FieldModel::VariableTable(serializer) => {
+                FieldModel::Vector(serializer) => {
                     if i >= fp.last {
                         return &current_field.decoder;
                     }
+
                     i += 1;
+
+                    current_serializer = serializer;
+                }
+                FieldModel::Pointer(serializer) => {
+                    if i > fp.last {
+                        return &current_field.decoder;
+                    }
+
                     current_serializer = serializer;
                 }
             }
@@ -132,22 +138,21 @@ impl Serializer {
                         fp.path[fp.last] = i as u16;
                         break 'outer;
                     }
-                    if name[offset..].as_bytes().get(f.var_name.len()) == Some(&b"."[0])
+                    if name[offset..]
+                        .as_bytes()
+                        .get(f.var_name.len())
+                        .is_some_and(|&b| b == b'.')
                         && &name[offset..(offset + f.var_name.len())] == f.var_name.as_ref()
                     {
                         fp.path[fp.last] = i as u16;
                         fp.last += 1;
                         offset += f.var_name.len() + 1;
                         match &f.model {
-                            FieldModel::FixedArray | FieldModel::VariableArray(_) => {
+                            FieldModel::Array | FieldModel::ArrayVector(_) => {
                                 fp.path[fp.last] = name[offset..].parse::<u16>().unwrap();
                                 break 'outer;
                             }
-                            FieldModel::FixedTable(serializer) => {
-                                current_serializer = serializer;
-                                continue 'outer;
-                            }
-                            FieldModel::VariableTable(serializer) => {
+                            FieldModel::Vector(serializer) => {
                                 fp.path[fp.last] =
                                     name[offset..(offset + 4)].parse::<u16>().unwrap();
                                 fp.last += 1;
@@ -155,7 +160,11 @@ impl Serializer {
                                 current_serializer = serializer;
                                 continue 'outer;
                             }
-                            FieldModel::Simple => unreachable!(),
+                            FieldModel::Pointer(serializer) => {
+                                current_serializer = serializer;
+                                continue 'outer;
+                            }
+                            FieldModel::Value => unreachable!(),
                         }
                     }
                 }

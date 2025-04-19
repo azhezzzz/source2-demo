@@ -40,6 +40,10 @@ impl<'a> CombatLogEntry<'a> {
         self.log.r#type()
     }
 
+    pub fn log(&self) -> &CMsgDotaCombatLogEntry {
+        &self.log
+    }
+
     pub fn assist_players(&self) -> &[i32] {
         self.log.assist_players.as_slice()
     }

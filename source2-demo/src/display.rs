@@ -195,3 +195,24 @@ impl Display for FieldType {
         write!(f, "{}", x)
     }
 }
+
+impl Display for FieldDecoder {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let output = match &self {
+            FieldDecoder::Boolean => "bool",
+            FieldDecoder::String => "String",
+            FieldDecoder::Signed8 => "i32",
+            FieldDecoder::Signed16 => "i16",
+            FieldDecoder::Signed32 => "i32",
+            FieldDecoder::Unsigned8 => "u8",
+            FieldDecoder::Unsigned16 => "u16",
+            FieldDecoder::Unsigned32 => "u32",
+            FieldDecoder::Vector(_, count) => &format!("[f32; {}]", count),
+            FieldDecoder::Unsigned64(_) => "u64",
+            FieldDecoder::Float32(_) => "f32",
+            FieldDecoder::QuantizedFloat(_) => "f32",
+            FieldDecoder::QAngle(_) => "[f32; 3]",
+        };
+        write!(f, "{output}")
+    }
+}

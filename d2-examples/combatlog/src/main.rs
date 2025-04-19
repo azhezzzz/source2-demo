@@ -59,7 +59,7 @@ impl CombatLog {
                     "{} {} is killed by {}",
                     time,
                     combat_log.target_name()?,
-                    combat_log.attacker_name()?
+                    combat_log.attacker_name().unwrap_or("UNKNOWN")
                 );
             }
             DotaCombatlogTypes::DotaCombatlogAbility => {

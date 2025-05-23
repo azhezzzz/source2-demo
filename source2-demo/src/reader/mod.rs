@@ -2,7 +2,7 @@ mod bits;
 mod field;
 mod msg;
 
-pub use bits::*;
+pub(crate) use bits::*;
 pub(crate) use field::*;
 pub(crate) use msg::*;
 

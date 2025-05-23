@@ -10,14 +10,14 @@ use std::cell::RefCell;
 
 pub(crate) struct FieldReader {
     tree: HTree,
-    paths_buf: RefCell<[FieldPath; 4096]>,
+    paths_buf: RefCell<[FieldPath; 8192]>,
 }
 
 impl Default for FieldReader {
     fn default() -> Self {
         FieldReader {
             tree: HTree::default(),
-            paths_buf: RefCell::new([FieldPath::default(); 4096]),
+            paths_buf: RefCell::new([FieldPath::default(); 8192]),
         }
     }
 }

@@ -1,6 +1,4 @@
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoFileHeader {
     #[prost(string, required, tag = "1")]
     pub demo_file_stamp: ::prost::alloc::string::String,
@@ -33,9 +31,7 @@ pub struct CDemoFileHeader {
     #[prost(int32, optional, tag = "15")]
     pub server_start_tick: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CGameInfo {
     #[prost(message, optional, tag = "4")]
     pub dota: ::core::option::Option<c_game_info::CDotaGameInfo>,
@@ -43,9 +39,7 @@ pub struct CGameInfo {
     pub cs: ::core::option::Option<c_game_info::CcsGameInfo>,
 }
 pub mod c_game_info {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct CDotaGameInfo {
         #[prost(uint64, optional, tag = "1")]
         pub match_id: ::core::option::Option<u64>,
@@ -71,9 +65,7 @@ pub mod c_game_info {
         pub end_time: ::core::option::Option<u32>,
     }
     pub mod c_dota_game_info {
-        #[derive(serde::Serialize, serde::Deserialize)]
-        #[allow(clippy::derive_partial_eq_without_eq)]
-        #[derive(Clone, PartialEq, ::prost::Message)]
+        #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
         pub struct CPlayerInfo {
             #[prost(string, optional, tag = "1")]
             pub hero_name: ::core::option::Option<::prost::alloc::string::String>,
@@ -86,9 +78,7 @@ pub mod c_game_info {
             #[prost(int32, optional, tag = "5")]
             pub game_team: ::core::option::Option<i32>,
         }
-        #[derive(serde::Serialize, serde::Deserialize)]
-        #[allow(clippy::derive_partial_eq_without_eq)]
-        #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+        #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
         pub struct CHeroSelectEvent {
             #[prost(bool, optional, tag = "1")]
             pub is_pick: ::core::option::Option<bool>,
@@ -98,17 +88,13 @@ pub mod c_game_info {
             pub hero_id: ::core::option::Option<i32>,
         }
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct CcsGameInfo {
         #[prost(int32, repeated, packed = "false", tag = "1")]
         pub round_start_ticks: ::prost::alloc::vec::Vec<i32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoFileInfo {
     #[prost(float, optional, tag = "1")]
     pub playback_time: ::core::option::Option<f32>,
@@ -119,25 +105,19 @@ pub struct CDemoFileInfo {
     #[prost(message, optional, tag = "4")]
     pub game_info: ::core::option::Option<CGameInfo>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoPacket {
     #[prost(bytes = "vec", optional, tag = "3")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoFullPacket {
     #[prost(message, optional, tag = "1")]
     pub string_table: ::core::option::Option<CDemoStringTables>,
     #[prost(message, optional, tag = "2")]
     pub packet: ::core::option::Option<CDemoPacket>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoSaveGame {
     #[prost(bytes = "vec", optional, tag = "1")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
@@ -148,35 +128,25 @@ pub struct CDemoSaveGame {
     #[prost(int32, optional, tag = "4")]
     pub version: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CDemoSyncTick {}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoConsoleCmd {
     #[prost(string, optional, tag = "1")]
     pub cmdstring: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoSendTables {
     #[prost(bytes = "vec", optional, tag = "1")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoClassInfo {
     #[prost(message, repeated, tag = "1")]
     pub classes: ::prost::alloc::vec::Vec<c_demo_class_info::ClassT>,
 }
 pub mod c_demo_class_info {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct ClassT {
         #[prost(int32, optional, tag = "1")]
         pub class_id: ::core::option::Option<i32>,
@@ -186,25 +156,19 @@ pub mod c_demo_class_info {
         pub table_name: ::core::option::Option<::prost::alloc::string::String>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoCustomData {
     #[prost(int32, optional, tag = "1")]
     pub callback_index: ::core::option::Option<i32>,
     #[prost(bytes = "vec", optional, tag = "2")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoCustomDataCallbacks {
     #[prost(string, repeated, tag = "1")]
     pub save_id: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoAnimationHeader {
     #[prost(sint32, optional, tag = "1")]
     pub entity_id: ::core::option::Option<i32>,
@@ -213,9 +177,7 @@ pub struct CDemoAnimationHeader {
     #[prost(bytes = "vec", optional, tag = "3")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoAnimationData {
     #[prost(sint32, optional, tag = "1")]
     pub entity_id: ::core::option::Option<i32>,
@@ -228,26 +190,20 @@ pub struct CDemoAnimationData {
     #[prost(int64, optional, tag = "5")]
     pub data_checksum: ::core::option::Option<i64>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoStringTables {
     #[prost(message, repeated, tag = "1")]
     pub tables: ::prost::alloc::vec::Vec<c_demo_string_tables::TableT>,
 }
 pub mod c_demo_string_tables {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct ItemsT {
         #[prost(string, optional, tag = "1")]
         pub str: ::core::option::Option<::prost::alloc::string::String>,
         #[prost(bytes = "vec", optional, tag = "2")]
         pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct TableT {
         #[prost(string, optional, tag = "1")]
         pub table_name: ::core::option::Option<::prost::alloc::string::String>,
@@ -259,29 +215,21 @@ pub mod c_demo_string_tables {
         pub table_flags: ::core::option::Option<i32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CDemoStop {}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoUserCmd {
     #[prost(int32, optional, tag = "1")]
     pub cmd_number: ::core::option::Option<i32>,
     #[prost(bytes = "vec", optional, tag = "2")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoSpawnGroups {
     #[prost(bytes = "vec", repeated, tag = "3")]
     pub msgs: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDemoRecovery {
     #[prost(message, optional, tag = "1")]
     pub initial_spawn_group: ::core::option::Option<c_demo_recovery::DemoInitialSpawnGroupEntry>,
@@ -289,9 +237,7 @@ pub struct CDemoRecovery {
     pub spawn_group_message: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 pub mod c_demo_recovery {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct DemoInitialSpawnGroupEntry {
         #[prost(uint32, optional, tag = "1")]
         pub spawngrouphandle: ::core::option::Option<u32>,
@@ -450,9 +396,7 @@ pub enum ENetworkDisconnectionReason {
     NetworkDisconnectKickedVacnetabnormalbehavior = 163,
     NetworkDisconnectKickedInsecureclient = 164,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgVector {
     #[prost(float, optional, tag = "1")]
     pub x: ::core::option::Option<f32>,
@@ -463,18 +407,14 @@ pub struct CMsgVector {
     #[prost(float, optional, tag = "4")]
     pub w: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgVector2D {
     #[prost(float, optional, tag = "1")]
     pub x: ::core::option::Option<f32>,
     #[prost(float, optional, tag = "2")]
     pub y: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgQAngle {
     #[prost(float, optional, tag = "1")]
     pub x: ::core::option::Option<f32>,
@@ -483,9 +423,7 @@ pub struct CMsgQAngle {
     #[prost(float, optional, tag = "3")]
     pub z: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgQuaternion {
     #[prost(float, optional, tag = "1")]
     pub x: ::core::option::Option<f32>,
@@ -496,9 +434,7 @@ pub struct CMsgQuaternion {
     #[prost(float, optional, tag = "4")]
     pub w: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgTransform {
     #[prost(message, optional, tag = "1")]
     pub position: ::core::option::Option<CMsgVector>,
@@ -507,9 +443,7 @@ pub struct CMsgTransform {
     #[prost(message, optional, tag = "3")]
     pub orientation: ::core::option::Option<CMsgQuaternion>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgRgba {
     #[prost(int32, optional, tag = "1")]
     pub r: ::core::option::Option<i32>,
@@ -520,9 +454,7 @@ pub struct CMsgRgba {
     #[prost(int32, optional, tag = "4")]
     pub a: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgPlayerInfo {
     #[prost(string, optional, tag = "1")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
@@ -537,24 +469,18 @@ pub struct CMsgPlayerInfo {
     #[prost(bool, optional, tag = "6")]
     pub ishltv: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CEntityMsg {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub target_entity: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgCVars {
     #[prost(message, repeated, tag = "1")]
     pub cvars: ::prost::alloc::vec::Vec<c_msg_c_vars::CVar>,
 }
 pub mod c_msg_c_vars {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct CVar {
         #[prost(string, optional, tag = "1")]
         pub name: ::core::option::Option<::prost::alloc::string::String>,
@@ -562,20 +488,14 @@ pub mod c_msg_c_vars {
         pub value: ::core::option::Option<::prost::alloc::string::String>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CNetMsgNop {}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CNetMsgSplitScreenUser {
     #[prost(int32, optional, tag = "1")]
     pub slot: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CNetMsgTick {
     #[prost(uint32, optional, tag = "1")]
     pub tick: ::core::option::Option<u32>,
@@ -598,25 +518,19 @@ pub struct CNetMsgTick {
     #[prost(uint32, optional, tag = "13")]
     pub host_frame_irregular_arrival_pct_x10: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CNetMsgStringCmd {
     #[prost(string, optional, tag = "1")]
     pub command: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(uint32, optional, tag = "2")]
     pub prediction_sync: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CNetMsgSetConVar {
     #[prost(message, optional, tag = "1")]
     pub convars: ::core::option::Option<CMsgCVars>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CNetMsgSignonState {
     #[prost(enumeration = "SignonStateT", optional, tag = "1", default = "SignonstateNone")]
     pub signon_state: ::core::option::Option<i32>,
@@ -631,9 +545,7 @@ pub struct CNetMsgSignonState {
     #[prost(string, optional, tag = "6")]
     pub addons: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgGameEvent {
     #[prost(string, optional, tag = "1")]
     pub event_name: ::core::option::Option<::prost::alloc::string::String>,
@@ -643,9 +555,7 @@ pub struct CSvcMsgGameEvent {
     pub keys: ::prost::alloc::vec::Vec<csvc_msg_game_event::KeyT>,
 }
 pub mod csvc_msg_game_event {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct KeyT {
         #[prost(int32, optional, tag = "1")]
         pub r#type: ::core::option::Option<i32>,
@@ -665,17 +575,13 @@ pub mod csvc_msg_game_event {
         pub val_uint64: ::core::option::Option<u64>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgListGameEvents {
     #[prost(message, repeated, tag = "1")]
     pub events: ::prost::alloc::vec::Vec<csvc_msg_list_game_events::EventT>,
 }
 pub mod csvc_msg_list_game_events {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct EventT {
         #[prost(int32, optional, tag = "1")]
         pub tick: ::core::option::Option<i32>,
@@ -683,9 +589,7 @@ pub mod csvc_msg_list_game_events {
         pub event: ::core::option::Option<super::CSvcMsgGameEvent>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CNetMsgSpawnGroupLoad {
     #[prost(string, optional, tag = "1")]
     pub worldname: ::core::option::Option<::prost::alloc::string::String>,
@@ -728,9 +632,7 @@ pub struct CNetMsgSpawnGroupLoad {
     #[prost(string, optional, tag = "20")]
     pub worldgroupname: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CNetMsgSpawnGroupManifestUpdate {
     #[prost(uint32, optional, tag = "1")]
     pub spawngrouphandle: ::core::option::Option<u32>,
@@ -739,9 +641,7 @@ pub struct CNetMsgSpawnGroupManifestUpdate {
     #[prost(bool, optional, tag = "3")]
     pub manifestincomplete: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CNetMsgSpawnGroupSetCreationTick {
     #[prost(uint32, optional, tag = "1")]
     pub spawngrouphandle: ::core::option::Option<u32>,
@@ -750,9 +650,7 @@ pub struct CNetMsgSpawnGroupSetCreationTick {
     #[prost(uint32, optional, tag = "3")]
     pub creationsequence: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CNetMsgSpawnGroupUnload {
     #[prost(uint32, optional, tag = "1")]
     pub spawngrouphandle: ::core::option::Option<u32>,
@@ -761,16 +659,12 @@ pub struct CNetMsgSpawnGroupUnload {
     #[prost(int32, optional, tag = "3")]
     pub tickcount: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CNetMsgSpawnGroupLoadCompleted {
     #[prost(uint32, optional, tag = "1")]
     pub spawngrouphandle: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgGameSessionConfiguration {
     #[prost(bool, optional, tag = "1")]
     pub is_multiplayer: ::core::option::Option<bool>,
@@ -811,9 +705,7 @@ pub struct CSvcMsgGameSessionConfiguration {
     #[prost(string, optional, tag = "18")]
     pub landmarkname: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CNetMsgDebugOverlay {
     #[prost(int32, optional, tag = "1")]
     pub etype: ::core::option::Option<i32>,
@@ -873,18 +765,14 @@ pub enum SpawnGroupFlagsT {
     SpawnGroupLoadStreamingData = 128,
     SpawnGroupCreateNewSceneWorld = 256,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgVDebugGameSessionIdEvent {
     #[prost(int32, optional, tag = "1")]
     pub clientid: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
     pub gamesessionid: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgPlaceDecalEvent {
     #[prost(message, optional, tag = "1")]
     pub position: ::core::option::Option<CMsgVector>,
@@ -915,23 +803,17 @@ pub struct CMsgPlaceDecalEvent {
     #[prost(bool, optional, tag = "14")]
     pub is_adjacent: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgClearWorldDecalsEvent {
     #[prost(uint32, optional, tag = "1")]
     pub flagstoclear: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgClearEntityDecalsEvent {
     #[prost(uint32, optional, tag = "1")]
     pub flagstoclear: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgClearDecalsForSkeletonInstanceEvent {
     #[prost(uint32, optional, tag = "1")]
     pub flagstoclear: ::core::option::Option<u32>,
@@ -940,26 +822,20 @@ pub struct CMsgClearDecalsForSkeletonInstanceEvent {
     #[prost(uint32, optional, tag = "3")]
     pub skeletoninstancehash: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSource1LegacyGameEventList {
     #[prost(message, repeated, tag = "1")]
     pub descriptors: ::prost::alloc::vec::Vec<c_msg_source1_legacy_game_event_list::DescriptorT>,
 }
 pub mod c_msg_source1_legacy_game_event_list {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct KeyT {
         #[prost(int32, optional, tag = "1")]
         pub r#type: ::core::option::Option<i32>,
         #[prost(string, optional, tag = "2")]
         pub name: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct DescriptorT {
         #[prost(int32, optional, tag = "1")]
         pub eventid: ::core::option::Option<i32>,
@@ -969,18 +845,14 @@ pub mod c_msg_source1_legacy_game_event_list {
         pub keys: ::prost::alloc::vec::Vec<KeyT>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSource1LegacyListenEvents {
     #[prost(int32, optional, tag = "1")]
     pub playerslot: ::core::option::Option<i32>,
     #[prost(uint32, repeated, packed = "false", tag = "2")]
     pub eventarraybits: ::prost::alloc::vec::Vec<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSource1LegacyGameEvent {
     #[prost(string, optional, tag = "1")]
     pub event_name: ::core::option::Option<::prost::alloc::string::String>,
@@ -994,9 +866,7 @@ pub struct CMsgSource1LegacyGameEvent {
     pub passthrough: ::core::option::Option<i32>,
 }
 pub mod c_msg_source1_legacy_game_event {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct KeyT {
         #[prost(int32, optional, tag = "1")]
         pub r#type: ::core::option::Option<i32>,
@@ -1016,9 +886,7 @@ pub mod c_msg_source1_legacy_game_event {
         pub val_uint64: ::core::option::Option<u64>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSosStartSoundEvent {
     #[prost(int32, optional, tag = "1")]
     pub soundevent_guid: ::core::option::Option<i32>,
@@ -1033,34 +901,26 @@ pub struct CMsgSosStartSoundEvent {
     #[prost(float, optional, tag = "6")]
     pub start_time: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgSosStopSoundEvent {
     #[prost(int32, optional, tag = "1")]
     pub soundevent_guid: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgSosStopSoundEventHash {
     #[prost(fixed32, optional, tag = "1")]
     pub soundevent_hash: ::core::option::Option<u32>,
     #[prost(int32, optional, tag = "2", default = "-1")]
     pub source_entity_index: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSosSetSoundEventParams {
     #[prost(int32, optional, tag = "1")]
     pub soundevent_guid: ::core::option::Option<i32>,
     #[prost(bytes = "vec", optional, tag = "5")]
     pub packed_params: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSosSetLibraryStackFields {
     #[prost(fixed32, optional, tag = "1")]
     pub stack_hash: ::core::option::Option<u32>,
@@ -1084,9 +944,7 @@ pub enum EBaseGameEvents {
     GeSosSetLibraryStackFields = 211,
     GeSosStopSoundEventHash = 212,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgClientInfo {
     #[prost(fixed32, optional, tag = "1")]
     pub send_table_crc: ::core::option::Option<u32>,
@@ -1099,18 +957,14 @@ pub struct CclcMsgClientInfo {
     #[prost(string, optional, tag = "6")]
     pub friends_name: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgMove {
     #[prost(bytes = "vec", optional, tag = "3")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
     #[prost(uint32, optional, tag = "4")]
     pub last_command_number: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgVoiceAudio {
     #[prost(enumeration = "VoiceDataFormatT", optional, tag = "1", default = "VoicedataFormatSteam")]
     pub format: ::core::option::Option<i32>,
@@ -1131,9 +985,7 @@ pub struct CMsgVoiceAudio {
     #[prost(float, optional, tag = "9")]
     pub voice_level: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgVoiceData {
     #[prost(message, optional, tag = "1")]
     pub audio: ::core::option::Option<CMsgVoiceAudio>,
@@ -1142,25 +994,19 @@ pub struct CclcMsgVoiceData {
     #[prost(uint32, optional, tag = "3")]
     pub tick: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CclcMsgBaselineAck {
     #[prost(int32, optional, tag = "1")]
     pub baseline_tick: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2")]
     pub baseline_nr: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgListenEvents {
     #[prost(fixed32, repeated, packed = "false", tag = "1")]
     pub event_mask: ::prost::alloc::vec::Vec<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgRespondCvarValue {
     #[prost(int32, optional, tag = "1")]
     pub cookie: ::core::option::Option<i32>,
@@ -1171,9 +1017,7 @@ pub struct CclcMsgRespondCvarValue {
     #[prost(string, optional, tag = "4")]
     pub value: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgFileCrcCheck {
     #[prost(int32, optional, tag = "1")]
     pub code_path: ::core::option::Option<i32>,
@@ -1186,60 +1030,44 @@ pub struct CclcMsgFileCrcCheck {
     #[prost(fixed32, optional, tag = "5")]
     pub crc: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CclcMsgLoadingProgress {
     #[prost(int32, optional, tag = "1")]
     pub progress: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgSplitPlayerConnect {
     #[prost(string, optional, tag = "1")]
     pub playername: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CclcMsgSplitPlayerDisconnect {
     #[prost(int32, optional, tag = "1")]
     pub slot: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CclcMsgServerStatus {
     #[prost(bool, optional, tag = "1")]
     pub simplified: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CclcMsgRequestPause {
     #[prost(enumeration = "RequestPauseT", optional, tag = "1", default = "RpPause")]
     pub pause_type: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2")]
     pub pause_group: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgCmdKeyValues {
     #[prost(bytes = "vec", optional, tag = "1")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgRconServerDetails {
     #[prost(bytes = "vec", optional, tag = "1")]
     pub token: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSource2SystemSpecs {
     #[prost(string, optional, tag = "1")]
     pub cpu_id: ::core::option::Option<::prost::alloc::string::String>,
@@ -1266,9 +1094,7 @@ pub struct CMsgSource2SystemSpecs {
     #[prost(uint32, optional, tag = "47")]
     pub gpu_texture_memory_size_mb: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSource2VProfLiteReportItem {
     #[prost(string, optional, tag = "1")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
@@ -1307,9 +1133,7 @@ pub struct CMsgSource2VProfLiteReportItem {
     #[prost(uint32, optional, tag = "44")]
     pub usec_1secmax_p99_all: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSource2VProfLiteReport {
     #[prost(message, optional, tag = "1")]
     pub total: ::core::option::Option<CMsgSource2VProfLiteReportItem>,
@@ -1318,9 +1142,7 @@ pub struct CMsgSource2VProfLiteReport {
     #[prost(uint32, optional, tag = "3")]
     pub discarded_frames: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgSource2NetworkFlowQuality {
     #[prost(uint32, optional, tag = "1")]
     pub duration: ::core::option::Option<u32>,
@@ -1381,18 +1203,14 @@ pub struct CMsgSource2NetworkFlowQuality {
     #[prost(sint32, optional, tag = "66")]
     pub recvmargin_p95: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgDiagnostic {
     #[prost(message, optional, tag = "1")]
     pub system_specs: ::core::option::Option<CMsgSource2SystemSpecs>,
     #[prost(message, optional, tag = "2")]
     pub vprof_report: ::core::option::Option<CMsgSource2VProfLiteReport>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSource2MetricsMatchPerfSummaryNotification {
     #[prost(uint32, optional, tag = "1")]
     pub appid: ::core::option::Option<u32>,
@@ -1408,9 +1226,7 @@ pub struct CSource2MetricsMatchPerfSummaryNotification {
     pub map: ::core::option::Option<::prost::alloc::string::String>,
 }
 pub mod c_source2_metrics_match_perf_summary_notification {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Client {
         #[prost(message, optional, tag = "1")]
         pub system_specs: ::core::option::Option<super::CMsgSource2SystemSpecs>,
@@ -1422,9 +1238,7 @@ pub mod c_source2_metrics_match_perf_summary_notification {
         pub steamid: ::core::option::Option<u64>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgServerInfo {
     #[prost(int32, optional, tag = "1")]
     pub protocol: ::core::option::Option<i32>,
@@ -1459,9 +1273,7 @@ pub struct CSvcMsgServerInfo {
     #[prost(bytes = "vec", optional, tag = "20")]
     pub game_session_manifest: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgClassInfo {
     #[prost(bool, optional, tag = "1")]
     pub create_on_client: ::core::option::Option<bool>,
@@ -1469,9 +1281,7 @@ pub struct CSvcMsgClassInfo {
     pub classes: ::prost::alloc::vec::Vec<csvc_msg_class_info::ClassT>,
 }
 pub mod csvc_msg_class_info {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct ClassT {
         #[prost(int32, optional, tag = "1")]
         pub class_id: ::core::option::Option<i32>,
@@ -1479,16 +1289,12 @@ pub mod csvc_msg_class_info {
         pub class_name: ::core::option::Option<::prost::alloc::string::String>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgSetPause {
     #[prost(bool, optional, tag = "1")]
     pub paused: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgVoiceInit {
     #[prost(int32, optional, tag = "1")]
     pub quality: ::core::option::Option<i32>,
@@ -1497,16 +1303,12 @@ pub struct CSvcMsgVoiceInit {
     #[prost(int32, optional, tag = "3", default = "0")]
     pub version: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgPrint {
     #[prost(string, optional, tag = "1")]
     pub text: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgSounds {
     #[prost(bool, optional, tag = "1")]
     pub reliable_sound: ::core::option::Option<bool>,
@@ -1514,9 +1316,7 @@ pub struct CSvcMsgSounds {
     pub sounds: ::prost::alloc::vec::Vec<csvc_msg_sounds::SounddataT>,
 }
 pub mod csvc_msg_sounds {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct SounddataT {
         #[prost(sint32, optional, tag = "1")]
         pub origin_x: ::core::option::Option<i32>,
@@ -1558,43 +1358,33 @@ pub mod csvc_msg_sounds {
         pub sound_resource_id: ::core::option::Option<u64>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgPrefetch {
     #[prost(int32, optional, tag = "1")]
     pub sound_index: ::core::option::Option<i32>,
     #[prost(enumeration = "PrefetchType", optional, tag = "2", default = "PftSound")]
     pub resource_type: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgSetView {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub entity_index: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2", default = "-1")]
     pub slot: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgFixAngle {
     #[prost(bool, optional, tag = "1")]
     pub relative: ::core::option::Option<bool>,
     #[prost(message, optional, tag = "2")]
     pub angle: ::core::option::Option<CMsgQAngle>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgCrosshairAngle {
     #[prost(message, optional, tag = "1")]
     pub angle: ::core::option::Option<CMsgQAngle>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgBspDecal {
     #[prost(message, optional, tag = "1")]
     pub pos: ::core::option::Option<CMsgVector>,
@@ -1607,9 +1397,7 @@ pub struct CSvcMsgBspDecal {
     #[prost(bool, optional, tag = "5")]
     pub low_priority: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgSplitScreen {
     #[prost(enumeration = "ESplitScreenMessageType", optional, tag = "1", default = "MsgSplitscreenAdduser")]
     pub r#type: ::core::option::Option<i32>,
@@ -1618,27 +1406,21 @@ pub struct CSvcMsgSplitScreen {
     #[prost(int32, optional, tag = "3", default = "-1")]
     pub player_index: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgGetCvarValue {
     #[prost(int32, optional, tag = "1")]
     pub cookie: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
     pub cvar_name: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgMenu {
     #[prost(int32, optional, tag = "1")]
     pub dialog_type: ::core::option::Option<i32>,
     #[prost(bytes = "vec", optional, tag = "2")]
     pub menu_key_values: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgUserMessage {
     #[prost(int32, optional, tag = "1")]
     pub msg_type: ::core::option::Option<i32>,
@@ -1647,9 +1429,7 @@ pub struct CSvcMsgUserMessage {
     #[prost(int32, optional, tag = "3")]
     pub passthrough: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgSendTable {
     #[prost(bool, optional, tag = "1")]
     pub is_end: ::core::option::Option<bool>,
@@ -1661,9 +1441,7 @@ pub struct CSvcMsgSendTable {
     pub props: ::prost::alloc::vec::Vec<csvc_msg_send_table::SendpropT>,
 }
 pub mod csvc_msg_send_table {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct SendpropT {
         #[prost(int32, optional, tag = "1")]
         pub r#type: ::core::option::Option<i32>,
@@ -1685,26 +1463,20 @@ pub mod csvc_msg_send_table {
         pub num_bits: ::core::option::Option<i32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgGameEventList {
     #[prost(message, repeated, tag = "1")]
     pub descriptors: ::prost::alloc::vec::Vec<csvc_msg_game_event_list::DescriptorT>,
 }
 pub mod csvc_msg_game_event_list {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct KeyT {
         #[prost(int32, optional, tag = "1")]
         pub r#type: ::core::option::Option<i32>,
         #[prost(string, optional, tag = "2")]
         pub name: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct DescriptorT {
         #[prost(int32, optional, tag = "1")]
         pub eventid: ::core::option::Option<i32>,
@@ -1714,9 +1486,7 @@ pub mod csvc_msg_game_event_list {
         pub keys: ::prost::alloc::vec::Vec<KeyT>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgPacketEntities {
     #[prost(int32, optional, tag = "1")]
     pub max_entries: ::core::option::Option<i32>,
@@ -1762,18 +1532,14 @@ pub struct CSvcMsgPacketEntities {
     pub dev_padding: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 pub mod csvc_msg_packet_entities {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct AlternateBaselineT {
         #[prost(int32, optional, tag = "1")]
         pub entity_index: ::core::option::Option<i32>,
         #[prost(int32, optional, tag = "2")]
         pub baseline_index: ::core::option::Option<i32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct NonTransmittedEntitiesT {
         #[prost(int32, optional, tag = "1")]
         pub header_count: ::core::option::Option<i32>,
@@ -1781,9 +1547,7 @@ pub mod csvc_msg_packet_entities {
         pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgTempEntities {
     #[prost(bool, optional, tag = "1")]
     pub reliable: ::core::option::Option<bool>,
@@ -1792,9 +1556,7 @@ pub struct CSvcMsgTempEntities {
     #[prost(bytes = "vec", optional, tag = "3")]
     pub entity_data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgCreateStringTable {
     #[prost(string, optional, tag = "1")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
@@ -1817,9 +1579,7 @@ pub struct CSvcMsgCreateStringTable {
     #[prost(bool, optional, tag = "10")]
     pub using_varint_bitcounts: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgUpdateStringTable {
     #[prost(int32, optional, tag = "1")]
     pub table_id: ::core::option::Option<i32>,
@@ -1828,9 +1588,7 @@ pub struct CSvcMsgUpdateStringTable {
     #[prost(bytes = "vec", optional, tag = "3")]
     pub string_data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgVoiceData {
     #[prost(message, optional, tag = "1")]
     pub audio: ::core::option::Option<CMsgVoiceAudio>,
@@ -1847,9 +1605,7 @@ pub struct CSvcMsgVoiceData {
     #[prost(int32, optional, tag = "7")]
     pub passthrough: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgPacketReliable {
     #[prost(int32, optional, tag = "1")]
     pub tick: ::core::option::Option<i32>,
@@ -1858,9 +1614,7 @@ pub struct CSvcMsgPacketReliable {
     #[prost(bool, optional, tag = "3")]
     pub state: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgFullFrameSplit {
     #[prost(int32, optional, tag = "1")]
     pub tick: ::core::option::Option<i32>,
@@ -1871,9 +1625,7 @@ pub struct CSvcMsgFullFrameSplit {
     #[prost(bytes = "vec", optional, tag = "4")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgHltvStatus {
     #[prost(string, optional, tag = "1")]
     pub master: ::core::option::Option<::prost::alloc::string::String>,
@@ -1884,41 +1636,31 @@ pub struct CSvcMsgHltvStatus {
     #[prost(int32, optional, tag = "4")]
     pub proxies: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgServerSteamId {
     #[prost(uint64, optional, tag = "1")]
     pub steam_id: ::core::option::Option<u64>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgCmdKeyValues {
     #[prost(bytes = "vec", optional, tag = "1")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgRconServerDetails {
     #[prost(bytes = "vec", optional, tag = "1")]
     pub token: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
     #[prost(string, optional, tag = "2")]
     pub details: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgIpcAddress {
     #[prost(fixed64, optional, tag = "1")]
     pub computer_guid: ::core::option::Option<u64>,
     #[prost(uint32, optional, tag = "2")]
     pub process_id: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgServerPeer {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_slot: ::core::option::Option<i32>,
@@ -1933,25 +1675,19 @@ pub struct CMsgServerPeer {
     #[prost(bool, optional, tag = "6")]
     pub is_listenserver_host: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgPeerList {
     #[prost(message, repeated, tag = "1")]
     pub peer: ::prost::alloc::vec::Vec<CMsgServerPeer>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgClearAllStringTables {
     #[prost(string, optional, tag = "1")]
     pub mapname: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, optional, tag = "3")]
     pub create_tables_skipped: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ProtoFlattenedSerializerFieldT {
     #[prost(int32, optional, tag = "1")]
     pub var_type_sym: ::core::option::Option<i32>,
@@ -1979,9 +1715,7 @@ pub struct ProtoFlattenedSerializerFieldT {
     pub var_serializer_sym: ::core::option::Option<i32>,
 }
 pub mod proto_flattened_serializer_field_t {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct PolymorphicFieldT {
         #[prost(int32, optional, tag = "1")]
         pub polymorphic_field_serializer_name_sym: ::core::option::Option<i32>,
@@ -1989,9 +1723,7 @@ pub mod proto_flattened_serializer_field_t {
         pub polymorphic_field_serializer_version: ::core::option::Option<i32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct ProtoFlattenedSerializerT {
     #[prost(int32, optional, tag = "1")]
     pub serializer_name_sym: ::core::option::Option<i32>,
@@ -2000,9 +1732,7 @@ pub struct ProtoFlattenedSerializerT {
     #[prost(int32, repeated, packed = "false", tag = "3")]
     pub fields_index: ::prost::alloc::vec::Vec<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgFlattenedSerializer {
     #[prost(message, repeated, tag = "1")]
     pub serializers: ::prost::alloc::vec::Vec<ProtoFlattenedSerializerT>,
@@ -2011,16 +1741,12 @@ pub struct CSvcMsgFlattenedSerializer {
     #[prost(message, repeated, tag = "3")]
     pub fields: ::prost::alloc::vec::Vec<ProtoFlattenedSerializerFieldT>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgStopSound {
     #[prost(fixed32, optional, tag = "1")]
     pub guid: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CBidirMsgRebroadcastGameEvent {
     #[prost(bool, optional, tag = "1")]
     pub posttoserver: ::core::option::Option<bool>,
@@ -2031,16 +1757,12 @@ pub struct CBidirMsgRebroadcastGameEvent {
     #[prost(uint64, optional, tag = "4")]
     pub receivingclients: ::core::option::Option<u64>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CBidirMsgRebroadcastSource {
     #[prost(int32, optional, tag = "1")]
     pub eventsource: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CBidirMsgPredictionEvent {
     #[prost(uint32, required, tag = "1")]
     pub event_id: u32,
@@ -2059,9 +1781,7 @@ pub mod c_bidir_msg_prediction_event {
         StUserCmdNum = 1,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgServerNetworkStats {
     #[prost(bool, optional, tag = "1")]
     pub dedicated: ::core::option::Option<bool>,
@@ -2115,18 +1835,14 @@ pub struct CMsgServerNetworkStats {
     pub players: ::prost::alloc::vec::Vec<c_msg_server_network_stats::Player>,
 }
 pub mod c_msg_server_network_stats {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Port {
         #[prost(int32, optional, tag = "1")]
         pub port: ::core::option::Option<i32>,
         #[prost(string, optional, tag = "2")]
         pub name: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Player {
         #[prost(uint64, optional, tag = "1")]
         pub steamid: ::core::option::Option<u64>,
@@ -2146,9 +1862,7 @@ pub mod c_msg_server_network_stats {
         pub engine_latency_ms: ::core::option::Option<i32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CSvcMsgHltvReplay {
     #[prost(int32, optional, tag = "1")]
     pub delay: ::core::option::Option<i32>,
@@ -2167,9 +1881,7 @@ pub struct CSvcMsgHltvReplay {
     #[prost(int32, optional, tag = "8")]
     pub reason: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CclcMsgHltvReplay {
     #[prost(int32, optional, tag = "1")]
     pub request: ::core::option::Option<i32>,
@@ -2182,16 +1894,12 @@ pub struct CclcMsgHltvReplay {
     #[prost(float, optional, tag = "5")]
     pub event_time: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgBroadcastCommand {
     #[prost(string, optional, tag = "1")]
     pub cmd: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CclcMsgHltvFixupOperatorTick {
     #[prost(int32, optional, tag = "1")]
     pub tick: ::core::option::Option<i32>,
@@ -2210,18 +1918,14 @@ pub struct CclcMsgHltvFixupOperatorTick {
     #[prost(message, optional, tag = "8")]
     pub view_offset: ::core::option::Option<CMsgVector>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgHltvFixupOperatorStatus {
     #[prost(uint32, optional, tag = "1")]
     pub mode: ::core::option::Option<u32>,
     #[prost(string, optional, tag = "2")]
     pub override_operator_name: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgServerUserCmd {
     #[prost(bytes = "vec", optional, tag = "1")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
@@ -2234,9 +1938,7 @@ pub struct CMsgServerUserCmd {
     #[prost(int32, optional, tag = "5")]
     pub client_tick: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgUserCommands {
     #[prost(message, repeated, tag = "1")]
     pub commands: ::prost::alloc::vec::Vec<CMsgServerUserCmd>,
@@ -2364,16 +2066,12 @@ pub enum ReplayEventTypeT {
     ReplayEventStuckNeedFullUpdate = 3,
     ReplayEventVictory = 4,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageAchievementEvent {
     #[prost(uint32, optional, tag = "1")]
     pub achievement: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageCloseCaption {
     #[prost(fixed32, optional, tag = "1")]
     pub hash: ::core::option::Option<u32>,
@@ -2384,9 +2082,7 @@ pub struct CUserMessageCloseCaption {
     #[prost(int32, optional, tag = "4", default = "-1")]
     pub ent_index: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageCloseCaptionDirect {
     #[prost(fixed32, optional, tag = "1")]
     pub hash: ::core::option::Option<u32>,
@@ -2397,9 +2093,7 @@ pub struct CUserMessageCloseCaptionDirect {
     #[prost(int32, optional, tag = "4", default = "-1")]
     pub ent_index: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageCloseCaptionPlaceholder {
     #[prost(string, optional, tag = "1")]
     pub string: ::core::option::Option<::prost::alloc::string::String>,
@@ -2410,16 +2104,12 @@ pub struct CUserMessageCloseCaptionPlaceholder {
     #[prost(int32, optional, tag = "4", default = "-1")]
     pub ent_index: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageCurrentTimescale {
     #[prost(float, optional, tag = "1")]
     pub current: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageDesiredTimescale {
     #[prost(float, optional, tag = "1")]
     pub desired: ::core::option::Option<f32>,
@@ -2430,9 +2120,7 @@ pub struct CUserMessageDesiredTimescale {
     #[prost(float, optional, tag = "4")]
     pub blenddeltamultiplier: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageFade {
     #[prost(uint32, optional, tag = "1")]
     pub duration: ::core::option::Option<u32>,
@@ -2443,9 +2131,7 @@ pub struct CUserMessageFade {
     #[prost(fixed32, optional, tag = "4")]
     pub color: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageShake {
     #[prost(uint32, optional, tag = "1")]
     pub command: ::core::option::Option<u32>,
@@ -2456,18 +2142,14 @@ pub struct CUserMessageShake {
     #[prost(float, optional, tag = "4")]
     pub duration: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageShakeDir {
     #[prost(message, optional, tag = "1")]
     pub shake: ::core::option::Option<CUserMessageShake>,
     #[prost(message, optional, tag = "2")]
     pub direction: ::core::option::Option<CMsgVector>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageWaterShake {
     #[prost(uint32, optional, tag = "1")]
     pub command: ::core::option::Option<u32>,
@@ -2478,9 +2160,7 @@ pub struct CUserMessageWaterShake {
     #[prost(float, optional, tag = "4")]
     pub duration: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageScreenTilt {
     #[prost(uint32, optional, tag = "1")]
     pub command: ::core::option::Option<u32>,
@@ -2493,9 +2173,7 @@ pub struct CUserMessageScreenTilt {
     #[prost(float, optional, tag = "5")]
     pub time: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageSayText {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub playerindex: ::core::option::Option<i32>,
@@ -2504,9 +2182,7 @@ pub struct CUserMessageSayText {
     #[prost(bool, optional, tag = "3")]
     pub chat: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageSayText2 {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub entityindex: ::core::option::Option<i32>,
@@ -2523,9 +2199,7 @@ pub struct CUserMessageSayText2 {
     #[prost(string, optional, tag = "7")]
     pub param4: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageHudMsg {
     #[prost(uint32, optional, tag = "1")]
     pub channel: ::core::option::Option<u32>,
@@ -2542,42 +2216,30 @@ pub struct CUserMessageHudMsg {
     #[prost(string, optional, tag = "11")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageHudText {
     #[prost(string, optional, tag = "1")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageTextMsg {
     #[prost(uint32, optional, tag = "1")]
     pub dest: ::core::option::Option<u32>,
     #[prost(string, repeated, tag = "2")]
     pub param: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageGameTitle {}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageResetHud {}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageSendAudio {
     #[prost(string, optional, tag = "1")]
     pub soundname: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, optional, tag = "2")]
     pub stop: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageAudioParameter {
     #[prost(uint32, optional, tag = "1")]
     pub parameter_type: ::core::option::Option<u32>,
@@ -2588,9 +2250,7 @@ pub struct CUserMessageAudioParameter {
     #[prost(uint32, optional, tag = "4")]
     pub int_value: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageVoiceMask {
     #[prost(uint32, repeated, packed = "false", tag = "1")]
     pub gamerules_masks: ::prost::alloc::vec::Vec<u32>,
@@ -2599,13 +2259,9 @@ pub struct CUserMessageVoiceMask {
     #[prost(bool, optional, tag = "3")]
     pub mod_enable: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageRequestState {}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageRumble {
     #[prost(int32, optional, tag = "1")]
     pub index: ::core::option::Option<i32>,
@@ -2614,9 +2270,7 @@ pub struct CUserMessageRumble {
     #[prost(int32, optional, tag = "3")]
     pub flags: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageSayTextChannel {
     #[prost(int32, optional, tag = "1")]
     pub player: ::core::option::Option<i32>,
@@ -2625,9 +2279,7 @@ pub struct CUserMessageSayTextChannel {
     #[prost(string, optional, tag = "3")]
     pub text: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageColoredText {
     #[prost(uint32, optional, tag = "1")]
     pub color: ::core::option::Option<u32>,
@@ -2642,23 +2294,17 @@ pub struct CUserMessageColoredText {
     #[prost(int32, optional, tag = "6")]
     pub context_team_id: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageItemPickup {
     #[prost(string, optional, tag = "1")]
     pub itemname: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageAmmoDenied {
     #[prost(uint32, optional, tag = "1")]
     pub ammo_id: ::core::option::Option<u32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageShowMenu {
     #[prost(uint32, optional, tag = "1")]
     pub validslots: ::core::option::Option<u32>,
@@ -2669,52 +2315,40 @@ pub struct CUserMessageShowMenu {
     #[prost(string, optional, tag = "4")]
     pub menustring: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageCreditsMsg {
     #[prost(enumeration = "ERollType", optional, tag = "1", default = "RollNone")]
     pub rolltype: ::core::option::Option<i32>,
     #[prost(float, optional, tag = "2")]
     pub logo_length: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CEntityMessagePlayJingle {
     #[prost(message, optional, tag = "1")]
     pub entity_msg: ::core::option::Option<CEntityMsg>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CEntityMessageScreenOverlay {
     #[prost(bool, optional, tag = "1")]
     pub start_effect: ::core::option::Option<bool>,
     #[prost(message, optional, tag = "2")]
     pub entity_msg: ::core::option::Option<CEntityMsg>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CEntityMessageRemoveAllDecals {
     #[prost(bool, optional, tag = "1")]
     pub remove_decals: ::core::option::Option<bool>,
     #[prost(message, optional, tag = "2")]
     pub entity_msg: ::core::option::Option<CEntityMsg>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CEntityMessagePropagateForce {
     #[prost(message, optional, tag = "1")]
     pub impulse: ::core::option::Option<CMsgVector>,
     #[prost(message, optional, tag = "2")]
     pub entity_msg: ::core::option::Option<CEntityMsg>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CEntityMessageDoSpark {
     #[prost(message, optional, tag = "1")]
     pub origin: ::core::option::Option<CMsgVector>,
@@ -2733,9 +2367,7 @@ pub struct CEntityMessageDoSpark {
     #[prost(message, optional, tag = "8")]
     pub entity_msg: ::core::option::Option<CEntityMsg>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CEntityMessageFixAngle {
     #[prost(bool, optional, tag = "1")]
     pub relative: ::core::option::Option<bool>,
@@ -2744,9 +2376,7 @@ pub struct CEntityMessageFixAngle {
     #[prost(message, optional, tag = "3")]
     pub entity_msg: ::core::option::Option<CEntityMsg>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageCameraTransition {
     #[prost(uint32, optional, tag = "1")]
     pub camera_type: ::core::option::Option<u32>,
@@ -2756,9 +2386,7 @@ pub struct CUserMessageCameraTransition {
     pub params_data_driven: ::core::option::Option<c_user_message_camera_transition::TransitionDataDriven>,
 }
 pub mod c_user_message_camera_transition {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct TransitionDataDriven {
         #[prost(string, optional, tag = "1")]
         pub filename: ::core::option::Option<::prost::alloc::string::String>,
@@ -2768,9 +2396,7 @@ pub mod c_user_message_camera_transition {
         pub duration: ::core::option::Option<f32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMsgParticleManager {
     #[prost(enumeration = "ParticleMessage", required, tag = "1", default = "GameParticleManagerEventCreate")]
     pub r#type: i32,
@@ -2854,13 +2480,9 @@ pub struct CUserMsgParticleManager {
     pub set_particle_cluster_growth: ::core::option::Option<c_user_msg_particle_manager::SetParticleClusterGrowth>,
 }
 pub mod c_user_msg_particle_manager {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct ReleaseParticleIndex {}
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct CreateParticle {
         #[prost(fixed64, optional, tag = "1")]
         pub particle_name_index: ::core::option::Option<u64>,
@@ -2883,25 +2505,19 @@ pub mod c_user_msg_particle_manager {
         #[prost(message, optional, tag = "10")]
         pub aggregation_position: ::core::option::Option<super::CMsgVector>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct DestroyParticle {
         #[prost(bool, optional, tag = "1")]
         pub destroy_immediately: ::core::option::Option<bool>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct DestroyParticleInvolving {
         #[prost(bool, optional, tag = "1")]
         pub destroy_immediately: ::core::option::Option<bool>,
         #[prost(uint32, optional, tag = "3", default = "16777215")]
         pub entity_handle: ::core::option::Option<u32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct DestroyParticleNamed {
         #[prost(fixed64, optional, tag = "1")]
         pub particle_name_index: ::core::option::Option<u64>,
@@ -2912,27 +2528,21 @@ pub mod c_user_msg_particle_manager {
         #[prost(bool, optional, tag = "4")]
         pub play_endcap: ::core::option::Option<bool>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleObsolete {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
         #[prost(message, optional, tag = "2")]
         pub position: ::core::option::Option<super::CMsgVector>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleFwdObsolete {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
         #[prost(message, optional, tag = "2")]
         pub forward: ::core::option::Option<super::CMsgVector>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleOrientObsolete {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
@@ -2945,9 +2555,7 @@ pub mod c_user_msg_particle_manager {
         #[prost(message, optional, tag = "5")]
         pub left: ::core::option::Option<super::CMsgVector>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleTransform {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
@@ -2958,18 +2566,14 @@ pub mod c_user_msg_particle_manager {
         #[prost(float, optional, tag = "4")]
         pub interpolation_interval: ::core::option::Option<f32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleFallback {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
         #[prost(message, optional, tag = "2")]
         pub position: ::core::option::Option<super::CMsgVector>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleOffset {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
@@ -2978,9 +2582,7 @@ pub mod c_user_msg_particle_manager {
         #[prost(message, optional, tag = "3")]
         pub angle_offset: ::core::option::Option<super::CMsgQAngle>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleEnt {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
@@ -2999,25 +2601,19 @@ pub mod c_user_msg_particle_manager {
         #[prost(message, optional, tag = "8")]
         pub offset_angles: ::core::option::Option<super::CMsgQAngle>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleSetFrozen {
         #[prost(bool, optional, tag = "1")]
         pub set_frozen: ::core::option::Option<bool>,
         #[prost(float, optional, tag = "2")]
         pub transition_duration: ::core::option::Option<f32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateParticleShouldDraw {
         #[prost(bool, optional, tag = "1")]
         pub should_draw: ::core::option::Option<bool>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct ChangeControlPointAttachment {
         #[prost(int32, optional, tag = "1")]
         pub attachment_old: ::core::option::Option<i32>,
@@ -3026,18 +2622,14 @@ pub mod c_user_msg_particle_manager {
         #[prost(uint32, optional, tag = "3", default = "16777215")]
         pub entity_handle: ::core::option::Option<u32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateEntityPosition {
         #[prost(uint32, optional, tag = "1", default = "16777215")]
         pub entity_handle: ::core::option::Option<u32>,
         #[prost(message, optional, tag = "2")]
         pub position: ::core::option::Option<super::CMsgVector>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct SetParticleFoWProperties {
         #[prost(int32, optional, tag = "1")]
         pub fow_control_point: ::core::option::Option<i32>,
@@ -3046,87 +2638,65 @@ pub mod c_user_msg_particle_manager {
         #[prost(float, optional, tag = "3")]
         pub fow_radius: ::core::option::Option<f32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct SetParticleShouldCheckFoW {
         #[prost(bool, optional, tag = "1")]
         pub check_fow: ::core::option::Option<bool>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct SetControlPointModel {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
         #[prost(string, optional, tag = "2")]
         pub model_name: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct SetControlPointSnapshot {
         #[prost(int32, optional, tag = "1")]
         pub control_point: ::core::option::Option<i32>,
         #[prost(string, optional, tag = "2")]
         pub snapshot_name: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct SetParticleText {
         #[prost(string, optional, tag = "1")]
         pub text: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct SetTextureAttribute {
         #[prost(string, optional, tag = "1")]
         pub attribute_name: ::core::option::Option<::prost::alloc::string::String>,
         #[prost(string, optional, tag = "2")]
         pub texture_name: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct SetSceneObjectGenericFlag {
         #[prost(bool, optional, tag = "1")]
         pub flag_value: ::core::option::Option<bool>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct SetSceneObjectTintAndDesat {
         #[prost(fixed32, optional, tag = "1")]
         pub tint: ::core::option::Option<u32>,
         #[prost(float, optional, tag = "2")]
         pub desat: ::core::option::Option<f32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct ParticleSkipToTime {
         #[prost(float, optional, tag = "1")]
         pub skip_to_time: ::core::option::Option<f32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct ParticleCanFreeze {
         #[prost(bool, optional, tag = "1")]
         pub can_freeze: ::core::option::Option<bool>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct ParticleFreezeTransitionOverride {
         #[prost(float, optional, tag = "1")]
         pub freeze_transition_override: ::core::option::Option<f32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct FreezeParticleInvolving {
         #[prost(bool, optional, tag = "1")]
         pub set_frozen: ::core::option::Option<bool>,
@@ -3135,9 +2705,7 @@ pub mod c_user_msg_particle_manager {
         #[prost(uint32, optional, tag = "3", default = "16777215")]
         pub entity_handle: ::core::option::Option<u32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct AddModellistOverrideElement {
         #[prost(string, optional, tag = "1")]
         pub model_name: ::core::option::Option<::prost::alloc::string::String>,
@@ -3146,16 +2714,12 @@ pub mod c_user_msg_particle_manager {
         #[prost(uint32, optional, tag = "3")]
         pub groupid: ::core::option::Option<u32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct ClearModellistOverride {
         #[prost(uint32, optional, tag = "1")]
         pub groupid: ::core::option::Option<u32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct SetParticleNamedValueContext {
         #[prost(message, repeated, tag = "1")]
         pub float_values: ::prost::alloc::vec::Vec<set_particle_named_value_context::FloatContextValue>,
@@ -3167,27 +2731,21 @@ pub mod c_user_msg_particle_manager {
         pub ehandle_values: ::prost::alloc::vec::Vec<set_particle_named_value_context::EHandleContext>,
     }
     pub mod set_particle_named_value_context {
-        #[derive(serde::Serialize, serde::Deserialize)]
-        #[allow(clippy::derive_partial_eq_without_eq)]
-        #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+        #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
         pub struct FloatContextValue {
             #[prost(uint32, optional, tag = "1")]
             pub value_name_hash: ::core::option::Option<u32>,
             #[prost(float, optional, tag = "2")]
             pub value: ::core::option::Option<f32>,
         }
-        #[derive(serde::Serialize, serde::Deserialize)]
-        #[allow(clippy::derive_partial_eq_without_eq)]
-        #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+        #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
         pub struct VectorContextValue {
             #[prost(uint32, optional, tag = "1")]
             pub value_name_hash: ::core::option::Option<u32>,
             #[prost(message, optional, tag = "2")]
             pub value: ::core::option::Option<super::super::CMsgVector>,
         }
-        #[derive(serde::Serialize, serde::Deserialize)]
-        #[allow(clippy::derive_partial_eq_without_eq)]
-        #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+        #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
         pub struct TransformContextValue {
             #[prost(uint32, optional, tag = "1")]
             pub value_name_hash: ::core::option::Option<u32>,
@@ -3196,9 +2754,7 @@ pub mod c_user_msg_particle_manager {
             #[prost(message, optional, tag = "3")]
             pub translation: ::core::option::Option<super::super::CMsgVector>,
         }
-        #[derive(serde::Serialize, serde::Deserialize)]
-        #[allow(clippy::derive_partial_eq_without_eq)]
-        #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+        #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
         pub struct EHandleContext {
             #[prost(uint32, optional, tag = "1")]
             pub value_name_hash: ::core::option::Option<u32>,
@@ -3206,9 +2762,7 @@ pub mod c_user_msg_particle_manager {
             pub ent_index: ::core::option::Option<u32>,
         }
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct CreatePhysicsSim {
         #[prost(string, optional, tag = "1")]
         pub prop_group_name: ::core::option::Option<::prost::alloc::string::String>,
@@ -3217,29 +2771,21 @@ pub mod c_user_msg_particle_manager {
         #[prost(uint32, optional, tag = "3")]
         pub max_particle_count: ::core::option::Option<u32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct DestroyPhysicsSim {}
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct SetVData {
         #[prost(string, optional, tag = "1")]
         pub vdata_name: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct SetMaterialOverride {
         #[prost(string, optional, tag = "1")]
         pub material_name: ::core::option::Option<::prost::alloc::string::String>,
         #[prost(bool, optional, tag = "2")]
         pub include_children: ::core::option::Option<bool>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct AddFan {
         #[prost(bool, optional, tag = "1")]
         pub active: ::core::option::Option<bool>,
@@ -3266,9 +2812,7 @@ pub mod c_user_msg_particle_manager {
         #[prost(float, optional, tag = "12")]
         pub curve_max_dist: ::core::option::Option<f32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct UpdateFan {
         #[prost(bool, optional, tag = "1")]
         pub active: ::core::option::Option<bool>,
@@ -3285,9 +2829,7 @@ pub mod c_user_msg_particle_manager {
         #[prost(message, optional, tag = "6")]
         pub bounds_maxs: ::core::option::Option<super::CMsgVector>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
     pub struct SetParticleClusterGrowth {
         #[prost(float, optional, tag = "1")]
         pub duration: ::core::option::Option<f32>,
@@ -3295,25 +2837,19 @@ pub mod c_user_msg_particle_manager {
         pub origin: ::core::option::Option<super::CMsgVector>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMsgHudError {
     #[prost(int32, optional, tag = "1")]
     pub order_id: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMsgCustomGameEvent {
     #[prost(string, optional, tag = "1")]
     pub event_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bytes = "vec", optional, tag = "2")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageHapticsManagerPulse {
     #[prost(int32, optional, tag = "1")]
     pub hand_id: ::core::option::Option<i32>,
@@ -3324,9 +2860,7 @@ pub struct CUserMessageHapticsManagerPulse {
     #[prost(float, optional, tag = "4")]
     pub effect_duration: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageHapticsManagerEffect {
     #[prost(int32, optional, tag = "1")]
     pub hand_id: ::core::option::Option<i32>,
@@ -3335,18 +2869,14 @@ pub struct CUserMessageHapticsManagerEffect {
     #[prost(float, optional, tag = "3")]
     pub effect_scale: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageAnimStateGraphState {
     #[prost(int32, optional, tag = "1")]
     pub entity_index: ::core::option::Option<i32>,
     #[prost(bytes = "vec", optional, tag = "2")]
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageUpdateCssClasses {
     #[prost(int32, optional, tag = "1")]
     pub target_world_panel: ::core::option::Option<i32>,
@@ -3355,32 +2885,24 @@ pub struct CUserMessageUpdateCssClasses {
     #[prost(bool, optional, tag = "3")]
     pub is_add: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageServerFrameTime {
     #[prost(float, optional, tag = "1")]
     pub frame_time: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageLagCompensationError {
     #[prost(float, optional, tag = "1")]
     pub distance: ::core::option::Option<f32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageRequestDllStatus {
     #[prost(string, optional, tag = "1")]
     pub dll_action: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, optional, tag = "2")]
     pub full_report: ::core::option::Option<bool>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageRequestUtilAction {
     #[prost(int32, optional, tag = "2")]
     pub util1: ::core::option::Option<i32>,
@@ -3393,9 +2915,7 @@ pub struct CUserMessageRequestUtilAction {
     #[prost(int32, optional, tag = "6")]
     pub util5: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageUtilMsgResponse {
     #[prost(fixed32, optional, tag = "1")]
     pub crc: ::core::option::Option<u32>,
@@ -3423,9 +2943,7 @@ pub struct CUserMessageUtilMsgResponse {
     pub total_count2: ::core::option::Option<i32>,
 }
 pub mod c_user_message_util_msg_response {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct ItemDetail {
         #[prost(int32, optional, tag = "1")]
         pub index: ::core::option::Option<i32>,
@@ -3437,9 +2955,7 @@ pub mod c_user_message_util_msg_response {
         pub name: ::core::option::Option<::prost::alloc::string::String>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageDllStatus {
     #[prost(string, optional, tag = "1")]
     pub file_report: ::core::option::Option<::prost::alloc::string::String>,
@@ -3459,9 +2975,7 @@ pub struct CUserMessageDllStatus {
     pub modules: ::prost::alloc::vec::Vec<c_user_message_dll_status::CModule>,
 }
 pub mod c_user_message_dll_status {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct CvDiagnostic {
         #[prost(uint32, optional, tag = "1")]
         pub id: ::core::option::Option<u32>,
@@ -3472,9 +2986,7 @@ pub mod c_user_message_dll_status {
         #[prost(string, optional, tag = "4")]
         pub string_value: ::core::option::Option<::prost::alloc::string::String>,
     }
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct CModule {
         #[prost(uint64, optional, tag = "1")]
         pub base_addr: ::core::option::Option<u64>,
@@ -3486,9 +2998,7 @@ pub mod c_user_message_dll_status {
         pub timestamp: ::core::option::Option<u32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CUserMessageRequestInventory {
     #[prost(int32, optional, tag = "1")]
     pub inventory: ::core::option::Option<i32>,
@@ -3497,9 +3007,7 @@ pub struct CUserMessageRequestInventory {
     #[prost(int32, optional, tag = "3")]
     pub options: ::core::option::Option<i32>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageInventoryResponse {
     #[prost(fixed32, optional, tag = "1")]
     pub crc: ::core::option::Option<u32>,
@@ -3529,9 +3037,7 @@ pub struct CUserMessageInventoryResponse {
     pub start_time: ::core::option::Option<i64>,
 }
 pub mod c_user_message_inventory_response {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct InventoryDetail {
         #[prost(int32, optional, tag = "1")]
         pub index: ::core::option::Option<i32>,
@@ -3555,17 +3061,13 @@ pub mod c_user_message_inventory_response {
         pub base_hash: ::core::option::Option<i32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageRequestDiagnostic {
     #[prost(message, repeated, tag = "1")]
     pub diagnostics: ::prost::alloc::vec::Vec<c_user_message_request_diagnostic::Diagnostic>,
 }
 pub mod c_user_message_request_diagnostic {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Diagnostic {
         #[prost(int32, optional, tag = "1")]
         pub index: ::core::option::Option<i32>,
@@ -3595,9 +3097,7 @@ pub mod c_user_message_request_diagnostic {
         pub context: ::core::option::Option<i32>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageDiagnosticResponse {
     #[prost(message, repeated, tag = "1")]
     pub diagnostics: ::prost::alloc::vec::Vec<c_user_message_diagnostic_response::Diagnostic>,
@@ -3613,9 +3113,7 @@ pub struct CUserMessageDiagnosticResponse {
     pub platform: ::core::option::Option<i32>,
 }
 pub mod c_user_message_diagnostic_response {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Diagnostic {
         #[prost(int32, optional, tag = "1")]
         pub index: ::core::option::Option<i32>,
@@ -3649,9 +3147,7 @@ pub mod c_user_message_diagnostic_response {
         pub placebo: ::core::option::Option<i64>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageExtraUserData {
     #[prost(int32, optional, tag = "1")]
     pub item: ::core::option::Option<i32>,
@@ -3664,9 +3160,7 @@ pub struct CUserMessageExtraUserData {
     #[prost(bytes = "vec", repeated, tag = "5")]
     pub detail2: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessageNotifyResponseFound {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub ent_index: ::core::option::Option<i32>,
@@ -3694,9 +3188,7 @@ pub struct CUserMessageNotifyResponseFound {
     pub speak_result: ::core::option::Option<i32>,
 }
 pub mod c_user_message_notify_response_found {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Criteria {
         #[prost(uint32, optional, tag = "1")]
         pub name_symbol: ::core::option::Option<u32>,
@@ -3704,9 +3196,7 @@ pub mod c_user_message_notify_response_found {
         pub value: ::core::option::Option<::prost::alloc::string::String>,
     }
 }
-#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMessagePlayResponseConditional {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub ent_index: ::core::option::Option<i32>,

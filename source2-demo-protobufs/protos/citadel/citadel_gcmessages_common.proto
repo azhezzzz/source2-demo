@@ -1,12 +1,13 @@
 import "steammessages.proto";
 import "gcsdk_gcmessages.proto";
+import "valveextensions.proto";
 
 enum CMsgLaneColor {
-	k_ELaneColor_Invalid = 0;
-	k_ELaneColor_Yellow = 1;
-	k_ELaneColor_Green = 3;
-	k_ELaneColor_Blue = 4;
-	k_ELaneColor_Purple = 6;
+	k_ELaneColor_Invalid = 0 [(schema_friendly_name) = "None"];
+	k_ELaneColor_Yellow = 1 [(schema_friendly_name) = "Yellow"];
+	k_ELaneColor_Green = 3 [(schema_friendly_name) = "Green"];
+	k_ELaneColor_Blue = 4 [(schema_friendly_name) = "Blue"];
+	k_ELaneColor_Purple = 6 [(schema_friendly_name) = "Purple"];
 }
 
 enum EGCCitadelCommonMessages {
@@ -171,6 +172,7 @@ message CSOCitadelLobby {
 	optional uint32 server_version = 13;
 	optional bool safe_to_abandon = 14;
 	optional bool match_punishes_abandons = 15;
+	optional uint32 game_mode_version = 16;
 }
 
 message CLobbyData_PostMatchSurvey {
@@ -310,6 +312,7 @@ message CSOCitadelParty {
 	optional .CSOCitadelParty.PrivateLobbySettings private_lobby_settings = 17;
 	optional bool desires_laning_together = 18;
 	optional .ECitadelMMPreference mm_preference = 19 [default = k_ECitadelMMPreference_Invalid];
+	optional uint64 party_hideout_server_id = 20;
 }
 
 message CMsgMatchPlayerPathsData {
@@ -323,6 +326,27 @@ message CMsgMatchPlayerPathsData {
 		repeated uint32 y_pos = 7 [packed = true];
 		repeated bool alive = 8 [packed = true];
 		repeated uint32 health = 9 [packed = true];
+		repeated .CMsgMatchPlayerPathsData.ECombatType combat_type = 10 [packed = true];
+		repeated .CMsgMatchPlayerPathsData.EMoveType move_type = 11 [packed = true];
+	}
+
+	enum ECombatType {
+		k_eCombatType_Out = 0;
+		k_eCombatType_Player = 1;
+		k_eCombatType_EnemyNPC = 2;
+		k_eCombatType_Neutral = 3;
+	}
+
+	enum EMoveType {
+		k_eMoveType_Normal = 0;
+		k_eMoveType_Ability = 1;
+		k_eMoveType_AbilityDebuff = 2;
+		k_eMoveType_GroundDash = 3;
+		k_eMoveType_Slide = 4;
+		k_eMoveType_RopeClimbing = 5;
+		k_eMoveType_Ziplining = 6;
+		k_eMoveType_InAir = 7;
+		k_eMoveType_AirDash = 8;
 	}
 
 	optional uint32 version = 1;
@@ -359,6 +383,7 @@ message CMsgMatchPlayerDamageMatrix {
 		k_eType_HealPrevented = 2;
 		k_eType_Mitigated = 3;
 		k_eType_LethalDamage = 4;
+		k_eType_Regen = 5;
 	}
 
 	repeated .CMsgMatchPlayerDamageMatrix.DamageDealer damage_dealers = 1;
@@ -375,6 +400,7 @@ message CMsgMatchMetaDataContents {
 
 	message Deaths {
 		optional uint32 game_time_s = 1;
+		optional float time_to_kill_s = 2;
 		optional uint32 killer_player_slot = 9;
 		optional .CMsgMatchMetaDataContents.Position death_pos = 10;
 		optional .CMsgMatchMetaDataContents.Position killer_pos = 11;
@@ -549,6 +575,7 @@ message CMsgMatchMetaDataContents {
 		optional bool new_player_pool = 22;
 		optional uint32 average_badge_team0 = 23;
 		optional uint32 average_badge_team1 = 24;
+		optional uint32 game_mode_version = 25;
 	}
 
 	enum EMatchOutcome {
@@ -565,6 +592,10 @@ message CMsgMatchMetaDataContents {
 		k_eAssists = 6;
 		k_eDenies = 7;
 		k_eTeamBonus = 8;
+		k_eAbilityAssassinate = 9;
+		k_eItemTrophyCollector = 10;
+		k_eItemCultistSacrifice = 11;
+		k_eBreakable = 12;
 	}
 
 	optional .CMsgMatchMetaDataContents.MatchInfo match_info = 2;

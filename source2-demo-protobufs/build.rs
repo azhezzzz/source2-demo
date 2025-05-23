@@ -66,7 +66,7 @@ fn clean_impl_blocks(rust_code: &str) -> String {
 
         if in_impl_block {
             let new_brace_count = brace_count + stripped_line.matches('{').count() - stripped_line.matches('}').count();
-            if new_brace_count <= 0 {
+            if new_brace_count == 0 {
                 in_impl_block = false;
                 brace_count = 0;
             } else {

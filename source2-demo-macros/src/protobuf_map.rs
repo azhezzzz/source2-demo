@@ -78,6 +78,8 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CCitadelUserMessageMeleeHit" => quote! { CitadelUserMessageIds::KEUserMsgMeleeHit },
         "CCitadelUserMsgFlexSlotUnlocked" => quote! { CitadelUserMessageIds::KEUserMsgFlexSlotUnlocked },
         "CCitadelUserMsgSeasonalAchievementUnlocked" => quote! { CitadelUserMessageIds::KEUserMsgSeasonalAchievementUnlocked },
+        "CCitadelUserMsgMusicQueue" => quote! { CitadelUserMessageIds::KEUserMsgMusicQueue },
+        "CCitadelUserMsgAg2ParamTrigger" => quote! { CitadelUserMessageIds::KEUserMsgAg2ParamTrigger },
         // "CCitadelUserMsgAbilityFailed" => quote! { CitadelUserMessageIds::KEUserMsgAbilityFailed },
 
         // ECitadelGameEvents
@@ -91,6 +93,7 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CMsgPlaceSatVolumeEvent" => quote! { ECitadelGameEvents::GePlaceSatVolumeEvent },
         "CMsgDisableSatVolumesEvent" => quote! { ECitadelGameEvents::GeDisableSatVolumesEvent },
         "CMsgRemoveSatVolumeEvent" => quote! { ECitadelGameEvents::GeRemoveSatVolumeEvent },
+        "CMsgRemoveBullet" => quote! { ECitadelGameEvents::GeRemoveBullet },
 
         // EDotaUserMessages
         "CDotaUserMsgChatEvent" => quote! { EDotaUserMessages::DotaUmChatEvent },
@@ -204,7 +207,7 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CDotaUserMsgHighFiveLeftHanging" => quote! { EDotaUserMessages::DotaUmHighFiveLeftHanging },
         "CDotaUserMsgHighFiveCompleted" => quote! { EDotaUserMessages::DotaUmHighFiveCompleted },
         "CDotaUserMsgShovelUnearth" => quote! { EDotaUserMessages::DotaUmShovelUnearth },
-        "CDotaUserMsgInvokerSpellCast" => quote! { EDotaUserMessages::DotaEmInvokerSpellCast },
+        // "CDotaUserMsgInvokerSpellCast" => quote! { EDotaUserMessages::DotaEmInvokerSpellCast },
         "CDotaUserMsgRadarAlert" => quote! { EDotaUserMessages::DotaUmRadarAlert },
         "CDotaUserMsgAllStarEvent" => quote! { EDotaUserMessages::DotaUmAllStarEvent },
         "CDotaUserMsgTalentTreeAlert" => quote! { EDotaUserMessages::DotaUmTalentTreeAlert },
@@ -247,6 +250,7 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CDotaUserMsgNeutralCraftAvailable" => quote! { EDotaUserMessages::DotaUmNeutralCraftAvailable },
         "CDotaUserMsgTimerAlert" => quote! { EDotaUserMessages::DotaUmTimerAlert },
         "CDotaUserMsgMadstoneAlert" => quote! { EDotaUserMessages::DotaUmMadstoneAlert },
+        "CDotaUserMsgCourierLeftFountainAlert" => quote! { EDotaUserMessages::DotaUmCourierLeftFountainAlert },
         // "CDotaUserMsgAddUnitToSelection" => quote! { EDotaUserMessages::DotaUmAddUnitToSelection },
         // "CDotaUserMsgCombatLogData" => quote! { EDotaUserMessages::DotaUmCombatLogData },
         // "CDotaUserMsgParticleManager" => quote! { EDotaUserMessages::DotaUmParticleManager },

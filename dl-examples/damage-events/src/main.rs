@@ -51,7 +51,7 @@ impl DamageEvents {
             self.get_entity_name(ctx, msg.entindex_attacker() as usize)?,
             self.get_entity_name(ctx, msg.entindex_victim() as usize)?,
             msg.damage(),
-            if msg.damage_absorbed() > 0 {
+            if msg.damage_absorbed() > 0.0 {
                 format!(
                     "({} absorbed ({}/{}))",
                     msg.damage_absorbed(),

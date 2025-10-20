@@ -4,6 +4,7 @@ members = [
     "chat",
     "combatlog",
     "lifestate",
+    "opendota",
     "wards"
 ]
 

@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 source2-demo = { path = "../../source2-demo", features = ["deadlock"] }
-memmap2 = "0.9.4"
+memmap2 = "0.9"
 anyhow = "1.0"

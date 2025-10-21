@@ -7,7 +7,7 @@ use std::collections::VecDeque;
 use std::fmt::{Display, Formatter};
 
 use hashbrown::HashMap;
-use anyhow::{Error, Result, bail};
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
 use source2_demo::prelude::*;
@@ -143,7 +143,7 @@ struct App {
 }
 
 impl App {
-    pub fn output(&mut self, mut e: Entry) -> Result<()> {
+    pub fn output(&mut self, mut e: Entry) -> ObserverResult {
         if self.start_time == 0.0 {
             self.log_buffer.push_back(e);
         } else {
@@ -153,7 +153,7 @@ impl App {
         Ok(())
     }
 
-    pub fn flush_log_buffer(&mut self) -> Result<()> {
+    pub fn flush_log_buffer(&mut self) -> ObserverResult {
         while let Some(e) = self.log_buffer.pop_front() {
             self.output(e)?
         }
@@ -239,7 +239,7 @@ impl App {
 #[observer]
 impl App {
     #[on_message]
-    fn handle_demo_cmd(&mut self, ctx: &Context, file_info: &CDemoFileInfo) -> ObserverResult {
+    fn handle_demo_cmd(&mut self, ctx: &Context, file_info: CDemoFileInfo) -> ObserverResult {
         let mut cosmetics_entry = Entry::new(self.time(ctx)?);
         cosmetics_entry.r#type = "cosmetics".to_string().into();
         cosmetics_entry.key = serde_json::to_string(&self.cosmetics_map)?.into();
@@ -461,16 +461,16 @@ impl App {
                                 let name1 = "npc_dota_hero_".to_string() + &class["CDOTA_Unit_Hero_".len()..].to_lowercase();
                                 let name2 = "npc_dota_hero".to_string()
                                     + &class["CDOTA_Unit_Hero_".len()..]
-                                        .to_lowercase()
-                                        .chars()
-                                        .map(|c| {
-                                            if c.is_ascii_uppercase() {
-                                                format!("_{}", c.to_lowercase())
-                                            } else {
-                                                c.to_string()
-                                            }
-                                        })
-                                        .collect::<String>();
+                                    .to_lowercase()
+                                    .chars()
+                                    .map(|c| {
+                                        if c.is_ascii_uppercase() {
+                                            format!("_{}", c.to_lowercase())
+                                        } else {
+                                            c.to_string()
+                                        }
+                                    })
+                                    .collect::<String>();
                                 self.name_to_slot.insert(name1.clone(), i);
                                 self.name_to_slot.insert(name2.clone(), i);
                                 self.class_to_combat_log.insert(class.to_string(), name1);
@@ -542,7 +542,7 @@ impl App {
     }
 
     #[on_entity("CDOTAWearableItem")]
-    fn on_entity(&mut self, _ctx: &Context, event: EntityEvents, entity: &Entity) -> Result<()> {
+    fn on_entity(&mut self, _ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
         if event == EntityEvents::Created {
             let account_id: u64 = property!(entity, "m_iAccountID");
             let item_definition_idx: i32 = property!(entity, "m_iItemDefinitionIndex");
@@ -556,7 +556,7 @@ impl App {
     }
 
     #[on_combat_log]
-    fn handle_cle(&mut self, _ctx: &Context, cle: &CombatLogEntry) -> Result<()> {
+    fn handle_cle(&mut self, _ctx: &Context, cle: &CombatLogEntry) -> ObserverResult {
         let time = cle.timestamp()?;
         let mut entry = Entry::new(time);
         entry.r#type = format!("{:?}", cle.r#type()).into();
@@ -594,7 +594,7 @@ impl App {
     }
 
     #[on_message]
-    fn on_chat_event(&mut self, ctx: &Context, event: CDotaUserMsgChatEvent) -> Result<()> {
+    fn on_chat_event(&mut self, ctx: &Context, event: CDotaUserMsgChatEvent) -> ObserverResult {
         let mut entry = Entry::new(self.time(ctx)?);
         entry.r#type = format!("{:?}", event.r#type()).into();
         entry.player1 = event.playerid_1().into();
@@ -604,7 +604,7 @@ impl App {
     }
 
     #[on_message]
-    fn on_all_chat_message(&mut self, ctx: &Context, event: CDotaUserMsgChatMessage) -> Result<()> {
+    fn on_all_chat_message(&mut self, ctx: &Context, event: CDotaUserMsgChatMessage) -> ObserverResult {
         let mut entry = Entry::new(self.time(ctx)?);
         entry.r#type = if event.channel_type() == 11 {
             "chat".to_string().into()
@@ -617,7 +617,7 @@ impl App {
     }
 
     #[on_message]
-    fn on_chat_wheel(&mut self, ctx: &Context, event: CDotaUserMsgChatWheel) -> Result<()> {
+    fn on_chat_wheel(&mut self, ctx: &Context, event: CDotaUserMsgChatWheel) -> ObserverResult {
         let mut entry = Entry::new(self.time(ctx)?);
         entry.r#type = "chatwheel".to_string().into();
         entry.slot = event.player_id().into();
@@ -627,14 +627,14 @@ impl App {
 }
 
 impl GameTimeObserver for App {
-    fn on_game_started(&mut self, _ctx: &Context, start_time: f32) -> Result<()> {
+    fn on_game_started(&mut self, _ctx: &Context, start_time: f32) -> ObserverResult {
         self.start_time = start_time;
         self.flush_log_buffer()
     }
 }
 
 impl WardsObserver for App {
-    fn on_ward(&mut self, ctx: &Context, ward_class: WardClass, event: WardEvent, ward: &Entity) -> Result<()> {
+    fn on_ward(&mut self, ctx: &Context, ward_class: WardClass, event: WardEvent, ward: &Entity) -> ObserverResult {
         let mut entry = Entry::new(self.time(ctx)?);
 
         let is_obs = ward_class == WardClass::Observer;

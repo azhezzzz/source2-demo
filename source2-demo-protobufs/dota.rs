@@ -1,6 +1,6 @@
 pub use crate::common::*;
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaClientHardwareSpecs {
     #[prost(uint32, optional, tag = "1")]
     pub logical_processors: ::core::option::Option<u32>,
@@ -18,7 +18,7 @@ pub struct CDotaClientHardwareSpecs {
     pub crc: ::prost::alloc::vec::Vec<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaLuaModifierEntry {
     #[prost(int32, required, tag = "1")]
     pub modifier_type: i32,
@@ -108,7 +108,7 @@ pub struct CDotaModifierBuffTableEntry {
     pub aura_within_range: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaMsgCoachHudPing {
     #[prost(uint32, optional, tag = "1")]
     pub x: ::core::option::Option<u32>,
@@ -124,7 +124,7 @@ pub struct CDotaMsgDismissAllStatPopups {
     pub time_delay: ::core::option::Option<f32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaMsgItemAlert {
     #[prost(int32, optional, tag = "1")]
     pub x: ::core::option::Option<i32>,
@@ -134,7 +134,7 @@ pub struct CDotaMsgItemAlert {
     pub item_ability_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaMsgLocationPing {
     #[prost(int32, optional, tag = "1")]
     pub x: ::core::option::Option<i32>,
@@ -152,7 +152,7 @@ pub struct CDotaMsgLocationPing {
     pub waypoint_path: ::core::option::Option<CDotaMsgPingWaypointPath>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaMsgMapLine {
     #[prost(int32, optional, tag = "1")]
     pub x: ::core::option::Option<i32>,
@@ -162,7 +162,7 @@ pub struct CDotaMsgMapLine {
     pub initial: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaMsgPingWaypointPath {
     #[prost(int32, optional, tag = "1")]
     pub x: ::core::option::Option<i32>,
@@ -208,7 +208,7 @@ pub struct CDotaMsgUnitOrder {
     pub flags: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaMsgWorldLine {
     #[prost(int32, optional, tag = "1")]
     pub x: ::core::option::Option<i32>,
@@ -252,13 +252,13 @@ pub struct CDotaSpeechMatchOnClient {
     pub randomseed: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMessageRequestItemSuggestions {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMessageTeamCaptainChanged {
     #[prost(uint32, optional, tag = "1")]
     pub team: ::core::option::Option<u32>,
@@ -266,7 +266,7 @@ pub struct CDotaUserMessageTeamCaptainChanged {
     pub captain_player_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgAbilityDraftRequestAbility {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -310,7 +310,7 @@ pub struct CDotaUserMsgAbilityPing {
     pub owner_entity: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgAbilitySteal {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -320,7 +320,7 @@ pub struct CDotaUserMsgAbilitySteal {
     pub ability_level: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgAddQuestLogEntry {
     #[prost(string, optional, tag = "1")]
     pub npc_name: ::core::option::Option<::prost::alloc::string::String>,
@@ -328,7 +328,7 @@ pub struct CDotaUserMsgAddQuestLogEntry {
     pub npc_dialog: ::core::option::Option<::prost::alloc::string::String>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgAghsStatusAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub source_player_id: ::core::option::Option<i32>,
@@ -344,7 +344,7 @@ pub struct CDotaUserMsgAghsStatusAlert {
     pub has_shard: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgAiDebugLine {
     #[prost(string, optional, tag = "1")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
@@ -364,7 +364,7 @@ pub struct CDotaUserMsgAllStarEvent {
     pub player_scores: ::prost::alloc::vec::Vec<cdota_user_msg_all_star_event::PlayerScore>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgBeastChat {
     #[prost(uint32, optional, tag = "1")]
     pub team: ::core::option::Option<u32>,
@@ -396,7 +396,7 @@ pub struct CDotaUserMsgBoosterStatePlayer {
     pub event_bonus_item_id: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgBotChat {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -408,7 +408,7 @@ pub struct CDotaUserMsgBotChat {
     pub team_only: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgBuyBackStateAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -440,7 +440,7 @@ pub struct CDotaUserMsgChatEvent {
     pub time: ::core::option::Option<f32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgChatMessage {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub source_player_id: ::core::option::Option<i32>,
@@ -450,7 +450,7 @@ pub struct CDotaUserMsgChatMessage {
     pub message_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgChatWheel {
     #[prost(uint32, optional, tag = "1", default = "4294967295")]
     pub chat_message_id: ::core::option::Option<u32>,
@@ -472,10 +472,10 @@ pub struct CDotaUserMsgChatWheelCooldown {
     pub cooldown_remaining: ::core::option::Option<f32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgClientLoadGridNav {}
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgCoachHudPing {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -515,7 +515,7 @@ pub struct CDotaUserMsgCompendiumState {
     pub compendium_players: ::prost::alloc::vec::Vec<CDotaUserMsgCompendiumStatePlayer>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgCompendiumStatePlayer {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -575,7 +575,7 @@ pub struct CDotaUserMsgCourierKilledAlert {
     pub owning_player_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgCourierLeftFountainAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub owning_player_id: ::core::option::Option<i32>,
@@ -621,7 +621,7 @@ pub struct CDotaUserMsgCustomHeaderMessage {
     pub value: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgCustomHudElementCreate {
     #[prost(string, optional, tag = "1")]
     pub element_id: ::core::option::Option<::prost::alloc::string::String>,
@@ -631,13 +631,13 @@ pub struct CDotaUserMsgCustomHudElementCreate {
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgCustomHudElementDestroy {
     #[prost(string, optional, tag = "1")]
     pub element_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgCustomHudElementModify {
     #[prost(string, optional, tag = "1")]
     pub element_id: ::core::option::Option<::prost::alloc::string::String>,
@@ -647,7 +647,7 @@ pub struct CDotaUserMsgCustomHudElementModify {
     pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgCustomMsg {
     #[prost(string, optional, tag = "1")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
@@ -657,7 +657,7 @@ pub struct CDotaUserMsgCustomMsg {
     pub value: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDamageReport {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -671,7 +671,7 @@ pub struct CDotaUserMsgDamageReport {
     pub broadcast: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDebugChallenge {
     #[prost(uint32, required, tag = "1")]
     pub challenge_type: u32,
@@ -689,7 +689,7 @@ pub struct CDotaUserMsgDebugChallenge {
     pub challenge_max_rank: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDestroyLinearProjectile {
     #[prost(int32, optional, tag = "1")]
     pub handle: ::core::option::Option<i32>,
@@ -701,7 +701,7 @@ pub struct CDotaUserMsgDismissAllStatPopups {
     pub dismissallmsg: ::core::option::Option<CDotaMsgDismissAllStatPopups>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDodgeTrackingProjectiles {
     #[prost(int32, required, tag = "1", default = "-1")]
     pub entindex: i32,
@@ -709,7 +709,7 @@ pub struct CDotaUserMsgDodgeTrackingProjectiles {
     pub attacks_only: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDuelAccepted {
     #[prost(int32, optional, tag = "1")]
     pub player_id_1: ::core::option::Option<i32>,
@@ -717,7 +717,7 @@ pub struct CDotaUserMsgDuelAccepted {
     pub player_id_2: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDuelOpponentKilled {
     #[prost(int32, optional, tag = "1")]
     pub player_id_winner: ::core::option::Option<i32>,
@@ -725,13 +725,13 @@ pub struct CDotaUserMsgDuelOpponentKilled {
     pub player_id_loser: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDuelRequested {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id_requestor: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgEmptyItemSlotAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub source_player_id: ::core::option::Option<i32>,
@@ -743,7 +743,7 @@ pub struct CDotaUserMsgEmptyItemSlotAlert {
     pub cooldown_seconds: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgEmptyTeleportAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub source_player_id: ::core::option::Option<i32>,
@@ -753,7 +753,7 @@ pub struct CDotaUserMsgEmptyTeleportAlert {
     pub cooldown_seconds: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgEnemyItemAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -773,7 +773,7 @@ pub struct CDotaUserMsgEnemyItemAlert {
     pub secondary_charges: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgEsArcanaCombo {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub ehandle: ::core::option::Option<u32>,
@@ -783,7 +783,7 @@ pub struct CDotaUserMsgEsArcanaCombo {
     pub arcana_level: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgEsArcanaComboSummary {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub ehandle: ::core::option::Option<u32>,
@@ -793,7 +793,7 @@ pub struct CDotaUserMsgEsArcanaComboSummary {
     pub damage_amount: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgFacetPing {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -805,7 +805,7 @@ pub struct CDotaUserMsgFacetPing {
     pub all_chat: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgFlipCoinResult {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -815,7 +815,7 @@ pub struct CDotaUserMsgFlipCoinResult {
     pub result: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgFoundNeutralItem {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -829,15 +829,17 @@ pub struct CDotaUserMsgFoundNeutralItem {
     pub enhancement_ability_id: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "6")]
     pub enhancement_level: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "7")]
+    pub trinket_level: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgGamerulesStateChanged {
     #[prost(uint32, optional, tag = "1")]
     pub state: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgGiftPlayer {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub source_player_id: ::core::option::Option<i32>,
@@ -863,7 +865,7 @@ pub struct CDotaUserMsgGlobalLightDirection {
     pub duration: ::core::option::Option<f32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgGlyphAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -889,7 +891,7 @@ pub struct CDotaUserMsgGuildChallengeProgress {
     pub complete: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgHalloweenDrops {
     #[prost(uint32, repeated, packed = "false", tag = "1")]
     pub item_defs: ::prost::alloc::vec::Vec<u32>,
@@ -913,7 +915,7 @@ pub struct CDotaUserMsgHeroRelicProgress {
     pub value_display: ::core::option::Option<f32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgHighFiveCompleted {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id_1: ::core::option::Option<i32>,
@@ -925,13 +927,13 @@ pub struct CDotaUserMsgHighFiveCompleted {
     pub special_entindex: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgHighFiveLeftHanging {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgHotPotatoCreated {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id_1: ::core::option::Option<i32>,
@@ -939,13 +941,13 @@ pub struct CDotaUserMsgHotPotatoCreated {
     pub player_id_2: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgHotPotatoExploded {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgHpManaAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -955,7 +957,7 @@ pub struct CDotaUserMsgHpManaAlert {
     pub show_raw_values: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgHudError {
     #[prost(int32, optional, tag = "1")]
     pub order_id: ::core::option::Option<i32>,
@@ -963,7 +965,7 @@ pub struct CDotaUserMsgHudError {
     pub sequence_number: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgInnatePing {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -973,7 +975,7 @@ pub struct CDotaUserMsgInnatePing {
     pub all_chat: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgInvalidCommand {
     #[prost(string, optional, tag = "1")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
@@ -981,7 +983,7 @@ pub struct CDotaUserMsgInvalidCommand {
     pub sequence_number: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgItemAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -989,7 +991,7 @@ pub struct CDotaUserMsgItemAlert {
     pub item_alert: ::core::option::Option<CDotaMsgItemAlert>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgItemFound {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player: ::core::option::Option<i32>,
@@ -1003,7 +1005,7 @@ pub struct CDotaUserMsgItemFound {
     pub itemdef: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgItemPurchased {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub item_ability_id: ::core::option::Option<i32>,
@@ -1011,13 +1013,13 @@ pub struct CDotaUserMsgItemPurchased {
     pub from_combine: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgItemSold {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub item_ability_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgKillcamDamageTaken {
     #[prost(int32, required, tag = "1", default = "-1")]
     pub player_id: i32,
@@ -1033,7 +1035,7 @@ pub struct CDotaUserMsgKillcamDamageTaken {
     pub damage_color: ::core::option::Option<::prost::alloc::string::String>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgLocationPing {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1041,7 +1043,7 @@ pub struct CDotaUserMsgLocationPing {
     pub location_ping: ::core::option::Option<CDotaMsgLocationPing>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMadstoneAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1055,7 +1057,7 @@ pub struct CDotaUserMsgMadstoneAlert {
     pub value: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMapLine {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1063,7 +1065,7 @@ pub struct CDotaUserMsgMapLine {
     pub mapline: ::core::option::Option<CDotaMsgMapLine>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMarsArenaOfBloodAttack {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub source_ehandle: ::core::option::Option<u32>,
@@ -1079,7 +1081,7 @@ pub struct CDotaUserMsgMiniKillCamInfo {
     pub attackers: ::prost::alloc::vec::Vec<cdota_user_msg_mini_kill_cam_info::Attacker>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMiniTaunt {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub taunting_player_id: ::core::option::Option<i32>,
@@ -1099,7 +1101,7 @@ pub struct CDotaUserMsgMinimapDebugPoint {
     pub index: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMinimapEvent {
     #[prost(int32, optional, tag = "1")]
     pub event_type: ::core::option::Option<i32>,
@@ -1131,13 +1133,13 @@ pub struct CDotaUserMsgModifierAlert {
     pub seconds_remaining: ::core::option::Option<f32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMoveCameraToUnit {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub unit_ehandle: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMuertaReleaseEventAssignedTargetKilled {
     #[prost(int32, required, tag = "1", default = "-1")]
     pub player_id_killer: i32,
@@ -1151,7 +1153,7 @@ pub struct CDotaUserMsgMuertaReleaseEventAssignedTargetKilled {
     pub last_hit: bool,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMutedPlayers {
     #[prost(int32, repeated, packed = "false", tag = "1")]
     pub text_muted_player_ids: ::prost::alloc::vec::Vec<i32>,
@@ -1159,7 +1161,7 @@ pub struct CDotaUserMsgMutedPlayers {
     pub voice_muted_player_ids: ::prost::alloc::vec::Vec<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgNeutralCampAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1177,7 +1179,7 @@ pub struct CDotaUserMsgNeutralCampAlert {
     pub stack_intention: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgNeutralCraftAvailable {}
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
@@ -1192,7 +1194,7 @@ pub struct CDotaUserMsgNevermoreRequiem {
     pub reverse: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgOmArcanaCombo {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub ehandle: ::core::option::Option<u32>,
@@ -1204,7 +1206,7 @@ pub struct CDotaUserMsgOmArcanaCombo {
     pub multicast_chance: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgOutpostCaptured {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub outpost_entindex: ::core::option::Option<i32>,
@@ -1212,7 +1214,7 @@ pub struct CDotaUserMsgOutpostCaptured {
     pub team_id: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgOutpostGrantedXp {
     #[prost(uint32, optional, tag = "1")]
     pub team_id: ::core::option::Option<u32>,
@@ -1220,7 +1222,7 @@ pub struct CDotaUserMsgOutpostGrantedXp {
     pub xp_amount: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgOverheadEvent {
     #[prost(enumeration = "DotaOverheadAlert", required, tag = "1", default = "OverheadAlertGold")]
     pub message_type: i32,
@@ -1240,7 +1242,7 @@ pub struct CDotaUserMsgPauseMinigameData {
     pub data_bits: ::prost::alloc::vec::Vec<cdota_user_msg_pause_minigame_data::DataBit>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgPing {
     #[prost(uint32, optional, tag = "2")]
     pub ping: ::core::option::Option<u32>,
@@ -1260,7 +1262,7 @@ pub struct CDotaUserMsgPingConfirmation {
     pub location: ::core::option::Option<CMsgVector>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgPlayerDraftPick {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id_captain: ::core::option::Option<i32>,
@@ -1270,7 +1272,7 @@ pub struct CDotaUserMsgPlayerDraftPick {
     pub team: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgPlayerDraftSuggestPick {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1306,7 +1308,7 @@ pub struct CDotaUserMsgProjectionAbility {
     pub victim_ent_index: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgProjectionEvent {
     #[prost(enumeration = "EProjectionEvent", optional, tag = "1", default = "EPeFirstBlood")]
     pub event_id: ::core::option::Option<i32>,
@@ -1314,7 +1316,7 @@ pub struct CDotaUserMsgProjectionEvent {
     pub team: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgQoPArcanaSummary {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub ehandle: ::core::option::Option<u32>,
@@ -1346,13 +1348,13 @@ pub struct CDotaUserMsgQuestStatus {
     pub item_ability_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgQueuedOrderRemoved {
     #[prost(uint32, repeated, packed = "false", tag = "1")]
     pub unit_order_sequence: ::prost::alloc::vec::Vec<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgQuickBuyAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1366,7 +1368,7 @@ pub struct CDotaUserMsgQuickBuyAlert {
     pub show_buyback: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgRadarAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1374,7 +1376,7 @@ pub struct CDotaUserMsgRadarAlert {
     pub negative: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgReceivedXmasGift {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1384,7 +1386,7 @@ pub struct CDotaUserMsgReceivedXmasGift {
     pub inventory_slot: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgReplaceQueryUnit {
     #[prost(int32, required, tag = "1", default = "-1")]
     pub player_id: i32,
@@ -1394,7 +1396,7 @@ pub struct CDotaUserMsgReplaceQueryUnit {
     pub target_entindex: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgRockPaperScissorsFinished {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id_1: ::core::option::Option<i32>,
@@ -1406,7 +1408,7 @@ pub struct CDotaUserMsgRockPaperScissorsFinished {
     pub player_2_choice: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgRockPaperScissorsStarted {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id_source: ::core::option::Option<i32>,
@@ -1414,7 +1416,7 @@ pub struct CDotaUserMsgRockPaperScissorsStarted {
     pub player_id_target: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgRollDiceResult {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1428,7 +1430,7 @@ pub struct CDotaUserMsgRollDiceResult {
     pub result: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgRoshanTimer {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1436,7 +1438,7 @@ pub struct CDotaUserMsgRoshanTimer {
     pub negative: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSalutePlayer {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub source_player_id: ::core::option::Option<i32>,
@@ -1452,7 +1454,7 @@ pub struct CDotaUserMsgSalutePlayer {
     pub num_recent_tips: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSelectPenaltyGold {
     #[prost(int32, required, tag = "1", default = "-1")]
     pub player_id: i32,
@@ -1460,7 +1462,7 @@ pub struct CDotaUserMsgSelectPenaltyGold {
     pub cost: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSendFinalGold {
     #[prost(uint32, repeated, packed = "false", tag = "1")]
     pub reliable_gold: ::prost::alloc::vec::Vec<u32>,
@@ -1468,7 +1470,7 @@ pub struct CDotaUserMsgSendFinalGold {
     pub unreliable_gold: ::prost::alloc::vec::Vec<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSendGenericToolTip {
     #[prost(string, optional, tag = "1")]
     pub title: ::core::option::Option<::prost::alloc::string::String>,
@@ -1480,7 +1482,7 @@ pub struct CDotaUserMsgSendGenericToolTip {
     pub close: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSendRoshanPopup {
     #[prost(bool, optional, tag = "1")]
     pub reclaimed: ::core::option::Option<bool>,
@@ -1488,7 +1490,7 @@ pub struct CDotaUserMsgSendRoshanPopup {
     pub gametime: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSendRoshanSpectatorPhase {
     #[prost(enumeration = "DotaRoshanPhase", optional, tag = "1", default = "KSrspRoshanAlive")]
     pub phase: ::core::option::Option<i32>,
@@ -1506,7 +1508,7 @@ pub struct CDotaUserMsgSendStatPopup {
     pub statpopup: ::core::option::Option<CDotaMsgSendStatPopup>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSetNextAutobuyItem {
     #[prost(string, optional, tag = "1")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
@@ -1524,7 +1526,7 @@ pub struct CDotaUserMsgSharedCooldown {
     pub name_index: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgShovelUnearth {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1536,7 +1538,7 @@ pub struct CDotaUserMsgShovelUnearth {
     pub quantity: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgShowGenericPopup {
     #[prost(string, required, tag = "1")]
     pub header: ::prost::alloc::string::String,
@@ -1552,7 +1554,7 @@ pub struct CDotaUserMsgShowGenericPopup {
     pub show_no_other_dialogs: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgShowSurvey {
     #[prost(int32, optional, tag = "1")]
     pub survey_id: ::core::option::Option<i32>,
@@ -1568,7 +1570,7 @@ pub struct CDotaUserMsgShowSurvey {
     pub teammate_account_id: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSpectatorPlayerClick {
     #[prost(int32, required, tag = "1", default = "-1")]
     pub entindex: i32,
@@ -1604,13 +1606,13 @@ pub struct CDotaUserMsgSpectatorPlayerUnitOrders {
     pub ping: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSpeechBubble {
     #[prost(bool, optional, tag = "1")]
     pub destroy_all: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgStatsHeroLookup {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1736,7 +1738,7 @@ pub struct CDotaUserMsgStatsTeamMinuteDetails {
     pub lane_performance: ::prost::alloc::vec::Vec<cdota_user_msg_stats_team_minute_details::LocationPerformance>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSuggestHeroPick {
     #[prost(int32, required, tag = "1", default = "-1")]
     pub player_id: i32,
@@ -1748,7 +1750,7 @@ pub struct CDotaUserMsgSuggestHeroPick {
     pub facet_id: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSuggestHeroRole {
     #[prost(int32, required, tag = "1", default = "-1")]
     pub player_id: i32,
@@ -1756,13 +1758,13 @@ pub struct CDotaUserMsgSuggestHeroRole {
     pub hero_role: ::core::option::Option<::prost::alloc::string::String>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSwapVerify {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTalentTreeAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1776,7 +1778,7 @@ pub struct CDotaUserMsgTalentTreeAlert {
     pub learned: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTeDestroyProjectile {
     #[prost(int32, optional, tag = "1")]
     pub handle: ::core::option::Option<i32>,
@@ -1886,7 +1888,7 @@ pub struct CDotaUserMsgTeUnitAnimation {
     pub lag_compensation_time: ::core::option::Option<f32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTeUnitAnimationEnd {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub entity: ::core::option::Option<u32>,
@@ -1894,7 +1896,7 @@ pub struct CDotaUserMsgTeUnitAnimationEnd {
     pub snap: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTimerAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1902,7 +1904,7 @@ pub struct CDotaUserMsgTimerAlert {
     pub timer_alert_type: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTipAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -1910,13 +1912,13 @@ pub struct CDotaUserMsgTipAlert {
     pub tip_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTutorialFade {
     #[prost(int32, optional, tag = "1")]
     pub tgt_alpha: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTutorialFinish {
     #[prost(string, optional, tag = "1")]
     pub heading: ::core::option::Option<::prost::alloc::string::String>,
@@ -1928,7 +1930,7 @@ pub struct CDotaUserMsgTutorialFinish {
     pub success: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTutorialMinimapPosition {}
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
@@ -1945,10 +1947,10 @@ pub struct CDotaUserMsgTutorialPingMinimap {
     pub entity_index: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTutorialRequestExp {}
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgTutorialTipInfo {
     #[prost(string, optional, tag = "1")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
@@ -1988,10 +1990,10 @@ pub struct CDotaUserMsgUpdateLinearProjectileCpData {
     pub vector: ::core::option::Option<CMsgVector>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgUpdateQuestProgress {}
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgUpdateSharedContent {
     #[prost(int32, optional, tag = "1")]
     pub slot_type: ::core::option::Option<i32>,
@@ -2011,7 +2013,7 @@ pub struct CDotaUserMsgVersusScenePlayerBehavior {
     pub playback_rate: ::core::option::Option<VersusScenePlaybackRate>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgVoteEnd {
     #[prost(int32, optional, tag = "1")]
     pub selected_choice: ::core::option::Option<i32>,
@@ -2029,13 +2031,13 @@ pub struct CDotaUserMsgVoteStart {
     pub choices: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgVoteUpdate {
     #[prost(int32, repeated, packed = "false", tag = "1")]
     pub choice_counts: ::prost::alloc::vec::Vec<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgWillPurchaseAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub item_ability_id: ::core::option::Option<i32>,
@@ -2047,7 +2049,7 @@ pub struct CDotaUserMsgWillPurchaseAlert {
     pub suggestion_player_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgWkArcanaProgress {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub ehandle: ::core::option::Option<u32>,
@@ -2057,7 +2059,7 @@ pub struct CDotaUserMsgWkArcanaProgress {
     pub hero_id: ::core::option::Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgWorldLine {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -2065,7 +2067,7 @@ pub struct CDotaUserMsgWorldLine {
     pub worldline: ::core::option::Option<CDotaMsgWorldLine>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgWrArcanaProgress {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub ehandle: ::core::option::Option<u32>,
@@ -2083,7 +2085,7 @@ pub struct CDotaUserMsgWrArcanaProgress {
     pub arcana_level: ::core::option::Option<u32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgWrArcanaSummary {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub ehandle: ::core::option::Option<u32>,
@@ -2103,7 +2105,7 @@ pub struct CDotaUserMsgWrArcanaSummary {
     pub success: ::core::option::Option<bool>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgXpAlert {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
@@ -2301,7 +2303,7 @@ pub struct CMsgHeroAbilityStat {
     pub float_value: ::core::option::Option<f32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgPendingEventAward {
     #[prost(enumeration = "EEvent", optional, tag = "1", default = "EventIdNone")]
     pub event_id: ::core::option::Option<i32>,
@@ -2852,6 +2854,7 @@ pub enum DotaOverheadAlert {
     OverheadAlertShard = 23,
     OverheadAlertDeadlyBlow = 24,
     OverheadAlertForceMiss = 25,
+    OverheadAlertAegis = 26,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2984,6 +2987,11 @@ pub enum EBadgeType {
     KEBadgeTypeTi13FinalsDay2 = 19,
     KEBadgeTypeTi13FinalsDay3 = 20,
     KEBadgeTypeTi13Special = 21,
+    KEBadgeTypeTi14FinalsDay1 = 22,
+    KEBadgeTypeTi14FinalsDay2 = 23,
+    KEBadgeTypeTi14FinalsDay3 = 24,
+    KEBadgeTypeTi14FinalsDay4 = 25,
+    KEBadgeTypeTi14Special = 26,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3236,6 +3244,8 @@ pub enum EEvent {
     EventIdFrostivus2023 = 48,
     EventIdInternational2024 = 49,
     EventIdFrostivus2024 = 50,
+    EventIdInternational2025 = 52,
+    EventIdFall2025 = 53,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3651,7 +3661,7 @@ pub enum FantasyScoring {
     FirstBlood = 10,
     Stuns = 11,
     SmokesUsed = 12,
-    NeutralTokensFound = 13,
+    Madstone = 13,
     WatchersTaken = 14,
     LotusesGained = 15,
     TormentorKills = 16,
@@ -3710,7 +3720,7 @@ pub enum MatchType {
     NewPlayerPool = 14,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct VersusSceneChatWheel {
     #[prost(uint32, optional, tag = "1", default = "4294967295")]
     pub chat_message_id: ::core::option::Option<u32>,
@@ -3761,7 +3771,7 @@ pub mod cdota_response_query_serialized {
 }
 
 pub mod cdota_save_game {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct Player {
         #[prost(enumeration = "super::DotaGcTeam", optional, tag = "1", default = "GoodGuys")]
         pub team: ::core::option::Option<i32>,
@@ -3797,7 +3807,7 @@ pub mod cdota_save_game {
 }
 
 pub mod cdota_user_msg_all_star_event {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct PlayerScore {
         #[prost(int32, optional, tag = "1", default = "-1")]
         pub player_id: ::core::option::Option<i32>,
@@ -3807,7 +3817,7 @@ pub mod cdota_user_msg_all_star_event {
 }
 
 pub mod cdota_user_msg_courier_killed_alert {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct LostItem {
         #[prost(int32, optional, tag = "1", default = "-1")]
         pub item_ability_id: ::core::option::Option<i32>,
@@ -3817,7 +3827,7 @@ pub mod cdota_user_msg_courier_killed_alert {
 }
 
 pub mod cdota_user_msg_guild_challenge_progress {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct PlayerProgress {
         #[prost(int32, optional, tag = "1", default = "-1")]
         pub player_id: ::core::option::Option<i32>,
@@ -3856,7 +3866,7 @@ pub mod cdota_user_msg_mini_kill_cam_info {
         pub attacker_name: ::core::option::Option<::prost::alloc::string::String>,
     }
     pub mod attacker {
-        #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+        #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
         pub struct Ability {
             #[prost(int32, optional, tag = "1", default = "-1")]
             pub ability_id: ::core::option::Option<i32>,
@@ -3867,7 +3877,7 @@ pub mod cdota_user_msg_mini_kill_cam_info {
 }
 
 pub mod cdota_user_msg_pause_minigame_data {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct DataBit {
         #[prost(uint32, optional, tag = "1")]
         pub index: ::core::option::Option<u32>,
@@ -3879,7 +3889,7 @@ pub mod cdota_user_msg_pause_minigame_data {
 }
 
 pub mod cdota_user_msg_stats_hero_position_info {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct PositionPair {
         #[prost(enumeration = "super::DotaPositionCategory", optional, tag = "1", default = "DotaPositionNone")]
         pub position_category: ::core::option::Option<i32>,
@@ -3889,7 +3899,7 @@ pub mod cdota_user_msg_stats_hero_position_info {
 }
 
 pub mod cdota_user_msg_stats_match_details {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct CDotaUserMsgStatsFightTeamDetails {
         #[prost(int32, repeated, packed = "false", tag = "1")]
         pub participants: ::prost::alloc::vec::Vec<i32>,
@@ -3914,7 +3924,7 @@ pub mod cdota_user_msg_stats_match_details {
 }
 
 pub mod cdota_user_msg_stats_team_minute_details {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct LocationPerformance {
         #[prost(uint32, optional, tag = "1")]
         pub location_category: ::core::option::Option<u32>,
@@ -3970,12 +3980,12 @@ pub mod cdota_user_msg_unit_event {
         #[prost(int32, optional, tag = "6")]
         pub sequence_variant: ::core::option::Option<i32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct RemoveGesture {
         #[prost(int32, optional, tag = "1")]
         pub activity: ::core::option::Option<i32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct BloodImpact {
         #[prost(int32, optional, tag = "1")]
         pub scale: ::core::option::Option<i32>,
@@ -3984,7 +3994,7 @@ pub mod cdota_user_msg_unit_event {
         #[prost(int32, optional, tag = "3")]
         pub y_normal: ::core::option::Option<i32>,
     }
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct FadeGesture {
         #[prost(int32, optional, tag = "1")]
         pub activity: ::core::option::Option<i32>,
@@ -3992,7 +4002,7 @@ pub mod cdota_user_msg_unit_event {
 }
 
 pub mod versus_scene_play_activity {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct ActivityInfo {
         #[prost(string, optional, tag = "1")]
         pub activity: ::core::option::Option<::prost::alloc::string::String>,

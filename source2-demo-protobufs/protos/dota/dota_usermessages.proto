@@ -363,6 +363,7 @@ enum DOTA_OVERHEAD_ALERT {
 	OVERHEAD_ALERT_SHARD = 23;
 	OVERHEAD_ALERT_DEADLY_BLOW = 24;
 	OVERHEAD_ALERT_FORCE_MISS = 25;
+	OVERHEAD_ALERT_AEGIS = 26;
 }
 
 enum DOTA_ROSHAN_PHASE {
@@ -1478,6 +1479,7 @@ message CDOTAUserMsg_FoundNeutralItem {
 	optional uint32 tier_item_count = 4;
 	optional int32 enhancement_ability_id = 5 [default = -1];
 	optional int32 enhancement_level = 6;
+	optional int32 trinket_level = 7;
 }
 
 message CDOTAUserMsg_OutpostCaptured {

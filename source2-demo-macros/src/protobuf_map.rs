@@ -80,6 +80,8 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CCitadelUserMsgSeasonalAchievementUnlocked" => quote! { CitadelUserMessageIds::KEUserMsgSeasonalAchievementUnlocked },
         "CCitadelUserMsgMusicQueue" => quote! { CitadelUserMessageIds::KEUserMsgMusicQueue },
         "CCitadelUserMsgAg2ParamTrigger" => quote! { CitadelUserMessageIds::KEUserMsgAg2ParamTrigger },
+        "CCitadelUserMessageItemPurchaseNotification" => quote! { CitadelUserMessageIds::KEUserMsgItemPurchaseNotification },
+        "CCitadelUserMsgEntityPortalled" => quote! { CitadelUserMessageIds::KEUserMsgEntityPortalled },
         // "CCitadelUserMsgAbilityFailed" => quote! { CitadelUserMessageIds::KEUserMsgAbilityFailed },
 
         // ECitadelGameEvents
@@ -347,6 +349,11 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         // "CUserMessageDllStatusResponse" => quote! { EBaseUserMessages::UmDllStatusResponse },
 
         // EBaseGameEvents
+        "CMsgVDebugGameSessionIDEvent" => quote! { EBaseGameEvents::GeVDebugGameSessionIdEvent },
+        "CMsgPlaceDecalEvent" => quote! { EBaseGameEvents::GePlaceDecalEvent },
+        "CMsgClearWorldDecalsEvent" => quote! { EBaseGameEvents::GeClearWorldDecalsEvent },
+        "CMsgClearEntityDecalsEvent" => quote! { EBaseGameEvents::GeClearEntityDecalsEvent },
+        "CMsgClearDecalsForEntityEvent" => quote! { EBaseGameEvents::GeClearDecalsForEntityEvent },
         "CMsgSource1LegacyGameEventList" => quote! { EBaseGameEvents::GeSource1LegacyGameEventList },
         "CMsgSource1LegacyListenEvents" => quote! { EBaseGameEvents::GeSource1LegacyListenEvents },
         "CMsgSource1LegacyGameEvent" => quote! { EBaseGameEvents::GeSource1LegacyGameEvent },

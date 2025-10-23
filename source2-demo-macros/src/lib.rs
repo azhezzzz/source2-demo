@@ -5,6 +5,7 @@ use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, FnArg, ItemImpl, Type};
 
+#[allow(unused_mut)]
 #[proc_macro_attribute]
 pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemImpl);

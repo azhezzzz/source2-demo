@@ -48,7 +48,7 @@ impl DemoCommands for Parser<'_> {
             let serializer_name = fs.symbols[s.serializer_name_sym() as usize].clone();
             let mut serializer = Serializer::default();
 
-            for i in s.fields_index.iter().map(|x| *x as usize) {
+            for i in s.fields_index.iter().map(|&x| x as usize) {
                 let current_field = &fs.fields[i];
                 let field_serializer_name = resolve(current_field.field_serializer_name_sym);
 
@@ -75,10 +75,12 @@ impl DemoCommands for Parser<'_> {
                         high_value: current_field.high_value(),
                     };
 
-                    let model = if field_type.pointer {
-                        FieldModel::Pointer(current_field_serializer.unwrap())
-                    } else if current_field_serializer.is_some() {
-                        FieldModel::Vector(current_field_serializer.unwrap())
+                    let model = if let Some(ser) = current_field_serializer {
+                        if field_type.pointer {
+                            FieldModel::Pointer(ser)
+                        } else {
+                            FieldModel::Vector(ser)
+                        }
                     } else if [
                         "CUtlVector",
                         "CNetworkUtlVectorBase",
@@ -90,19 +92,19 @@ impl DemoCommands for Parser<'_> {
                             field_type.generic.as_ref().unwrap(),
                             properties,
                         ))
-                    } else if field_type.count.is_some_and(|x| x > 0)
-                        && field_type.base.as_ref() != "char"
-                    {
+                    } else if field_type.count > 0 && field_type.base.as_ref() != "char" {
                         FieldModel::Array
                     } else {
                         FieldModel::Value
                     };
-                    
+
                     let decoder = match model {
                         FieldModel::Value | FieldModel::Array => {
                             FieldDecoder::from_field(&field_type, properties)
                         }
-                        FieldModel::Vector(_) | FieldModel::ArrayVector(_) => FieldDecoder::Unsigned32,
+                        FieldModel::Vector(_) | FieldModel::ArrayVector(_) => {
+                            FieldDecoder::Unsigned32
+                        }
                         FieldModel::Pointer(_) => FieldDecoder::Boolean,
                     };
 

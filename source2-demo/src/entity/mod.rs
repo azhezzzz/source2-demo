@@ -65,7 +65,7 @@ impl Entity {
         &self.class
     }
 
-    /// Returns [`FieldValue`] for given property name. You can also use
+    /// Returns [`FieldValue`] for a given property name. You can also use
     /// [`property!`] and [`try_property!`] macros.
     ///
     /// # Examples

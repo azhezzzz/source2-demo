@@ -33,8 +33,7 @@ impl MessageReader for Reader<'_> {
         let tick = self.read_var_u32();
         let size = self.read_var_u32();
 
-        let msg_type =
-            EDemoCommands::try_from(cmd & !(EDemoCommands::DemIsCompressed as i32)).unwrap();
+        let msg_type = EDemoCommands::try_from(cmd & !(EDemoCommands::DemIsCompressed as i32))?;
         let msg_compressed = cmd & EDemoCommands::DemIsCompressed as i32 != 0;
 
         let buf = if msg_compressed {
@@ -70,7 +69,7 @@ impl MessageReader for Reader<'_> {
         let mut temp_reader = Reader::new(self.buf);
         temp_reader.reset_to(16);
         while let Some(message) = temp_reader.read_next_message()? {
-            if EDemoCommands::try_from(message.msg_type) != Ok(EDemoCommands::DemPacket) {
+            if message.msg_type != EDemoCommands::DemPacket {
                 continue;
             }
 
@@ -81,9 +80,7 @@ impl MessageReader for Reader<'_> {
                 let size = packet_reader.read_var_u32();
                 let packet_buf = packet_reader.read_bytes(size);
 
-                if CitadelUserMessageIds::try_from(msg_type)
-                    == Ok(CitadelUserMessageIds::KEUserMsgPostMatchDetails)
-                {
+                if msg_type == CitadelUserMessageIds::KEUserMsgPostMatchDetails as i32 {
                     return Ok(CMsgMatchMetaDataContents::decode(
                         CCitadelUserMsgPostMatchDetails::decode(packet_buf.as_slice())?
                             .match_details(),

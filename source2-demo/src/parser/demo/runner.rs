@@ -7,7 +7,7 @@ use std::cmp::min;
 use std::mem;
 
 pub trait DemoRunner {
-    /// Moves to the end of replay. Last packet is [`CDemoFileInfo`].
+    /// Moves to the end of replay. The last packet is [`CDemoFileInfo`].
     fn run_to_end(&mut self) -> Result<(), ParserError>;
 
     /// Moves to target tick.

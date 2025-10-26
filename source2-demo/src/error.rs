@@ -5,6 +5,9 @@ pub enum ParserError {
     ProtobufDecode(#[from] crate::proto::prost::DecodeError),
 
     #[error(transparent)]
+    UnknownEnumValue(#[from] crate::proto::prost::UnknownEnumValue),
+
+    #[error(transparent)]
     SnapDecompress(#[from] snap::Error),
 
     #[error(transparent)]

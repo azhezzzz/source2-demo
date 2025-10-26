@@ -34,7 +34,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    /// Creates new instance of parser and performs validation of replay file.
+    /// Creates a new instance of parser and performs validation of a replay file.
     pub fn new(replay: &'a [u8]) -> Result<Self, ParserError> {
         let mut reader = Reader::new(replay);
 
@@ -73,7 +73,7 @@ impl<'a> Parser<'a> {
         &self.replay_info
     }
 
-    /// Registers new observer and returns `Rc<RefCell<T>>` of it.
+    /// Registers a new observer and returns `Rc<RefCell<T>>` of it.
     /// Observer struct must implement Observer and Default traits.
     pub fn register_observer<T>(&mut self) -> Rc<RefCell<T>>
     where

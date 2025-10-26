@@ -104,12 +104,7 @@ impl SvcMsg for Parser<'_> {
         string_table: CSvcMsgUpdateStringTable,
     ) -> Result<(), ParserError> {
         let modified = {
-            let table = self
-                .context
-                .string_tables
-                .tables
-                .get_mut(string_table.table_id() as usize)
-                .unwrap();
+            let table = &mut self.context.string_tables.tables[string_table.table_id() as usize];
 
             table.parse(
                 &mut self.context.baselines,
@@ -141,15 +136,16 @@ impl SvcMsg for Parser<'_> {
         for _ in 0..packet_entities.updated_entries() {
             index = index.wrapping_add((reader.read_ubit_var() + 1) as usize);
 
-            let cmd = reader.read_bits(2);
+            let cmd = reader.read_bits_no_refill(2);
             if cmd == 1 {
                 continue;
             }
 
             match EntityEvents::from_cmd(cmd) {
                 EntityEvents::Created => {
-                    let class_id = reader.read_bits(self.context.classes.class_id_size) as i32;
-                    let serial = reader.read_bits(17);
+                    let class_id =
+                        reader.read_bits_no_refill(self.context.classes.class_id_size) as i32;
+                    let serial = reader.read_bits_no_refill(17);
                     let _ = reader.read_var_u32();
 
                     let class = self.context.classes.get_by_id_rc(class_id as usize).clone();
@@ -177,7 +173,7 @@ impl SvcMsg for Parser<'_> {
                         entity_baseline,
                     ));
 
-                    let entity = self.context.entities.entities_vec[index].as_mut().unwrap();
+                    let entity = unsafe { self.context.entities.entities_vec[index].as_mut().unwrap_unchecked() };
 
                     self.field_reader.read_fields(
                         &mut reader,
@@ -187,11 +183,11 @@ impl SvcMsg for Parser<'_> {
 
                     try_observers!(
                         self,
-                        on_entity(
-                            &self.context,
-                            EntityEvents::Created,
-                            self.context.entities.entities_vec[index].as_ref().unwrap()
-                        )
+                        on_entity(&self.context, EntityEvents::Created, unsafe {
+                            self.context.entities.entities_vec[index]
+                                .as_ref()
+                                .unwrap_unchecked()
+                        })
                     )?;
                 }
                 EntityEvents::Updated => {
@@ -205,20 +201,22 @@ impl SvcMsg for Parser<'_> {
 
                     try_observers!(
                         self,
-                        on_entity(
-                            &self.context,
-                            EntityEvents::Updated,
-                            self.context.entities.entities_vec[index].as_ref().unwrap()
-                        )
+                        on_entity(&self.context, EntityEvents::Updated, unsafe {
+                            self.context.entities.entities_vec[index]
+                                .as_ref()
+                                .unwrap_unchecked()
+                        })
                     )?;
                 }
                 EntityEvents::Deleted => {
-                    if let Some(entity) = self.context.entities.entities_vec[index].as_ref() {
-                        try_observers!(
-                            self,
-                            on_entity(&self.context, EntityEvents::Deleted, entity)
-                        )?;
-                    }
+                    try_observers!(
+                        self,
+                        on_entity(&self.context, EntityEvents::Deleted, unsafe {
+                            self.context.entities.entities_vec[index]
+                                .as_ref()
+                                .unwrap_unchecked()
+                        })
+                    )?;
                     self.context.entities.entities_vec[index] = None;
                 }
             }

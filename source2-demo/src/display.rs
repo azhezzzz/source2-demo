@@ -189,8 +189,8 @@ impl Display for FieldType {
         if self.pointer {
             x += "*";
         }
-        if let Some(c) = self.count {
-            x = x + "[" + &c.to_string() + "]";
+        if self.count > 0 {
+            x = x + "[" + &self.count.to_string() + "]";
         }
         write!(f, "{}", x)
     }

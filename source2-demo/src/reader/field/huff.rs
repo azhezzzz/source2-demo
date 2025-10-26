@@ -22,26 +22,27 @@ impl Default for HTree {
             .map(|(_, weight)| weight)
             .iter()
             .enumerate()
-            .map(|(v, w)| HTree::Leaf {
+            .map(|(v, &w)| HTree::Leaf {
                 value: v as i32,
-                weight: if *w == 0 { 1 } else { *w },
+                weight: if w == 0 { 1 } else { w },
             })
             .collect::<BinaryHeap<HTree>>();
 
         let mut n = 40;
 
-        while trees.len() > 1 {
-            let a = trees.pop().unwrap();
-            let b = trees.pop().unwrap();
-
+        while let (Some(a), Some(b)) = (trees.pop(), trees.pop()) {
             trees.push(HTree::Node {
                 weight: a.weight() + b.weight(),
                 value: n,
-                left: Box::new(a),
-                right: Box::new(b),
+                left: a.into(),
+                right: b.into(),
             });
 
             n += 1;
+
+            if trees.len() == 1 {
+                break;
+            }
         }
 
         trees.pop().unwrap()
@@ -50,8 +51,8 @@ impl Default for HTree {
 
 impl Ord for HTree {
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.weight().cmp(&other.weight()) {
-            Ordering::Equal => self.value().cmp(&other.value()),
+        match self.weight().cmp(other.weight()) {
+            Ordering::Equal => self.value().cmp(other.value()),
             ord => ord.reverse(),
         }
     }
@@ -65,16 +66,16 @@ impl PartialOrd for HTree {
 
 impl HTree {
     #[inline]
-    pub fn weight(&self) -> i32 {
+    pub fn weight(&self) -> &i32 {
         match self {
-            HTree::Leaf { weight, .. } | HTree::Node { weight, .. } => *weight,
+            HTree::Leaf { weight, .. } | HTree::Node { weight, .. } => weight,
         }
     }
 
     #[inline]
-    pub fn value(&self) -> i32 {
+    pub fn value(&self) -> &i32 {
         match self {
-            HTree::Leaf { value, .. } | HTree::Node { value, .. } => *value,
+            HTree::Leaf { value, .. } | HTree::Node { value, .. } => value,
         }
     }
 

@@ -96,14 +96,17 @@ impl BitsReader for Reader<'_> {
     fn read_var_u32(&mut self) -> u32 {
         let mut x: u32 = 0;
         let mut y: u32 = 0;
-        self.refill();
-        loop {
-            let byte = self.read_bits_no_refill(8);
+        let mut byte: u8;
 
-            x |= (byte & 0x7F) << y;
+        self.refill();
+
+        loop {
+            byte = self.read_bits_no_refill(8) as u8;
+
+            x |= ((byte & 0x7F) as u32) << y;
             y += 7;
 
-            if (byte & 0x80) == 0 || y == 35 {
+            if (byte & 0x80) == 0 {
                 return x;
             }
         }
@@ -113,9 +116,13 @@ impl BitsReader for Reader<'_> {
     fn read_var_u64(&mut self) -> u64 {
         let mut x: u64 = 0;
         let mut y: u8 = 0;
-        self.refill();
+        let mut byte: u8;
         loop {
-            let byte = self.read_bits_no_refill(8);
+            if self.le_reader.lookahead_bits() < 8 {
+                self.refill();
+            }
+
+            byte = self.read_bits_no_refill(8) as u8;
 
             x |= (byte as u64 & 0x7F) << y;
             y += 7;
@@ -123,20 +130,16 @@ impl BitsReader for Reader<'_> {
             if (byte & 0x80) == 0 {
                 return x;
             }
-
-            if y == 49 {
-                self.refill();
-            }
         }
     }
 
     #[inline]
     fn read_var_i32(&mut self) -> i32 {
-        let ux: u32 = self.read_var_u32();
+        let ux = self.read_var_u32() as i32;
         if ux & 1 != 0 {
-            return !((ux >> 1) as i32);
+            return !(ux >> 1);
         }
-        (ux >> 1) as i32
+        ux >> 1
     }
 
     #[inline]
@@ -211,13 +214,23 @@ impl BitsReader for Reader<'_> {
     #[inline]
     fn read_string(&mut self) -> String {
         let mut i = 0;
+        let mut byte: u8;
+        self.refill();
         loop {
-            let b = self.read_bits(8) as u8;
-            if b == 0 {
-                return String::from_utf8_lossy(&self.string_buf[..i]).into();
+            byte = self.read_bits_no_refill(8) as u8;
+
+            if byte == 0 {
+                unsafe {
+                    return String::from_utf8_unchecked(self.string_buf[..i].to_vec());
+                }
             }
-            self.string_buf[i] = b;
+
+            self.string_buf[i] = byte;
             i += 1;
+
+            if self.le_reader.lookahead_bits() < 8 {
+                self.refill();
+            }
         }
     }
 

@@ -3,6 +3,7 @@ use crate::entity::*;
 use crate::event::*;
 use crate::string_table::*;
 use hashbrown::HashMap;
+use source2_demo_protobufs::CDemoFileInfo;
 use std::rc::Rc;
 
 /// Current replay state.
@@ -17,6 +18,7 @@ pub struct Context {
     pub(crate) net_tick: u32,
 
     pub(crate) game_build: u32,
+    pub(crate) replay_info: CDemoFileInfo,
 
     pub(crate) baselines: BaselineContainer,
     pub(crate) serializers: HashMap<Box<str>, Rc<Serializer>>,
@@ -34,9 +36,19 @@ impl Default for Context {
             previous_tick: u32::MAX,
             net_tick: u32::MAX,
             game_build: 0,
+            replay_info: CDemoFileInfo::default(),
             baselines: BaselineContainer::default(),
             serializers: HashMap::default(),
             last_full_packet_tick: u32::MAX,
+        }
+    }
+}
+
+impl Context {
+    pub fn new(replay_info: CDemoFileInfo) -> Self {
+        Context {
+            replay_info,
+            ..Default::default()
         }
     }
 }
@@ -68,5 +80,9 @@ impl Context {
 
     pub fn game_build(&self) -> u32 {
         self.game_build
+    }
+
+    pub fn replay_info(&self) -> &CDemoFileInfo {
+        &self.replay_info
     }
 }

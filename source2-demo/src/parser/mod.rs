@@ -20,6 +20,7 @@ use std::collections::VecDeque;
 pub struct Parser<'a> {
     pub(crate) reader: Reader<'a>,
     pub(crate) field_reader: FieldReader,
+
     pub(crate) observers: Vec<Rc<RefCell<dyn Observer + 'a>>>,
 
     #[cfg(feature = "dota")]
@@ -50,6 +51,7 @@ impl<'a> Parser<'a> {
         Ok(Parser {
             reader,
             field_reader: FieldReader::default(),
+
             observers: Vec::default(),
 
             #[cfg(feature = "dota")]
@@ -58,6 +60,8 @@ impl<'a> Parser<'a> {
             prologue_completed: false,
             skip_deltas: false,
 
+            context: Context::new(replay_info.clone()),
+            
             replay_info,
             last_tick,
 

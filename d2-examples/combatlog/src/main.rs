@@ -5,9 +5,10 @@ use source2_demo::proto::DotaCombatlogTypes;
 struct CombatLog;
 
 #[observer]
+#[uses_combat_log]
 impl CombatLog {
     #[on_combat_log]
-    fn handle_cle(&mut self, _ctx: &Context, combat_log: &CombatLogEntry) -> ObserverResult {
+    fn handle_cle(&mut self, combat_log: &CombatLogEntry) -> ObserverResult {
         let time = combat_log.timestamp()?;
         match combat_log.r#type() {
             DotaCombatlogTypes::DotaCombatlogDamage => {
@@ -43,7 +44,7 @@ impl CombatLog {
                     time,
                     combat_log.target_name()?,
                     combat_log.inflictor_name()?,
-                    combat_log.attacker_name()?
+                    combat_log.attacker_name().unwrap_or("UNKNOWN")
                 );
             }
             DotaCombatlogTypes::DotaCombatlogModifierRemove => {

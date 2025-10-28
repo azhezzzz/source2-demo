@@ -73,7 +73,11 @@ impl Default for Wards {
 }
 
 #[allow(unused_variables)]
-impl Observer for Wards {
+#[observer]
+#[uses_entities]
+#[uses_combat_log]
+impl Wards {
+    #[on_tick_end]
     fn on_tick_end(&mut self, ctx: &Context) -> ObserverResult {
         while let Some(ev) = self.pending_events.pop_front() {
             let old_state = *self.current_life_state.get(&ev.entity_idx).unwrap_or(&2);
@@ -117,6 +121,7 @@ impl Observer for Wards {
         Ok(())
     }
 
+    #[on_entity]
     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
         if event == EntityEvents::Created
             && WardClass::from_class_name(entity.class().name()).is_some()
@@ -143,6 +148,7 @@ impl Observer for Wards {
         Ok(())
     }
 
+    #[on_combat_log]
     fn on_combat_log(&mut self, ctx: &Context, combat_log: &CombatLogEntry) -> ObserverResult {
         if combat_log.r#type() == DotaCombatlogTypes::DotaCombatlogDeath
             && combat_log.target_name().is_ok()
@@ -167,6 +173,7 @@ impl Observer for Wards {
         Ok(())
     }
 
+    #[on_stop]
     fn on_stop(&mut self, ctx: &Context) -> ObserverResult {
         self.current_life_state.iter().for_each(|state| {
             self.pending_events.push_back(PendingEvent {

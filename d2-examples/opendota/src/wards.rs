@@ -74,6 +74,8 @@ impl Default for Wards {
 
 #[allow(unused_variables)]
 #[observer]
+#[uses_entities]
+#[uses_combat_log]
 impl Wards {
     #[on_tick_end]
     fn on_tick_end(&mut self, ctx: &Context) -> ObserverResult {

@@ -36,6 +36,7 @@ impl GameTime {
 }
 
 #[observer]
+#[uses_entities]
 impl GameTime {
     #[on_tick_start]
     fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {

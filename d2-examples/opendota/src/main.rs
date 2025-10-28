@@ -237,6 +237,8 @@ impl App {
 }
 
 #[observer]
+#[uses_entities]
+#[uses_combat_log]
 impl App {
     #[on_message]
     fn handle_demo_cmd(&mut self, ctx: &Context, file_info: CDemoFileInfo) -> ObserverResult {
@@ -542,7 +544,7 @@ impl App {
     }
 
     #[on_entity("CDOTAWearableItem")]
-    fn on_entity(&mut self, _ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+    fn on_entity(&mut self, event: EntityEvents, entity: &Entity) -> ObserverResult {
         if event == EntityEvents::Created {
             let account_id: u64 = property!(entity, "m_iAccountID");
             let item_definition_idx: i32 = property!(entity, "m_iItemDefinitionIndex");
@@ -556,7 +558,7 @@ impl App {
     }
 
     #[on_combat_log]
-    fn handle_cle(&mut self, _ctx: &Context, cle: &CombatLogEntry) -> ObserverResult {
+    fn handle_cle(&mut self, cle: &CombatLogEntry) -> ObserverResult {
         let time = cle.timestamp()?;
         let mut entry = Entry::new(time);
         entry.r#type = format!("{:?}", cle.r#type()).into();

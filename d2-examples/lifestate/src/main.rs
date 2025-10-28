@@ -17,6 +17,7 @@ impl Default for LifeState {
 }
 
 #[observer]
+#[uses_entities]
 impl LifeState {
     #[on_entity]
     fn handle_entities(&mut self, ctx: &Context, entity: &Entity) -> ObserverResult {

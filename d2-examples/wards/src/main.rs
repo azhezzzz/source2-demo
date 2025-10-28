@@ -26,7 +26,8 @@ impl WardsObserver for WardEvents {
     }
 }
 
-impl Observer for WardEvents {}
+#[observer]
+impl WardEvents {}
 
 fn main() -> anyhow::Result<()> {
     let args = std::env::args().collect::<Vec<_>>();

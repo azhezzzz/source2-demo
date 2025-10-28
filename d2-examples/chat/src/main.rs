@@ -6,20 +6,25 @@ struct Chat;
 
 #[observer]
 impl Chat {
+    fn get_player_name(&self, ctx: &Context, player_id: u32) -> Option<String> {
+        let gi = ctx.replay_info().game_info.as_ref()?;
+        let dota = gi.dota.as_ref()?;
+        let pi = dota.player_info.get(player_id as usize)?;
+        pi.player_name.clone()
+    }
+
     #[on_message]
     fn handle_chat_msg(
         &mut self,
         ctx: &Context,
         chat_msg: CDotaUserMsgChatMessage,
     ) -> ObserverResult {
-        if let Ok(pr) = ctx.entities().get_by_class_name("CDOTA_PlayerResource") {
-            let name: String = property!(
-                pr,
-                "m_vecPlayerData.{:04}.m_iszPlayerName",
-                chat_msg.source_player_id()
-            );
-            println!("{}: {}", name, chat_msg.message_text());
-        }
+        let name = self
+            .get_player_name(ctx, chat_msg.source_player_id() as u32)
+            .unwrap_or("<unknown>".to_string());
+
+        println!("{}: {}", name, chat_msg.message_text());
+
         Ok(())
     }
 }

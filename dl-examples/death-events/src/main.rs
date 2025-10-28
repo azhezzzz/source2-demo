@@ -4,6 +4,9 @@ use source2_demo::prelude::*;
 struct DeathEvents;
 
 #[observer]
+#[uses_entities]
+#[uses_game_events]
+#[uses_string_tables]
 impl DeathEvents {
     fn get_hero_name(
         &self,

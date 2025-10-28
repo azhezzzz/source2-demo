@@ -5,6 +5,7 @@ use source2_demo::proto::*;
 struct Chat;
 
 #[observer]
+#[uses_string_tables]
 impl Chat {
     #[on_message]
     fn on_chat_message(&mut self, ctx: &Context, msg: CCitadelUserMsgChatMsg) -> ObserverResult {

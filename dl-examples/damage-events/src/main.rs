@@ -5,6 +5,8 @@ use source2_demo::proto::*;
 struct DamageEvents;
 
 #[observer]
+#[uses_entities]
+#[uses_string_tables]
 impl DamageEvents {
     fn get_entity_name(
         &self,

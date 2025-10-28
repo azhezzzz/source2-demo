@@ -8,11 +8,52 @@ use crate::event::CombatLogEntry;
 /// Result type for observers ([`anyhow::Result`])
 pub type ObserverResult = anyhow::Result<()>;
 
+
+bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    pub struct Interests: u64 {
+        const DEMO       = 1 << 0;  // EDemoCommands
+        const NET        = 1 << 1;  // NetMessages
+        const SVC        = 1 << 2;  // SvcMessages
+
+        const BASE_UM    = 1 << 3;  // EBaseUserMessages
+        const BASE_GE    = 1 << 4;  // EBaseGameEvents and game events
+
+        const TICK_START = 1 << 5;
+        const TICK_END   = 1 << 6;
+
+        const ENABLE_ENTITY     = 1 << 7;
+        const TRACK_ENTITY     = 1 << 8;
+        const ENABLE_STRINGTAB  = 1 << 9;
+        const TRACK_STRINGTAB  = 1 << 10;
+
+        const STOP       = 1 << 11;
+
+        #[cfg(feature = "dota")]
+        const DOTA_UM    = 1 << 12; // EDotaUserMessages
+
+        #[cfg(feature = "dota")]
+        const COMBAT_LOG = 1 << 13; // Combat Log
+
+
+        #[cfg(feature = "deadlock")]
+        const CITA_UM    = 1 << 14; // CitadelUserMessageIds
+
+        #[cfg(feature = "deadlock")]
+        const CITA_GE    = 1 << 15; // ECitadelGameEvents
+    }
+}
+
+
 /// A trait defining methods for handling game event and protobuf messages. Can
 /// be attached to the [` crate::Parser `] instance with [`crate::Parser::register_observer`]
 /// method.
 #[allow(unused_variables)]
 pub trait Observer {
+    fn interests(&self) -> Interests {
+        Interests::empty()
+    }
+
     #[cold]
     #[inline(never)]
     fn on_demo_command(

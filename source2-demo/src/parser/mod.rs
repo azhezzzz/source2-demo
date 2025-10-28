@@ -22,6 +22,8 @@ pub struct Parser<'a> {
     pub(crate) field_reader: FieldReader,
 
     pub(crate) observers: Vec<Rc<RefCell<dyn Observer + 'a>>>,
+    pub(crate) observer_masks: Vec<Interests>,
+    pub(crate) global_mask: Interests,
 
     #[cfg(feature = "dota")]
     pub(crate) combat_log: VecDeque<CMsgDotaCombatLogEntry>,
@@ -53,6 +55,8 @@ impl<'a> Parser<'a> {
             field_reader: FieldReader::default(),
 
             observers: Vec::default(),
+            observer_masks: Vec::default(),
+            global_mask: Interests::empty(),
 
             #[cfg(feature = "dota")]
             combat_log: VecDeque::default(),
@@ -64,8 +68,6 @@ impl<'a> Parser<'a> {
             
             replay_info,
             last_tick,
-
-            context: Context::default(),
         })
     }
 
@@ -84,8 +86,16 @@ impl<'a> Parser<'a> {
         T: Observer + Default + 'a,
     {
         let rc = Rc::new(RefCell::new(T::default()));
+        let mask = rc.borrow().interests();
+        self.global_mask |= mask;
+        self.observer_masks.push(mask);
         self.observers.push(rc.clone());
         rc.clone()
+    }
+
+    #[inline]
+    fn anyone_interested(&self, flag: Interests) -> bool {
+        self.global_mask.intersects(flag)
     }
 
     pub(crate) fn prologue(&mut self) -> Result<(), ParserError> {
@@ -137,7 +147,7 @@ impl<'a> Parser<'a> {
             _ => {}
         };
 
-        try_observers!(self, on_demo_command(&self.context, msg_type, msg))?;
+        try_observers!(self, DEMO, on_demo_command(&self.context, msg_type, msg))?;
         Ok(())
     }
 

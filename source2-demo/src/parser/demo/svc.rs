@@ -89,6 +89,7 @@ impl SvcMsg for Parser<'_> {
 
         try_observers!(
             self,
+            TRACK_STRINGTAB,
             on_string_table(
                 &self.context,
                 &self.context.string_tables.tables[table_index],
@@ -115,6 +116,7 @@ impl SvcMsg for Parser<'_> {
 
         try_observers!(
             self,
+            TRACK_STRINGTAB,
             on_string_table(
                 &self.context,
                 &self.context.string_tables.tables[string_table.table_id() as usize],
@@ -173,7 +175,11 @@ impl SvcMsg for Parser<'_> {
                         entity_baseline,
                     ));
 
-                    let entity = unsafe { self.context.entities.entities_vec[index].as_mut().unwrap_unchecked() };
+                    let entity = unsafe {
+                        self.context.entities.entities_vec[index]
+                            .as_mut()
+                            .unwrap_unchecked()
+                    };
 
                     self.field_reader.read_fields(
                         &mut reader,
@@ -183,6 +189,7 @@ impl SvcMsg for Parser<'_> {
 
                     try_observers!(
                         self,
+                        TRACK_ENTITY,
                         on_entity(&self.context, EntityEvents::Created, unsafe {
                             self.context.entities.entities_vec[index]
                                 .as_ref()
@@ -201,6 +208,7 @@ impl SvcMsg for Parser<'_> {
 
                     try_observers!(
                         self,
+                        TRACK_ENTITY,
                         on_entity(&self.context, EntityEvents::Updated, unsafe {
                             self.context.entities.entities_vec[index]
                                 .as_ref()
@@ -211,6 +219,7 @@ impl SvcMsg for Parser<'_> {
                 EntityEvents::Deleted => {
                     try_observers!(
                         self,
+                        TRACK_ENTITY,
                         on_entity(&self.context, EntityEvents::Deleted, unsafe {
                             self.context.entities.entities_vec[index]
                                 .as_ref()

@@ -1,15 +1,68 @@
 mod protobuf_map;
 
 use crate::protobuf_map::get_enum_from_struct;
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream};
 use quote::{quote, ToTokens};
-use syn::{parse_macro_input, FnArg, ItemImpl, Type};
+use syn::{parse_macro_input, parse::Parser, punctuated::Punctuated, Ident, ItemImpl, Token, Type, FnArg};
 
 #[allow(unused_mut)]
 #[proc_macro_attribute]
-pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let mut mode_all = false;
+
+    if !attr.is_empty() {
+        let parser = Punctuated::<Ident, Token![,]>::parse_terminated;
+        if let Ok(idents) = parser.parse(attr.clone()) {
+            for id in idents {
+                if id == "manual" { mode_all = false; }
+                if id == "all" { mode_all = true; }
+            }
+        }
+    }
+
     let input = parse_macro_input!(item as ItemImpl);
     let struct_name = &input.self_ty;
+
+    let mut interests = quote!(::source2_demo::Interests::empty());
+    macro_rules! add_flag {
+        ($flag:ident) => {
+            interests = quote!(#interests | ::source2_demo::Interests::$flag);
+        };
+    }
+
+    for a in &input.attrs {
+        if a.path().is_ident("uses_entities") { add_flag!(ENABLE_ENTITY); }
+        if a.path().is_ident("uses_string_tables") { add_flag!(ENABLE_STRINGTAB); }
+        if a.path().is_ident("uses_game_events") { add_flag!(BASE_GE); }
+        #[cfg(feature = "dota")]
+        if a.path().is_ident("uses_combat_log") {
+            add_flag!(ENABLE_STRINGTAB);
+            add_flag!(COMBAT_LOG);
+        }
+    }
+
+    let mut has_demo = false;
+    let mut has_net = false;
+    let mut has_svc = false;
+    let mut has_base_um = false;
+    let mut has_base_ge = false;
+    let mut has_tick_start = false;
+    let mut has_tick_end = false;
+    let mut has_entity = false;
+    let mut has_entity_track = false;
+    let mut has_string_table = false;
+    let mut has_string_table_track = false;
+    let mut has_stop = false;
+
+    #[cfg(feature = "dota")]
+    let mut has_dota_um = false;
+    #[cfg(feature = "dota")]
+    let mut has_combat_log = false;
+
+    #[cfg(feature = "citadel")]
+    let mut has_cita_um = false;
+    #[cfg(feature = "citadel")]
+    let mut has_cita_ge = false;
 
     #[cfg(feature = "dota")]
     let mut on_combat_log_body = quote!();
@@ -36,6 +89,14 @@ pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
     for item in &input.items {
         if let syn::ImplItem::Fn(method) = item {
             for attr in &method.attrs {
+                for a in &method.attrs {
+                    if a.path().is_ident("uses_entities") { add_flag!(ENABLE_ENTITY); }
+                    if a.path().is_ident("uses_string_tables") { add_flag!(ENABLE_STRINGTAB); }
+                    if a.path().is_ident("uses_game_events") { add_flag!(BASE_GE); }
+                    #[cfg(feature = "dota")]
+                    if a.path().is_ident("uses_combat_log") { add_flag!(DOTA_UM); }
+                }
+
                 let method_name = method.sig.ident.clone();
                 let mut args = vec![];
 
@@ -46,13 +107,20 @@ pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
                 if let Some(ident) = attr.path().get_ident() {
                     match ident.to_string().as_str() {
-                        "on_tick_start" => on_tick_start_body.extend(quote! {
+                        "on_tick_start" => {
+                            has_tick_start = true;
+                            on_tick_start_body.extend(quote! {
                             self.#method_name(#(#args),*)?;
-                        }),
-                        "on_tick_end" => on_tick_end_body.extend(quote! {
+                        })
+                        }
+                        "on_tick_end" => {
+                            has_tick_end = true;
+                            on_tick_end_body.extend(quote! {
                             self.#method_name(#(#args),*)?;
-                        }),
+                        })
+                        }
                         "on_stop" => {
+                            has_stop = true;
                             on_stop_body.extend(quote! {
                                 self.#method_name(#(#args),*)?;
                             });
@@ -66,6 +134,7 @@ pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
                             })
                         }
                         "on_entity" => {
+                            has_entity_track = true;
                             let (arg_type, is_ref) = get_arg_type(method, args.len() + 1);
 
                             if arg_type.to_token_stream().to_string() == "EntityEvents" {
@@ -105,6 +174,7 @@ pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
                             });
                         }
                         "on_string_table" => {
+                            has_string_table_track = true;
                             args.push(quote! { table });
                             args.push(quote! { modified });
                             on_string_table_body.extend(if let Ok(table_name) = attr.parse_args::<syn::LitStr>() {
@@ -121,8 +191,9 @@ pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         }
                         "on_message" => {
                             let (arg_type, is_ref) = get_arg_type(method, args.len() + 1);
-
                             let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
+                            let type_string = enum_type.to_token_stream().to_string();
+                            let root = type_string.split("::").collect::<Vec<_>>()[0].trim();
 
                             args.push(if is_ref {
                                 quote! { &message }
@@ -142,7 +213,23 @@ pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
                                 };
                             }
 
-                            match enum_type.to_token_stream().to_string().split("::").collect::<Vec<_>>()[0].trim() {
+                            match root {
+                                "EDemoCommands" => has_demo = true,
+                                "EBaseUserMessages" => has_base_um = true,
+                                "EBaseGameEvents" => has_base_ge = true,
+                                "SvcMessages" => has_svc = true,
+                                "NetMessages" => has_net = true,
+                                #[cfg(feature = "dota")]
+                                "EDotaUserMessages" => has_dota_um = true,
+                                #[cfg(feature = "citadel")]
+                                "CitadelUserMessageIds" => has_cita_um = true,
+                                #[cfg(feature = "citadel")]
+                                "ECitadelGameEvents" => has_cita_ge = true,
+                                _ => {}
+                            }
+
+
+                            match root {
                                 "EDemoCommands" => extend!(on_demo_command_body),
                                 "EBaseUserMessages" => extend!(on_base_user_message_body),
                                 "EBaseGameEvents" => extend!(on_base_game_event_body),
@@ -155,7 +242,7 @@ pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
                                 "CitadelUserMessageIds" => extend!(on_citadel_user_message_body),
                                 #[cfg(feature = "citadel")]
                                 "ECitadelGameEvents" => extend!(on_citadel_game_event_body),
-                                
+
                                 x => unreachable!("{}", x),
                             }
                         }
@@ -316,11 +403,42 @@ pub fn observer(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     });
 
+    macro_rules! add_if { ($cond:expr, $flag:ident) => {
+        if $cond { interests = quote!(#interests | ::source2_demo::Interests::$flag); }
+    }}
+
+    if mode_all {
+        interests = quote!(::source2_demo::Interests::all());
+    }
+
+    add_if!(has_demo,       DEMO);
+    add_if!(has_net,        NET);
+    add_if!(has_svc,        SVC);
+    add_if!(has_base_um,    BASE_UM);
+    add_if!(has_base_ge,    BASE_GE);
+    add_if!(has_tick_start, TICK_START);
+    add_if!(has_tick_end,   TICK_END);
+    add_if!(has_entity,     ENABLE_ENTITY);
+    add_if!(has_entity_track,     TRACK_ENTITY);
+    add_if!(has_string_table,  ENABLE_STRINGTAB);
+    add_if!(has_string_table_track,  TRACK_STRINGTAB);
+    add_if!(has_stop,       STOP);
+
+    #[cfg(feature = "dota")]
+    add_if!(has_dota_um,    DOTA_UM);
+    #[cfg(feature = "dota")]
+    add_if!(has_combat_log, COMBAT_LOG);
+
+    #[cfg(feature = "citadel")]
+    add_if!(has_cita_um,    CITA_UM);
+    #[cfg(feature = "citadel")]
+    add_if!(has_cita_ge,    CITA_GE);
+
     let ret = quote! {
         impl Observer for #struct_name {
+            fn interests(&self) -> ::source2_demo::Interests { #interests }
             #obs_body
         }
-
         #input
     };
 
@@ -533,3 +651,16 @@ pub fn on_stop(_attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn on_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
+
+#[proc_macro_attribute]
+pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+
+#[proc_macro_attribute]
+pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+
+#[proc_macro_attribute]
+pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+
+#[cfg(feature = "dota")]
+#[proc_macro_attribute]
+pub fn uses_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream { item }

@@ -31,7 +31,7 @@ use source2_demo::proto::*;
 struct Chat;
 
 // Mark impl block with observer attribute
-#[observer]
+#[observer(all)]
 impl Chat {
     #[on_message] // Use on_message attribute to mark protobuf message handler
     fn handle_chat_msg(

@@ -1,7 +1,7 @@
 use crate::error::ParserError;
 use crate::parser::demo::svc::SvcMsg;
 use crate::proto::*;
-use crate::Parser;
+use crate::{Interests, Parser};
 use crate::{try_observers, GameEvent, GameEventList};
 
 #[cfg(feature = "dota")]
@@ -57,7 +57,7 @@ impl DemoMessages for Parser<'_> {
         msg_type: EBaseUserMessages,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, on_base_user_message(&self.context, msg_type, msg))?;
+        try_observers!(self, BASE_UM, on_base_user_message(&self.context, msg_type, msg))?;
         Ok(())
     }
 
@@ -66,16 +66,18 @@ impl DemoMessages for Parser<'_> {
         msg_type: EBaseGameEvents,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        if msg_type == EBaseGameEvents::GeSource1LegacyGameEventList {
-            self.context.game_events = GameEventList::new(CSvcMsgGameEventList::decode(msg)?);
-        }
+        if self.anyone_interested(Interests::BASE_GE) {
+            if msg_type == EBaseGameEvents::GeSource1LegacyGameEventList {
+                self.context.game_events = GameEventList::new(CSvcMsgGameEventList::decode(msg)?);
+            }
 
-        if msg_type == EBaseGameEvents::GeSource1LegacyGameEvent {
-            let ge = GameEvent::new(&self.context.game_events, CSvcMsgGameEvent::decode(msg)?);
-            try_observers!(self, on_game_event(&self.context, &ge))?;
-        }
+            if msg_type == EBaseGameEvents::GeSource1LegacyGameEvent {
+                let ge = GameEvent::new(&self.context.game_events, CSvcMsgGameEvent::decode(msg)?);
+                try_observers!(self, BASE_GE, on_game_event(&self.context, &ge))?;
+            }
 
-        try_observers!(self, on_base_game_event(&self.context, msg_type, msg))?;
+            try_observers!(self, BASE_GE, on_base_game_event(&self.context, msg_type, msg))?;
+        }
         Ok(())
     }
 
@@ -83,18 +85,31 @@ impl DemoMessages for Parser<'_> {
         match msg_type {
             SvcMessages::SvcServerInfo => self.server_info(CSvcMsgServerInfo::decode(msg)?)?,
             SvcMessages::SvcCreateStringTable => {
-                self.create_string_table(CSvcMsgCreateStringTable::decode(msg)?)?
+                let msg = CSvcMsgCreateStringTable::decode(msg)?;
+                self.create_string_table(msg)?
             }
             SvcMessages::SvcUpdateStringTable => {
-                self.update_string_table(CSvcMsgUpdateStringTable::decode(msg)?)?
+                if self.anyone_interested(Interests::ENABLE_STRINGTAB) {
+                    let msg = CSvcMsgUpdateStringTable::decode(msg)?;
+                    self.update_string_table(msg)?
+                } else if self.anyone_interested(Interests::ENABLE_ENTITY) {
+                    let msg = CSvcMsgUpdateStringTable::decode(msg)?;
+                    if self.context.string_tables.tables[msg.table_id() as usize].name
+                        == "instancebaseline"
+                    {
+                        self.update_string_table(msg)?
+                    }
+                }
             }
             SvcMessages::SvcPacketEntities => {
-                self.packet_entities(CSvcMsgPacketEntities::decode(msg)?)?
+                if self.anyone_interested(Interests::ENABLE_ENTITY) {
+                    self.packet_entities(CSvcMsgPacketEntities::decode(msg)?)?
+                }
             }
             _ => {}
         }
 
-        try_observers!(self, on_svc_message(&self.context, msg_type, msg))?;
+        try_observers!(self, SVC, on_svc_message(&self.context, msg_type, msg))?;
         Ok(())
     }
 
@@ -103,7 +118,7 @@ impl DemoMessages for Parser<'_> {
             self.context.net_tick = CNetMsgTick::decode(msg)?.tick();
         }
 
-        try_observers!(self, on_net_message(&self.context, msg_type, msg))?;
+        try_observers!(self, NET, on_net_message(&self.context, msg_type, msg))?;
         Ok(())
     }
 
@@ -119,25 +134,27 @@ impl DemoMessages for Parser<'_> {
             return Ok(());
         }
 
-        try_observers!(self, on_tick_start(&self.context))?;
+        try_observers!(self, TICK_START, on_tick_start(&self.context))?;
         Ok(())
     }
 
     fn on_tick_end(&mut self) -> Result<(), ParserError> {
         #[cfg(feature = "dota")]
-        if let Ok(names) = self.context.string_tables.get_by_name("CombatLogNames") {
-            while let Some(log) = self.combat_log.pop_front() {
-                let entry = CombatLogEntry { names, log };
-                try_observers!(self, on_combat_log(&self.context, &entry))?;
+        if self.anyone_interested(Interests::ENABLE_STRINGTAB | Interests::COMBAT_LOG) {
+            if let Ok(names) = self.context.string_tables.get_by_name("CombatLogNames") {
+                while let Some(log) = self.combat_log.pop_front() {
+                    let entry = CombatLogEntry { names, log };
+                    try_observers!(self, COMBAT_LOG, on_combat_log(&self.context, &entry))?;
+                }
             }
         }
 
-        try_observers!(self, on_tick_end(&self.context))?;
+        try_observers!(self, TICK_END, on_tick_end(&self.context))?;
         Ok(())
     }
 
     fn on_stop(&mut self) -> Result<(), ParserError> {
-        try_observers!(self, on_stop(&self.context))?;
+        try_observers!(self, STOP, on_stop(&self.context))?;
         Ok(())
     }
 
@@ -147,12 +164,14 @@ impl DemoMessages for Parser<'_> {
         msg_type: EDotaUserMessages,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        if msg_type == EDotaUserMessages::DotaUmCombatLogDataHltv {
+        if self.anyone_interested(Interests::COMBAT_LOG)
+            && msg_type == EDotaUserMessages::DotaUmCombatLogDataHltv
+        {
             let entry = CMsgDotaCombatLogEntry::decode(msg)?;
             self.combat_log.push_back(entry);
         }
 
-        try_observers!(self, on_dota_user_message(&self.context, msg_type, msg))?;
+        try_observers!(self, DOTA_UM, on_dota_user_message(&self.context, msg_type, msg))?;
         Ok(())
     }
 
@@ -162,7 +181,7 @@ impl DemoMessages for Parser<'_> {
         msg_type: ECitadelGameEvents,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, on_citadel_game_event(&self.context, msg_type, msg))?;
+        try_observers!(self, CITA_GE, on_citadel_game_event(&self.context, msg_type, msg))?;
         Ok(())
     }
 
@@ -172,7 +191,7 @@ impl DemoMessages for Parser<'_> {
         msg_type: CitadelUserMessageIds,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, on_citadel_user_message(&self.context, msg_type, msg))?;
+        try_observers!(self, CITA_UM, on_citadel_user_message(&self.context, msg_type, msg))?;
         Ok(())
     }
 }

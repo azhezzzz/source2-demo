@@ -1,18 +1,21 @@
 #[macro_export]
 macro_rules! try_observers {
-    ($self:ident, $method:ident ( $($arg:expr),* )) => {
-        {
-            use std::rc::Rc;
-            use std::cell::RefCell;
-            use $crate::Observer;
-
-            $self.observers
-                .iter()
-                .try_for_each(|obs: &Rc<RefCell<dyn Observer>>| obs.borrow_mut().$method($($arg),*))
+    ($self:ident, $flag:ident, $method:ident ( $($arg:expr),* )) => {{
+        use $crate::Interests;
+        if !$self.global_mask.intersects(Interests::$flag) {
+            Ok(())
+        } else {
+            ($self.observers.iter().zip($self.observer_masks.iter()))
+                .try_for_each(|(obs, &mask)| {
+                    if mask.intersects(Interests::$flag) {
+                        obs.borrow_mut().$method($($arg),*)
+                    } else {
+                        Ok(())
+                    }
+                })
         }
-    };
+    }};
 }
-
 /// Macro for getting property from [`crate::Entity`].
 ///
 /// # Examples

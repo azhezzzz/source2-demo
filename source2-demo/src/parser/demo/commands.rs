@@ -202,7 +202,7 @@ impl DemoCommands for Parser<'_> {
                 x.items[i].value = Rc::new(item.data().to_vec()).into();
                 if table.table_name() == "instancebaseline" {
                     self.context.baselines.add_baseline(
-                        item.str().parse().unwrap(),
+                        item.str().parse().unwrap_or(-1),
                         x.items[i].value.as_ref().unwrap().clone(),
                     );
                 }

@@ -220,11 +220,11 @@ impl SvcMsg for Parser<'_> {
                     try_observers!(
                         self,
                         TRACK_ENTITY,
-                        on_entity(&self.context, EntityEvents::Deleted, unsafe {
-                            self.context.entities.entities_vec[index]
-                                .as_ref()
-                                .unwrap_unchecked()
-                        })
+                        on_entity(
+                            &self.context,
+                            EntityEvents::Deleted,
+                            self.context.entities.entities_vec[index].as_ref().unwrap()
+                        )
                     )?;
                     self.context.entities.entities_vec[index] = None;
                 }

@@ -117,7 +117,7 @@ impl StringTable {
                 });
 
                 if self.name == "instancebaseline" {
-                    baselines.add_baseline(key.as_ref().unwrap().parse().unwrap(), value.clone());
+                    baselines.add_baseline(key.as_ref().unwrap().parse().unwrap_or(-1), value.clone());
                 }
 
                 value

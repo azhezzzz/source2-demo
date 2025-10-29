@@ -212,6 +212,7 @@ impl Display for FieldDecoder {
             FieldDecoder::Float32(_) => "f32",
             FieldDecoder::QuantizedFloat(_) => "f32",
             FieldDecoder::QAngle(_) => "[f32; 3]",
+            FieldDecoder::CCSGameModeRules => "bool"
         };
         write!(f, "{output}")
     }

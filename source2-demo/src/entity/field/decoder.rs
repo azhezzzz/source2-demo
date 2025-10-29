@@ -16,6 +16,8 @@ pub(crate) enum FieldDecoder {
     Float32(FieldProperties),
     QuantizedFloat(FieldProperties),
     QAngle(FieldProperties),
+
+    CCSGameModeRules
 }
 
 impl FieldDecoder {
@@ -28,7 +30,7 @@ impl FieldDecoder {
 
             "char" | "CUtlString" | "CUtlSymbolLarge" => FieldDecoder::String,
 
-            "Vector" => FieldDecoder::Vector(properties, 3),
+            "Vector" | "VectorWS" => FieldDecoder::Vector(properties, 3),
             "Vector2D" => FieldDecoder::Vector(properties, 2),
             "Vector4D" | "Quaternion" => FieldDecoder::Vector(properties, 4),
 
@@ -133,22 +135,18 @@ impl FieldDecoder {
                     let y = reader.read_bool();
                     let z = reader.read_bool();
                     if x {
-                        reader.refill();
                         v[0] = reader.read_angle(20);
                     }
                     if y {
-                        reader.refill();
                         v[1] = reader.read_angle(20);
                     }
                     if z {
-                        reader.refill();
                         v[2] = reader.read_angle(20);
                     }
 
                     return FieldValue::Vector3D(v);
                 }
-
-                if fp.bit_count != 0 {
+                if fp.bit_count != 0 && fp.bit_count != 32 {
                     let n = fp.bit_count as u32;
                     return FieldValue::Vector3D([
                         reader.read_angle(n),
@@ -157,7 +155,14 @@ impl FieldDecoder {
                     ]);
                 }
 
-                // move to reader
+                if fp.bit_count == 32 {
+                    return FieldValue::Vector3D([
+                        reader.read_f32(),
+                        reader.read_f32(),
+                        reader.read_f32(),
+                    ]);
+                }
+
                 let mut v = [0f32; 3];
                 let x = reader.read_bool();
                 let y = reader.read_bool();
@@ -174,6 +179,13 @@ impl FieldDecoder {
 
                 FieldValue::Vector3D(v)
             }
+
+            FieldDecoder::CCSGameModeRules => FieldValue::Boolean({
+                reader.refill();
+                let x = reader.read_bool();
+                reader.read_ubit_var();
+                x
+            }),
         }
     }
 }

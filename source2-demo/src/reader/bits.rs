@@ -266,7 +266,7 @@ impl BitsReader for Reader<'_> {
 
     #[inline]
     fn read_angle(&mut self, n: u32) -> f32 {
-        (self.read_bits_no_refill(n) as f32) * 360.0 / (1 << n) as f32
+        (self.read_bits(n) as f32) * 360.0 / (1 << n) as f32
     }
 
     #[inline]

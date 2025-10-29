@@ -45,7 +45,7 @@ impl DemoCommands for Parser<'_> {
         let mut field_types: HashMap<Box<str>, Rc<FieldType>> = HashMap::default();
 
         for s in fs.serializers.iter() {
-            let serializer_name = fs.symbols[s.serializer_name_sym() as usize].clone();
+            let ser_name = fs.symbols[s.serializer_name_sym() as usize].clone();
             let mut serializer = Serializer::default();
 
             for i in s.fields_index.iter().map(|&x| x as usize) {
@@ -98,7 +98,7 @@ impl DemoCommands for Parser<'_> {
                         FieldModel::Value
                     };
 
-                    let decoder = match model {
+                    let mut decoder = match model {
                         FieldModel::Value | FieldModel::Array => {
                             FieldDecoder::from_field(&field_type, properties)
                         }
@@ -107,6 +107,10 @@ impl DemoCommands for Parser<'_> {
                         }
                         FieldModel::Pointer(_) => FieldDecoder::Boolean,
                     };
+
+                    if ser_name == "CCSGameModeRules" || var_name.as_ref() == "m_pGameModeRules" {
+                        decoder = FieldDecoder::CCSGameModeRules;
+                    }
 
                     let field = Field {
                         var_name,
@@ -119,7 +123,7 @@ impl DemoCommands for Parser<'_> {
                 }
                 serializer.fields.push(fields[i].clone());
             }
-            serializers.insert(serializer_name.into(), serializer.into());
+            serializers.insert(ser_name.into(), serializer.into());
         }
         Ok(())
     }

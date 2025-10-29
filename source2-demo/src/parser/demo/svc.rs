@@ -159,11 +159,13 @@ impl SvcMsg for Parser<'_> {
                         .entry(class_id)
                         .or_insert_with(|| {
                             let mut state = FieldState::default();
-                            self.field_reader.read_fields(
-                                &mut Reader::new(&self.context.baselines.baselines[&class_id]),
-                                &class.serializer,
-                                &mut state,
-                            );
+                            if let Some(baseline) = self.context.baselines.baselines.get(&class_id) {
+                                self.field_reader.read_fields(
+                                    &mut Reader::new(baseline.as_ref()),
+                                    &class.serializer,
+                                    &mut state,
+                                );
+                            }
                             state
                         })
                         .clone();

@@ -83,7 +83,6 @@ impl BitsReader for Reader<'_> {
 
     #[inline]
     fn read_bool(&mut self) -> bool {
-        // self.refill();
         self.read_bits_no_refill(1) == 1
     }
 
@@ -187,11 +186,13 @@ impl BitsReader for Reader<'_> {
     fn read_3bit_normal(&mut self) -> [f32; 3] {
         self.refill();
         let mut vec = [0.0f32; 3];
-        vec[0] = match self.read_bool() {
+        let x = self.read_bool();
+        let y = self.read_bool();
+        vec[0] = match x {
             true => self.read_normal(),
             false => vec[0],
         };
-        vec[1] = match self.read_bool() {
+        vec[1] = match y {
             true => self.read_normal(),
             false => vec[1],
         };

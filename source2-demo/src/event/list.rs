@@ -1,5 +1,5 @@
 use crate::event::*;
-use hashbrown::HashMap;
+use crate::HashMap;
 use source2_demo_protobufs::CSvcMsgGameEventList;
 use std::rc::Rc;
 

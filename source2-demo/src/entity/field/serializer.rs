@@ -1,6 +1,6 @@
 use crate::entity::field::*;
 use crate::error::SerializerError;
-use hashbrown::HashMap;
+use crate::HashMap;
 use std::cell::RefCell;
 use std::rc::Rc;
 

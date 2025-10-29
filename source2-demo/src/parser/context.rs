@@ -2,7 +2,7 @@ use crate::entity::field::*;
 use crate::entity::*;
 use crate::event::*;
 use crate::string_table::*;
-use hashbrown::HashMap;
+use crate::HashMap;
 use source2_demo_protobufs::CDemoFileInfo;
 use std::rc::Rc;
 

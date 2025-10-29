@@ -5,7 +5,7 @@ use crate::parser::demo::DemoMessages;
 use crate::proto::*;
 use crate::reader::*;
 use crate::{Parser, StringTableRow};
-use hashbrown::HashMap;
+use crate::HashMap;
 use std::rc::Rc;
 
 pub trait DemoCommands {

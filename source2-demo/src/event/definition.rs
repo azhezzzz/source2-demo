@@ -1,4 +1,4 @@
-use hashbrown::HashMap;
+use crate::HashMap;
 use std::rc::Rc;
 
 pub(crate) struct GameEventDefinition {

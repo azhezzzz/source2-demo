@@ -49,6 +49,12 @@ pub use crate::parser::*;
 pub use crate::string_table::*;
 pub use source2_demo_macros::*;
 
+pub type HashMap<K, V> =
+hashbrown::HashMap<K, V, rustc_hash::FxBuildHasher>;
+pub type HashSet<T> =
+hashbrown::HashSet<T, rustc_hash::FxBuildHasher>;
+
+
 #[cfg(feature = "dota")]
 pub use crate::event::CombatLogEntry;
 

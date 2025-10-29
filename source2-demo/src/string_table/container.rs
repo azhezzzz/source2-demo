@@ -1,6 +1,6 @@
 use crate::error::StringTableError;
 use crate::string_table::*;
-use hashbrown::HashMap;
+use crate::HashMap;
 
 /// String tables container.
 #[derive(Default, Clone)]

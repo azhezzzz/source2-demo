@@ -1,6 +1,6 @@
 use crate::entity::field::Serializer;
 use crate::error::ClassError;
-use hashbrown::HashMap;
+use crate::HashMap;
 use std::rc::Rc;
 
 /// Container for classes.

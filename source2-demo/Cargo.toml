@@ -12,6 +12,7 @@ edition = "2021"
 
 [dependencies]
 hashbrown = "0.16"
+rustc-hash = "2.1"
 snap = "1.1"
 bitter = "0.8"
 thiserror = "2.0"

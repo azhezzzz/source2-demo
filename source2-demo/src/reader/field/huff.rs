@@ -5,12 +5,12 @@ use std::collections::BinaryHeap;
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub(crate) enum HTree {
     Leaf {
-        weight: i32,
-        value: i32,
+        weight: u32,
+        value: u32,
     },
     Node {
-        weight: i32,
-        value: i32,
+        weight: u32,
+        value: u32,
         left: Box<HTree>,
         right: Box<HTree>,
     },
@@ -23,7 +23,7 @@ impl Default for HTree {
             .iter()
             .enumerate()
             .map(|(v, &w)| HTree::Leaf {
-                value: v as i32,
+                value: v as u32,
                 weight: if w == 0 { 1 } else { w },
             })
             .collect::<BinaryHeap<HTree>>();
@@ -66,14 +66,14 @@ impl PartialOrd for HTree {
 
 impl HTree {
     #[inline]
-    pub fn weight(&self) -> &i32 {
+    pub fn weight(&self) -> &u32 {
         match self {
             HTree::Leaf { weight, .. } | HTree::Node { weight, .. } => weight,
         }
     }
 
     #[inline]
-    pub fn value(&self) -> &i32 {
+    pub fn value(&self) -> &u32 {
         match self {
             HTree::Leaf { value, .. } | HTree::Node { value, .. } => value,
         }

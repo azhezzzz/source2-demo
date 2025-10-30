@@ -4,8 +4,8 @@ use crate::error::ParserError;
 use crate::parser::demo::DemoMessages;
 use crate::proto::*;
 use crate::reader::*;
-use crate::{Parser, StringTableRow};
 use crate::HashMap;
+use crate::{Parser, StringTableRow};
 use std::rc::Rc;
 
 pub trait DemoCommands {
@@ -34,18 +34,18 @@ impl DemoCommands for Parser<'_> {
 
         let fs = CSvcMsgFlattenedSerializer::decode(buf.as_slice())?;
 
-        let resolve = |p: Option<i32>| -> Box<str> {
+        let resolve = |p: Option<i32>| -> &str {
             if let Some(i) = p {
-                return fs.symbols[i as usize].clone().into();
+                return &fs.symbols[i as usize];
             }
-            "".into()
+            ""
         };
 
         let mut fields: Vec<Rc<Field>> = vec![];
-        let mut field_types: HashMap<Box<str>, Rc<FieldType>> = HashMap::default();
+        let mut field_types: HashMap<&str, Rc<FieldType>> = HashMap::default();
 
         for s in fs.serializers.iter() {
-            let ser_name = fs.symbols[s.serializer_name_sym() as usize].clone();
+            let ser_name = resolve(s.serializer_name_sym);
             let mut serializer = Serializer::default();
 
             for i in s.fields_index.iter().map(|&x| x as usize) {
@@ -56,18 +56,18 @@ impl DemoCommands for Parser<'_> {
                     let var_type_str = resolve(current_field.var_type_sym);
                     let var_name = resolve(current_field.var_name_sym);
 
-                    let current_field_serializer = serializers.get(&field_serializer_name).cloned();
+                    let current_field_serializer = serializers.get(field_serializer_name);
 
                     let field_type = field_types
-                        .entry(var_type_str.clone())
-                        .or_insert_with(|| FieldType::new(var_type_str.clone().as_ref()).into())
+                        .entry(var_type_str)
+                        .or_insert_with(|| Rc::new(FieldType::new(var_type_str)))
                         .clone();
 
                     let properties = FieldProperties {
-                        encoder: match var_name.as_ref() {
+                        encoder: match var_name {
                             "m_flSimulationTime" | "m_flAnimTime" => Some(FieldEncoder::SimTime),
                             "m_flRuneTime" => Some(FieldEncoder::RuneTime),
-                            _ => FieldEncoder::from_str(&resolve(current_field.var_encoder_sym)),
+                            _ => FieldEncoder::from_str(resolve(current_field.var_encoder_sym)),
                         },
                         encoder_flags: current_field.encode_flags(),
                         bit_count: current_field.bit_count(),
@@ -77,17 +77,14 @@ impl DemoCommands for Parser<'_> {
 
                     let model = if let Some(ser) = current_field_serializer {
                         if field_type.pointer {
-                            FieldModel::Pointer(ser)
+                            FieldModel::Pointer(ser.clone())
                         } else {
-                            FieldModel::Vector(ser)
+                            FieldModel::Vector(ser.clone())
                         }
-                    } else if [
-                        "CUtlVector",
-                        "CNetworkUtlVectorBase",
-                        "CUtlVectorEmbeddedNetworkVar",
-                    ]
-                    .contains(&field_type.base.as_ref())
-                    {
+                    } else if matches!(
+                        field_type.base.as_ref(),
+                        "CUtlVector" | "CNetworkUtlVectorBase" | "CUtlVectorEmbeddedNetworkVar"
+                    ) {
                         FieldModel::ArrayVector(FieldDecoder::from_field(
                             field_type.generic.as_ref().unwrap(),
                             properties,
@@ -108,20 +105,19 @@ impl DemoCommands for Parser<'_> {
                         FieldModel::Pointer(_) => FieldDecoder::Boolean,
                     };
 
-                    if ser_name == "CCSGameModeRules" || var_name.as_ref() == "m_pGameModeRules" {
+                    if ser_name == "CCSGameModeRules" || var_name == "m_pGameModeRules" {
                         decoder = FieldDecoder::CCSGameModeRules;
                     }
 
                     let field = Field {
-                        var_name,
+                        var_name: var_name.into(),
                         field_type,
                         model,
-
                         decoder,
                     };
                     fields.push(field.into());
                 }
-                serializer.fields.push(fields[i].clone());
+                serializer.fields.push(Rc::clone(&fields[i]));
             }
             serializers.insert(ser_name.into(), serializer.into());
         }

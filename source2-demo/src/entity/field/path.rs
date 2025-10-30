@@ -23,10 +23,7 @@ impl FieldPath {
 
     #[inline]
     pub(crate) fn pop(&mut self, n: usize) {
-        for _ in 0..n {
-            self.path[self.last] = 0;
-            self.last -= 1;
-        }
+        self.last -= n;
     }
 
     #[inline]

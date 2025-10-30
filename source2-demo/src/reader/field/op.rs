@@ -226,7 +226,7 @@ impl FieldOp {
     }
 }
 
-pub(crate) const OPERATIONS: [(FieldOp, i32); 40] = [
+pub(crate) const OPERATIONS: [(FieldOp, u32); 40] = [
     (FieldOp::PlusOne, 36271),
     (FieldOp::PlusTwo, 10334),
     (FieldOp::PlusThree, 1375),

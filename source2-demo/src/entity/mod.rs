@@ -33,22 +33,24 @@ impl EntityEvents {
 
 #[derive(Clone)]
 pub struct Entity {
-    index: u32,
-    serial: u32,
+    pub(crate) index: u32,
+    pub(crate) serial: u32,
     pub(crate) class: Rc<Class>,
     pub(crate) state: FieldState,
 }
 
-impl Entity {
-    pub(crate) fn new(index: u32, serial: u32, class: Rc<Class>, state: FieldState) -> Self {
+impl Default for Entity {
+    fn default() -> Self {
         Entity {
-            index,
-            serial,
-            class,
-            state,
+            index: u32::MAX,
+            serial: 0,
+            class: Class::default().into(),
+            state: FieldState::default(),
         }
     }
+}
 
+impl Entity {
     pub fn index(&self) -> u32 {
         self.index
     }

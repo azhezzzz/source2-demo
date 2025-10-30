@@ -32,9 +32,8 @@ pub mod prelude {
 
     #[cfg(feature = "dota")]
     pub use crate::event::CombatLogEntry;
-
     #[cfg(feature = "dota")]
-    pub use source2_demo_protobufs::EDotaUserMessages;
+    pub use crate::proto::EDotaUserMessages;
 
     #[cfg(feature = "deadlock")]
     pub use crate::proto::CitadelUserMessageIds;

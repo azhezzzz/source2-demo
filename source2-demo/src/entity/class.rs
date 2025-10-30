@@ -39,7 +39,7 @@ impl Classes {
 }
 
 /// Entity class
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Class {
     pub(crate) id: i32,
     pub(crate) name: Box<str>,

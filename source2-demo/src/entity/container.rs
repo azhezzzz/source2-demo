@@ -3,13 +3,13 @@ use crate::Entity;
 
 /// Container for entities.
 pub struct Entities {
-    pub(crate) entities_vec: Vec<Option<Entity>>,
+    pub(crate) entities_vec: Vec<Entity>,
 }
 
 impl Default for Entities {
     fn default() -> Self {
         Entities {
-            entities_vec: vec![None; 8192],
+            entities_vec: vec![Entity::default(); 8192],
         }
     }
 }
@@ -41,14 +41,13 @@ impl Entities {
     /// }
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = &Entity> {
-        self.entities_vec.iter().flatten()
+        self.entities_vec.iter().filter(|e| e.index != u32::MAX)
     }
 
     /// Returns [`Entity`] for given index.
     pub fn get_by_index(&self, index: usize) -> Result<&Entity, EntityError> {
         self.entities_vec
             .get(index)
-            .and_then(|x| x.as_ref())
             .ok_or(EntityError::IndexNotFound(index))
     }
 

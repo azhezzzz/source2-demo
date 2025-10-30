@@ -23,6 +23,12 @@ pub trait SvcMsg {
         &mut self,
         packet_entities: CSvcMsgPacketEntities,
     ) -> Result<(), ParserError>;
+
+    fn entity_created(&mut self, reader: &mut Reader, index: usize) -> Result<(), ParserError>;
+
+    fn entity_updated(&mut self, reader: &mut Reader, index: usize) -> Result<(), ParserError>;
+
+    fn entity_deleted(&mut self, index: usize) -> Result<(), ParserError>;
 }
 
 impl SvcMsg for Parser<'_> {
@@ -139,99 +145,104 @@ impl SvcMsg for Parser<'_> {
             index = index.wrapping_add((reader.read_ubit_var() + 1) as usize);
 
             let cmd = reader.read_bits_no_refill(2);
+
             if cmd == 1 {
                 continue;
             }
 
             match EntityEvents::from_cmd(cmd) {
-                EntityEvents::Created => {
-                    let class_id =
-                        reader.read_bits_no_refill(self.context.classes.class_id_size) as i32;
-                    let serial = reader.read_bits_no_refill(17);
-                    let _ = reader.read_var_u32();
-
-                    let class = self.context.classes.get_by_id_rc(class_id as usize).clone();
-
-                    let entity_baseline = self
-                        .context
-                        .baselines
-                        .states
-                        .entry(class_id)
-                        .or_insert_with(|| {
-                            let mut state = FieldState::default();
-                            if let Some(baseline) = self.context.baselines.baselines.get(&class_id) {
-                                self.field_reader.read_fields(
-                                    &mut Reader::new(baseline.as_ref()),
-                                    &class.serializer,
-                                    &mut state,
-                                );
-                            }
-                            state
-                        })
-                        .clone();
-
-                    self.context.entities.entities_vec[index] = Some(Entity::new(
-                        index as u32,
-                        serial,
-                        class.clone(),
-                        entity_baseline,
-                    ));
-
-                    let entity = unsafe {
-                        self.context.entities.entities_vec[index]
-                            .as_mut()
-                            .unwrap_unchecked()
-                    };
-
-                    self.field_reader.read_fields(
-                        &mut reader,
-                        &entity.class.serializer,
-                        &mut entity.state,
-                    );
-
-                    try_observers!(
-                        self,
-                        TRACK_ENTITY,
-                        on_entity(&self.context, EntityEvents::Created, unsafe {
-                            self.context.entities.entities_vec[index]
-                                .as_ref()
-                                .unwrap_unchecked()
-                        })
-                    )?;
-                }
-                EntityEvents::Updated => {
-                    let entity = self.context.entities.entities_vec[index].as_mut().unwrap();
-
-                    self.field_reader.read_fields(
-                        &mut reader,
-                        &entity.class.serializer,
-                        &mut entity.state,
-                    );
-
-                    try_observers!(
-                        self,
-                        TRACK_ENTITY,
-                        on_entity(&self.context, EntityEvents::Updated, unsafe {
-                            self.context.entities.entities_vec[index]
-                                .as_ref()
-                                .unwrap_unchecked()
-                        })
-                    )?;
-                }
-                EntityEvents::Deleted => {
-                    try_observers!(
-                        self,
-                        TRACK_ENTITY,
-                        on_entity(
-                            &self.context,
-                            EntityEvents::Deleted,
-                            self.context.entities.entities_vec[index].as_ref().unwrap()
-                        )
-                    )?;
-                    self.context.entities.entities_vec[index] = None;
-                }
+                EntityEvents::Created => self.entity_created(&mut reader, index)?,
+                EntityEvents::Updated => self.entity_updated(&mut reader, index)?,
+                EntityEvents::Deleted => self.entity_deleted(index)?,
             }
         }
+
+        Ok(())
+    }
+
+    fn entity_created(&mut self, reader: &mut Reader, index: usize) -> Result<(), ParserError> {
+        let class_id = reader.read_bits_no_refill(self.context.classes.class_id_size) as i32;
+        let serial = reader.read_bits_no_refill(17);
+        let _ = reader.read_var_u32();
+
+        let class = self.context.classes.get_by_id_rc(class_id as usize).clone();
+
+        let entity_baseline = self
+            .context
+            .baselines
+            .states
+            .entry(class_id)
+            .or_insert_with(|| {
+                let mut state = FieldState::default();
+                if let Some(baseline) = self.context.baselines.baselines.get(&class_id) {
+                    self.field_reader.read_fields(
+                        &mut Reader::new(baseline.as_ref()),
+                        &class.serializer,
+                        &mut state,
+                    );
+                }
+                state
+            })
+            .clone();
+
+        debug_assert!(
+            index < self.context.entities.entities_vec.len(),
+            "Entity index out of bounds"
+        );
+
+        let entity = &mut self.context.entities.entities_vec[index];
+        entity.index = index as u32;
+        entity.serial = serial;
+        entity.class = class.clone();
+        entity.state = entity_baseline;
+
+        self.field_reader
+            .read_fields(reader, &entity.class.serializer, &mut entity.state);
+
+        try_observers!(
+            self,
+            TRACK_ENTITY,
+            on_entity(
+                &self.context,
+                EntityEvents::Created,
+                &self.context.entities.entities_vec[index]
+            )
+        )?;
+
+        Ok(())
+    }
+
+    fn entity_updated(&mut self, reader: &mut Reader, index: usize) -> Result<(), ParserError> {
+        let entity = &mut self.context.entities.entities_vec[index];
+
+        self.field_reader
+            .read_fields(reader, &entity.class.serializer, &mut entity.state);
+
+        try_observers!(
+            self,
+            TRACK_ENTITY,
+            on_entity(
+                &self.context,
+                EntityEvents::Updated,
+                &self.context.entities.entities_vec[index]
+            )
+        )?;
+
+        Ok(())
+    }
+
+    fn entity_deleted(&mut self, index: usize) -> Result<(), ParserError> {
+        try_observers!(
+            self,
+            TRACK_ENTITY,
+            on_entity(
+                &self.context,
+                EntityEvents::Deleted,
+                &self.context.entities.entities_vec[index]
+            )
+        )?;
+
+        self.context.entities.entities_vec[index].index = u32::MAX;
 
         Ok(())
     }

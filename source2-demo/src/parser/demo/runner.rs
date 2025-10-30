@@ -3,6 +3,7 @@ use crate::parser::demo::DemoMessages;
 use crate::parser::Parser;
 use crate::proto::*;
 use crate::reader::*;
+use crate::Entity;
 use std::cmp::min;
 use std::mem;
 
@@ -65,7 +66,7 @@ impl DemoRunner for Parser<'_> {
             self.context.net_tick = u32::MAX;
             self.reader.reset_to(16);
 
-            self.context.entities.entities_vec = vec![None; 8192];
+            self.context.entities.entities_vec = vec![Entity::default(); 8192];
 
             self.context.string_tables.tables.clear();
             self.context.string_tables.name_to_table.clear();

@@ -74,7 +74,7 @@ impl Display for Context {
             self.entities
                 .entities_vec
                 .iter()
-                .flatten()
+                .filter(|e| e.index != u32::MAX)
                 .collect::<Vec<_>>()
                 .len()
         ]);
@@ -90,7 +90,10 @@ impl Display for Entities {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut table = Table::new();
         table.add_row(row!["idx", "serial", "handle", "class"]);
-        for e in self.entities_vec.iter().flatten() {
+        for e in self.entities_vec.iter() {
+            if e.index() == u32::MAX {
+                continue;
+            }
             table.add_row(row![
                 e.index().to_string(),
                 e.serial().to_string(),
@@ -212,7 +215,7 @@ impl Display for FieldDecoder {
             FieldDecoder::Float32(_) => "f32",
             FieldDecoder::QuantizedFloat(_) => "f32",
             FieldDecoder::QAngle(_) => "[f32; 3]",
-            FieldDecoder::CCSGameModeRules => "bool"
+            FieldDecoder::CCSGameModeRules => "bool",
         };
         write!(f, "{output}")
     }

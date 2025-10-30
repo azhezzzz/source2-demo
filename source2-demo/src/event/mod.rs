@@ -20,7 +20,7 @@ pub struct GameEvent<'a> {
 }
 
 impl<'a> GameEvent<'a> {
-    pub fn new(list: &'a GameEventList, ge: CSvcMsgGameEvent) -> Self {
+    pub(crate) fn new(list: &'a GameEventList, ge: CSvcMsgGameEvent) -> Self {
         let id = ge.eventid();
         let keys = ge
             .keys

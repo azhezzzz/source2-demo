@@ -46,9 +46,12 @@ impl Entities {
 
     /// Returns [`Entity`] for given index.
     pub fn get_by_index(&self, index: usize) -> Result<&Entity, EntityError> {
-        self.entities_vec
-            .get(index)
-            .ok_or(EntityError::IndexNotFound(index))
+        if let Some(e) = self.entities_vec.get(index) {
+            if e.index != u32::MAX {
+                return Ok(e);
+            }
+        }
+        Err(EntityError::IndexNotFound(index))
     }
 
     /// Returns [`Entity`] for given handle.

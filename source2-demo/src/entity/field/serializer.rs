@@ -142,8 +142,7 @@ impl Serializer {
                     fp.path[fp.last] = i as u16;
                     break 'outer;
                 }
-                if name[offset..]
-                    .as_bytes()
+                if name.as_bytes()[offset..]
                     .get(f.var_name.len())
                     .is_some_and(|&b| b == b'.')
                     && &name[offset..(offset + f.var_name.len())] == f.var_name.as_ref()

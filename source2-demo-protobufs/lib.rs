@@ -11,4 +11,10 @@ mod citadel;
 #[cfg(feature = "citadel")]
 pub use citadel::*;
 
+#[cfg(feature = "cs2")]
+mod cs2;
+#[cfg(feature = "cs2")]
+pub use cs2::*;
+
+
 pub use prost;

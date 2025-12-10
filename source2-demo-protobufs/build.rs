@@ -12,20 +12,31 @@ fn main() -> std::io::Result<()> {
         config.default_package_filename("common");
         config.compile_protos(
             &[
+                "./protos/common/base_gcmessages.proto",
                 "./protos/common/demo.proto",
                 "./protos/common/gameevents.proto",
+                "./protos/common/gcsdk_gcmessages.proto",
                 "./protos/common/netmessages.proto",
                 "./protos/common/network_connection.proto",
                 "./protos/common/networkbasetypes.proto",
+                "./protos/common/steammessages.proto",
+                "./protos/common/steammessages_steamlearn.steamworkssdk.proto",
+                "./protos/common/steammessages_unified_base.steamworkssdk.proto",
                 "./protos/common/usermessages.proto",
+                "./protos/common/valveextensions.proto",
             ],
             &["./protos/common"],
         )?;
 
         config.default_package_filename("dota");
         config.compile_protos(
-            &["./protos/dota/dota_commonmessages.proto", "./protos/dota/dota_modifiers.proto", "./protos/dota/dota_shared_enums.proto", "./protos/dota/dota_usermessages.proto"],
-            &["./protos/dota", "./protos/common"],
+            &[
+                "./protos/dota/dota_commonmessages.proto",
+                "./protos/dota/dota_modifiers.proto",
+                "./protos/dota/dota_shared_enums.proto",
+                "./protos/dota/dota_usermessages.proto"],
+            &["./protos/dota", "./protos/common"
+            ],
         )?;
 
         config.default_package_filename("citadel");
@@ -35,17 +46,29 @@ fn main() -> std::io::Result<()> {
                 "./protos/citadel/citadel_gcmessages_common.proto",
                 "./protos/citadel/citadel_usermessages.proto",
                 "./protos/citadel/base_modifier.proto",
-                "./protos/citadel/valveextensions.proto",
             ],
             &["./protos/common", "./protos/citadel"],
+        )?;
+
+        config.default_package_filename("cs2");
+        config.compile_protos(
+            &[
+                "./protos/cs2/cs_gameevents.proto",
+                "./protos/cs2/cstrike15_gcmessages.proto",
+                "./protos/cs2/cstrike15_usermessages.proto",
+                "./protos/cs2/engine_gcmessages.proto",
+            ],
+            &["./protos/common", "./protos/cs2"],
         )?;
 
         clean_rust_file("dota.rs")?;
         clean_rust_file("common.rs")?;
         clean_rust_file("citadel.rs")?;
+        clean_rust_file("cs2.rs")?;
 
         clean_blocks("dota.rs", "common.rs")?;
         clean_blocks("citadel.rs", "common.rs")?;
+        clean_blocks("cs2.rs", "common.rs")?;
     }
     Ok(())
 }

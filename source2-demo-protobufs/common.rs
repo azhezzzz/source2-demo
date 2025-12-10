@@ -22,14 +22,14 @@ pub struct CMsgProtoBufHeader {
     pub gc_dir_index_source: ::core::option::Option<i32>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CgcSystemMsgGetAccountDetails {
+pub struct CGcSystemMsgGetAccountDetails {
     #[prost(fixed64, optional, tag = "1")]
     pub steamid: ::core::option::Option<u64>,
     #[prost(uint32, optional, tag = "2")]
     pub appid: ::core::option::Option<u32>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CgcSystemMsgGetAccountDetailsResponse {
+pub struct CGcSystemMsgGetAccountDetailsResponse {
     #[prost(uint32, optional, tag = "1", default = "2")]
     pub eresult_deprecated: ::core::option::Option<u32>,
     #[prost(string, optional, tag = "2")]
@@ -106,7 +106,7 @@ pub struct CgcSystemMsgGetAccountDetailsResponse {
     pub is_banned_steam_china: ::core::option::Option<bool>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CipLocationInfo {
+pub struct CIpLocationInfo {
     #[prost(uint32, optional, tag = "1")]
     pub ip: ::core::option::Option<u32>,
     #[prost(float, optional, tag = "2")]
@@ -121,9 +121,9 @@ pub struct CipLocationInfo {
     pub city: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CgcMsgGetIpLocationResponse {
+pub struct CGcMsgGetIpLocationResponse {
     #[prost(message, repeated, tag = "1")]
-    pub infos: ::prost::alloc::vec::Vec<CipLocationInfo>,
+    pub infos: ::prost::alloc::vec::Vec<CIpLocationInfo>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -933,7 +933,7 @@ pub struct CMsgGcToGcSubGcStarting {
     pub dir_index: ::core::option::Option<i32>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CgcToGcMsgMasterAck {
+pub struct CGcToGcMsgMasterAck {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub dir_index: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "3")]
@@ -953,7 +953,7 @@ pub mod cgc_to_gc_msg_master_ack {
     }
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CgcToGcMsgMasterAckResponse {
+pub struct CGcToGcMsgMasterAckResponse {
     #[prost(int32, optional, tag = "1", default = "2")]
     pub eresult: ::core::option::Option<i32>,
 }
@@ -968,7 +968,7 @@ pub struct CMsgGcToGcUniverseStartupResponse {
     pub eresult: ::core::option::Option<i32>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CgcToGcMsgMasterStartupComplete {
+pub struct CGcToGcMsgMasterStartupComplete {
     #[prost(message, repeated, tag = "1")]
     pub gc_info: ::prost::alloc::vec::Vec<cgc_to_gc_msg_master_startup_complete::GcInfo>,
 }
@@ -982,7 +982,7 @@ pub mod cgc_to_gc_msg_master_startup_complete {
     }
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CgcToGcMsgRouted {
+pub struct CGcToGcMsgRouted {
     #[prost(uint32, optional, tag = "1")]
     pub msg_type: ::core::option::Option<u32>,
     #[prost(fixed64, optional, tag = "2")]
@@ -991,7 +991,7 @@ pub struct CgcToGcMsgRouted {
     pub net_message: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CgcToGcMsgRoutedReply {
+pub struct CGcToGcMsgRoutedReply {
     #[prost(uint32, optional, tag = "1")]
     pub msg_type: ::core::option::Option<u32>,
     #[prost(bytes = "vec", optional, tag = "2")]
@@ -1188,7 +1188,7 @@ pub struct CMsgGcToGcForwardAccountDetails {
     #[prost(fixed64, optional, tag = "1")]
     pub steamid: ::core::option::Option<u64>,
     #[prost(message, optional, tag = "2")]
-    pub account_details: ::core::option::Option<CgcSystemMsgGetAccountDetailsResponse>,
+    pub account_details: ::core::option::Option<CGcSystemMsgGetAccountDetailsResponse>,
     #[prost(uint32, optional, tag = "3")]
     pub age_seconds: ::core::option::Option<u32>,
 }
@@ -1429,7 +1429,7 @@ pub struct CMsgGcToClientPollConvarResponse {
     pub convar_value: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CgcMsgCompressedMsgToClient {
+pub struct CGcMsgCompressedMsgToClient {
     #[prost(uint32, optional, tag = "1")]
     pub msg_id: ::core::option::Option<u32>,
     #[prost(bytes = "vec", optional, tag = "2")]
@@ -1511,7 +1511,7 @@ pub enum GcConnectionStatus {
     SteamGoingDown = 6,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CgcStorePurchaseInitLineItem {
+pub struct CGcStorePurchaseInitLineItem {
     #[prost(uint32, optional, tag = "1")]
     pub item_def_id: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -1534,7 +1534,7 @@ pub struct CMsgGcStorePurchaseInit {
     #[prost(int32, optional, tag = "3")]
     pub currency: ::core::option::Option<i32>,
     #[prost(message, repeated, tag = "4")]
-    pub line_items: ::prost::alloc::vec::Vec<CgcStorePurchaseInitLineItem>,
+    pub line_items: ::prost::alloc::vec::Vec<CGcStorePurchaseInitLineItem>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgGcStorePurchaseInitResponse {
@@ -1636,7 +1636,7 @@ pub struct CMsgLanServerAvailable {
     pub lobby_id: ::core::option::Option<u64>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoEconGameAccountClient {
+pub struct CSoEconGameAccountClient {
     #[prost(uint32, optional, tag = "1", default = "0")]
     pub additional_backpack_slots: ::core::option::Option<u32>,
     #[prost(bool, optional, tag = "2", default = "false")]
@@ -1676,7 +1676,7 @@ pub struct CMsgApplyEggEssence {
     pub egg_item_id: ::core::option::Option<u64>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoEconItemAttribute {
+pub struct CSoEconItemAttribute {
     #[prost(uint32, optional, tag = "1", default = "65535")]
     pub def_index: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -1685,14 +1685,14 @@ pub struct CsoEconItemAttribute {
     pub value_bytes: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoEconItemEquipped {
+pub struct CSoEconItemEquipped {
     #[prost(uint32, optional, tag = "1")]
     pub new_class: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
     pub new_slot: ::core::option::Option<u32>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CsoEconItem {
+pub struct CSoEconItem {
     #[prost(uint64, optional, tag = "1")]
     pub id: ::core::option::Option<u64>,
     #[prost(uint32, optional, tag = "2")]
@@ -1712,15 +1712,15 @@ pub struct CsoEconItem {
     #[prost(uint32, optional, tag = "9", default = "0")]
     pub origin: ::core::option::Option<u32>,
     #[prost(message, repeated, tag = "12")]
-    pub attribute: ::prost::alloc::vec::Vec<CsoEconItemAttribute>,
+    pub attribute: ::prost::alloc::vec::Vec<CSoEconItemAttribute>,
     #[prost(message, optional, boxed, tag = "13")]
-    pub interior_item: ::core::option::Option<::prost::alloc::boxed::Box<CsoEconItem>>,
+    pub interior_item: ::core::option::Option<::prost::alloc::boxed::Box<CSoEconItem>>,
     #[prost(uint32, optional, tag = "15", default = "0")]
     pub style: ::core::option::Option<u32>,
     #[prost(uint64, optional, tag = "16")]
     pub original_id: ::core::option::Option<u64>,
     #[prost(message, repeated, tag = "18")]
-    pub equipped_state: ::prost::alloc::vec::Vec<CsoEconItemEquipped>,
+    pub equipped_state: ::prost::alloc::vec::Vec<CSoEconItemEquipped>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgSortItems {
@@ -2124,7 +2124,7 @@ pub struct CGameInfo {
     #[prost(message, optional, tag = "4")]
     pub dota: ::core::option::Option<c_game_info::CDotaGameInfo>,
     #[prost(message, optional, tag = "5")]
-    pub cs: ::core::option::Option<c_game_info::CcsGameInfo>,
+    pub cs: ::core::option::Option<c_game_info::CCsGameInfo>,
 }
 pub mod c_game_info {
     #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
@@ -2177,7 +2177,7 @@ pub mod c_game_info {
         }
     }
     #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-    pub struct CcsGameInfo {
+    pub struct CCsGameInfo {
         #[prost(int32, repeated, packed = "false", tag = "1")]
         pub round_start_ticks: ::prost::alloc::vec::Vec<i32>,
     }

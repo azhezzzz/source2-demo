@@ -873,7 +873,7 @@ pub struct CMsgEnableSatVolumesEvent {
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgEquippedItemList {
     #[prost(message, repeated, tag = "1")]
-    pub items: ::prost::alloc::vec::Vec<CsoEconItem>,
+    pub items: ::prost::alloc::vec::Vec<CSoEconItem>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
@@ -1198,6 +1198,108 @@ pub struct CMsgStartFindingMatchInfo {
     pub mm_preference: ::core::option::Option<i32>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CSoCitadelHideoutLobby {
+    #[prost(uint64, optional, tag = "1")]
+    pub hideout_lobby_id: ::core::option::Option<u64>,
+    #[prost(uint64, optional, tag = "2")]
+    pub party_id: ::core::option::Option<u64>,
+    #[prost(fixed64, optional, tag = "3")]
+    pub server_steam_id: ::core::option::Option<u64>,
+    #[prost(uint32, optional, tag = "4")]
+    pub udp_connect_ip: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "5")]
+    pub udp_connect_port: ::core::option::Option<u32>,
+    #[prost(bytes = "vec", optional, tag = "6")]
+    pub sdr_address: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+    #[prost(uint32, optional, tag = "7")]
+    pub server_version: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "8")]
+    pub compat_version: ::core::option::Option<u32>,
+    #[prost(message, repeated, tag = "9")]
+    pub members: ::prost::alloc::vec::Vec<cso_citadel_hideout_lobby::Member>,
+    #[prost(uint32, optional, tag = "10")]
+    pub active_account_hideout: ::core::option::Option<u32>,
+    #[prost(message, repeated, tag = "11")]
+    pub extra_messages: ::prost::alloc::vec::Vec<CExtraMsgBlock>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CSoCitadelLobby {
+    #[prost(uint64, optional, tag = "1")]
+    pub lobby_id: ::core::option::Option<u64>,
+    #[prost(uint64, optional, tag = "2")]
+    pub match_id: ::core::option::Option<u64>,
+    #[prost(enumeration = "ECitadelMatchMode", optional, tag = "3", default = "KECitadelMatchModeInvalid")]
+    pub match_mode: ::core::option::Option<i32>,
+    #[prost(enumeration = "ECitadelGameMode", optional, tag = "4", default = "KECitadelGameModeInvalid")]
+    pub game_mode: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "5")]
+    pub compatibility_version: ::core::option::Option<u32>,
+    #[prost(message, repeated, tag = "6")]
+    pub extra_messages: ::prost::alloc::vec::Vec<CExtraMsgBlock>,
+    #[prost(fixed64, optional, tag = "7")]
+    pub server_steam_id: ::core::option::Option<u64>,
+    #[prost(enumeration = "ELobbyServerState", optional, tag = "8", default = "KELobbyServerStateAssign")]
+    pub server_state: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "9")]
+    pub udp_connect_ip: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "10")]
+    pub udp_connect_port: ::core::option::Option<u32>,
+    #[prost(bytes = "vec", optional, tag = "12")]
+    pub sdr_address: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+    #[prost(uint32, optional, tag = "13")]
+    pub server_version: ::core::option::Option<u32>,
+    #[prost(bool, optional, tag = "14")]
+    pub safe_to_abandon: ::core::option::Option<bool>,
+    #[prost(bool, optional, tag = "15")]
+    pub match_punishes_abandons: ::core::option::Option<bool>,
+    #[prost(uint32, optional, tag = "16")]
+    pub game_mode_version: ::core::option::Option<u32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CSoCitadelParty {
+    #[prost(uint64, optional, tag = "1")]
+    pub party_id: ::core::option::Option<u64>,
+    #[prost(message, repeated, tag = "2")]
+    pub members: ::prost::alloc::vec::Vec<cso_citadel_party::Member>,
+    #[prost(message, repeated, tag = "3")]
+    pub invites: ::prost::alloc::vec::Vec<cso_citadel_party::Invite>,
+    #[prost(string, optional, tag = "4")]
+    pub dev_server_command: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag = "5")]
+    pub left_members: ::prost::alloc::vec::Vec<cso_citadel_party::LeftMember>,
+    #[prost(uint64, optional, tag = "6")]
+    pub join_code: ::core::option::Option<u64>,
+    #[prost(enumeration = "ECitadelBotDifficulty", optional, tag = "7", default = "KECitadelBotDifficultyNone")]
+    pub bot_difficulty: ::core::option::Option<i32>,
+    #[prost(enumeration = "ECitadelMatchMode", optional, tag = "9", default = "KECitadelMatchModeInvalid")]
+    pub match_mode: ::core::option::Option<i32>,
+    #[prost(enumeration = "ECitadelGameMode", optional, tag = "10", default = "KECitadelGameModeInvalid")]
+    pub game_mode: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "11")]
+    pub match_making_start_time: ::core::option::Option<u32>,
+    #[prost(string, optional, tag = "12")]
+    pub server_search_key: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "13")]
+    pub is_high_skill_range_party: ::core::option::Option<bool>,
+    #[prost(enumeration = "cso_citadel_party::EChatMode", optional, tag = "14", default = "KENone")]
+    pub chat_mode: ::core::option::Option<i32>,
+    #[prost(enumeration = "ECitadelRegionMode", optional, tag = "15", default = "KECitadelRegionModeRow")]
+    pub region_mode: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "16")]
+    pub is_private_lobby: ::core::option::Option<bool>,
+    #[prost(message, optional, tag = "17")]
+    pub private_lobby_settings: ::core::option::Option<cso_citadel_party::PrivateLobbySettings>,
+    #[prost(bool, optional, tag = "18")]
+    pub desires_laning_together: ::core::option::Option<bool>,
+    #[prost(enumeration = "ECitadelMmPreference", optional, tag = "19", default = "KECitadelMmPreferenceInvalid")]
+    pub mm_preference: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "21")]
+    pub hideout_search_key: ::core::option::Option<::prost::alloc::string::String>,
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CUserMessageEmpty {
     #[prost(uint32, optional, tag = "1")]
@@ -1316,108 +1418,6 @@ pub enum CitadelUserMessageIds {
     KEUserMsgAg2ParamTrigger = 359,
     KEUserMsgItemPurchaseNotification = 360,
     KEUserMsgEntityPortalled = 361,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CsoCitadelHideoutLobby {
-    #[prost(uint64, optional, tag = "1")]
-    pub hideout_lobby_id: ::core::option::Option<u64>,
-    #[prost(uint64, optional, tag = "2")]
-    pub party_id: ::core::option::Option<u64>,
-    #[prost(fixed64, optional, tag = "3")]
-    pub server_steam_id: ::core::option::Option<u64>,
-    #[prost(uint32, optional, tag = "4")]
-    pub udp_connect_ip: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "5")]
-    pub udp_connect_port: ::core::option::Option<u32>,
-    #[prost(bytes = "vec", optional, tag = "6")]
-    pub sdr_address: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(uint32, optional, tag = "7")]
-    pub server_version: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "8")]
-    pub compat_version: ::core::option::Option<u32>,
-    #[prost(message, repeated, tag = "9")]
-    pub members: ::prost::alloc::vec::Vec<cso_citadel_hideout_lobby::Member>,
-    #[prost(uint32, optional, tag = "10")]
-    pub active_account_hideout: ::core::option::Option<u32>,
-    #[prost(message, repeated, tag = "11")]
-    pub extra_messages: ::prost::alloc::vec::Vec<CExtraMsgBlock>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CsoCitadelLobby {
-    #[prost(uint64, optional, tag = "1")]
-    pub lobby_id: ::core::option::Option<u64>,
-    #[prost(uint64, optional, tag = "2")]
-    pub match_id: ::core::option::Option<u64>,
-    #[prost(enumeration = "ECitadelMatchMode", optional, tag = "3", default = "KECitadelMatchModeInvalid")]
-    pub match_mode: ::core::option::Option<i32>,
-    #[prost(enumeration = "ECitadelGameMode", optional, tag = "4", default = "KECitadelGameModeInvalid")]
-    pub game_mode: ::core::option::Option<i32>,
-    #[prost(uint32, optional, tag = "5")]
-    pub compatibility_version: ::core::option::Option<u32>,
-    #[prost(message, repeated, tag = "6")]
-    pub extra_messages: ::prost::alloc::vec::Vec<CExtraMsgBlock>,
-    #[prost(fixed64, optional, tag = "7")]
-    pub server_steam_id: ::core::option::Option<u64>,
-    #[prost(enumeration = "ELobbyServerState", optional, tag = "8", default = "KELobbyServerStateAssign")]
-    pub server_state: ::core::option::Option<i32>,
-    #[prost(uint32, optional, tag = "9")]
-    pub udp_connect_ip: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "10")]
-    pub udp_connect_port: ::core::option::Option<u32>,
-    #[prost(bytes = "vec", optional, tag = "12")]
-    pub sdr_address: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(uint32, optional, tag = "13")]
-    pub server_version: ::core::option::Option<u32>,
-    #[prost(bool, optional, tag = "14")]
-    pub safe_to_abandon: ::core::option::Option<bool>,
-    #[prost(bool, optional, tag = "15")]
-    pub match_punishes_abandons: ::core::option::Option<bool>,
-    #[prost(uint32, optional, tag = "16")]
-    pub game_mode_version: ::core::option::Option<u32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CsoCitadelParty {
-    #[prost(uint64, optional, tag = "1")]
-    pub party_id: ::core::option::Option<u64>,
-    #[prost(message, repeated, tag = "2")]
-    pub members: ::prost::alloc::vec::Vec<cso_citadel_party::Member>,
-    #[prost(message, repeated, tag = "3")]
-    pub invites: ::prost::alloc::vec::Vec<cso_citadel_party::Invite>,
-    #[prost(string, optional, tag = "4")]
-    pub dev_server_command: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(message, repeated, tag = "5")]
-    pub left_members: ::prost::alloc::vec::Vec<cso_citadel_party::LeftMember>,
-    #[prost(uint64, optional, tag = "6")]
-    pub join_code: ::core::option::Option<u64>,
-    #[prost(enumeration = "ECitadelBotDifficulty", optional, tag = "7", default = "KECitadelBotDifficultyNone")]
-    pub bot_difficulty: ::core::option::Option<i32>,
-    #[prost(enumeration = "ECitadelMatchMode", optional, tag = "9", default = "KECitadelMatchModeInvalid")]
-    pub match_mode: ::core::option::Option<i32>,
-    #[prost(enumeration = "ECitadelGameMode", optional, tag = "10", default = "KECitadelGameModeInvalid")]
-    pub game_mode: ::core::option::Option<i32>,
-    #[prost(uint32, optional, tag = "11")]
-    pub match_making_start_time: ::core::option::Option<u32>,
-    #[prost(string, optional, tag = "12")]
-    pub server_search_key: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "13")]
-    pub is_high_skill_range_party: ::core::option::Option<bool>,
-    #[prost(enumeration = "cso_citadel_party::EChatMode", optional, tag = "14", default = "KENone")]
-    pub chat_mode: ::core::option::Option<i32>,
-    #[prost(enumeration = "ECitadelRegionMode", optional, tag = "15", default = "KECitadelRegionModeRow")]
-    pub region_mode: ::core::option::Option<i32>,
-    #[prost(bool, optional, tag = "16")]
-    pub is_private_lobby: ::core::option::Option<bool>,
-    #[prost(message, optional, tag = "17")]
-    pub private_lobby_settings: ::core::option::Option<cso_citadel_party::PrivateLobbySettings>,
-    #[prost(bool, optional, tag = "18")]
-    pub desires_laning_together: ::core::option::Option<bool>,
-    #[prost(enumeration = "ECitadelMmPreference", optional, tag = "19", default = "KECitadelMmPreferenceInvalid")]
-    pub mm_preference: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "21")]
-    pub hideout_search_key: ::core::option::Option<::prost::alloc::string::String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]

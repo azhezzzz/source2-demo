@@ -26,6 +26,692 @@ pub struct CClientHeaderOverwatchEvidence {
     pub caseid: ::core::option::Option<u64>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgAchievementEvent {
+    #[prost(int32, optional, tag = "1")]
+    pub achievement: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub count: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub user_id: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgAdjustMoney {
+    #[prost(int32, optional, tag = "1")]
+    pub amount: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgAmmoDenied {
+    #[prost(int32, optional, tag = "1")]
+    pub ammoidx: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgBarTime {
+    #[prost(string, optional, tag = "1")]
+    pub time: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgCallVoteFailed {
+    #[prost(int32, optional, tag = "1")]
+    pub reason: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub time: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgClientInfo {
+    #[prost(int32, optional, tag = "1")]
+    pub dummy: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgCloseCaption {
+    #[prost(uint32, optional, tag = "1")]
+    pub hash: ::core::option::Option<u32>,
+    #[prost(int32, optional, tag = "2")]
+    pub duration: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "3")]
+    pub from_player: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "4")]
+    pub cctoken: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgCloseCaptionDirect {
+    #[prost(uint32, optional, tag = "1")]
+    pub hash: ::core::option::Option<u32>,
+    #[prost(int32, optional, tag = "2")]
+    pub duration: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "3")]
+    pub from_player: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgCounterStrafe {
+    #[prost(int32, optional, tag = "1")]
+    pub press_to_release_ns: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub total_keys_down: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgCurrentRoundOdds {
+    #[prost(int32, optional, tag = "1")]
+    pub odds: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgCurrentTimescale {
+    #[prost(float, optional, tag = "1")]
+    pub cur_timescale: ::core::option::Option<f32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgDamage {
+    #[prost(int32, optional, tag = "1")]
+    pub amount: ::core::option::Option<i32>,
+    #[prost(message, optional, tag = "2")]
+    pub inflictor_world_pos: ::core::option::Option<CMsgVector>,
+    #[prost(int32, optional, tag = "3", default = "-1")]
+    pub victim_entindex: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgDamagePrediction {
+    #[prost(int32, optional, tag = "1")]
+    pub command_num: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub pellet_idx: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub victim_slot: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "4")]
+    pub victim_starting_health: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "5")]
+    pub victim_damage: ::core::option::Option<i32>,
+    #[prost(message, optional, tag = "6")]
+    pub shoot_pos: ::core::option::Option<CMsgVector>,
+    #[prost(message, optional, tag = "7")]
+    pub shoot_dir: ::core::option::Option<CMsgQAngle>,
+    #[prost(message, optional, tag = "8")]
+    pub aim_punch: ::core::option::Option<CMsgQAngle>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgDeepStats {
+    #[prost(message, optional, tag = "1")]
+    pub stats: ::core::option::Option<CMsgGccStrike15ClientDeepStats>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgDesiredTimescale {
+    #[prost(float, optional, tag = "1")]
+    pub desired_timescale: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "2")]
+    pub duration_realtime_sec: ::core::option::Option<f32>,
+    #[prost(int32, optional, tag = "3")]
+    pub interpolator_type: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "4")]
+    pub start_blend_time: ::core::option::Option<f32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgDisconnectToLobby {
+    #[prost(int32, optional, tag = "1")]
+    pub dummy: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgEndOfMatchAllPlayersData {
+    #[prost(message, repeated, tag = "1")]
+    pub allplayerdata: ::prost::alloc::vec::Vec<ccs_usr_msg_end_of_match_all_players_data::PlayerData>,
+    #[prost(int32, optional, tag = "2")]
+    pub scene: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgEntityOutlineHighlight {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub entidx: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "2")]
+    pub removehighlight: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgFade {
+    #[prost(int32, optional, tag = "1")]
+    pub duration: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub hold_time: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub flags: ::core::option::Option<i32>,
+    #[prost(message, optional, tag = "4")]
+    pub clr: ::core::option::Option<CMsgRgba>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgGameTitle {
+    #[prost(int32, optional, tag = "1")]
+    pub dummy: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgGeiger {
+    #[prost(int32, optional, tag = "1")]
+    pub range: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgHintText {
+    #[prost(string, optional, tag = "1")]
+    pub message: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgHudMsg {
+    #[prost(int32, optional, tag = "1")]
+    pub channel: ::core::option::Option<i32>,
+    #[prost(message, optional, tag = "2")]
+    pub pos: ::core::option::Option<CMsgVector2D>,
+    #[prost(message, optional, tag = "3")]
+    pub clr1: ::core::option::Option<CMsgRgba>,
+    #[prost(message, optional, tag = "4")]
+    pub clr2: ::core::option::Option<CMsgRgba>,
+    #[prost(int32, optional, tag = "5")]
+    pub effect: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "6")]
+    pub fade_in_time: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "7")]
+    pub fade_out_time: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "9")]
+    pub hold_time: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "10")]
+    pub fx_time: ::core::option::Option<f32>,
+    #[prost(string, optional, tag = "11")]
+    pub text: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgHudText {
+    #[prost(string, optional, tag = "1")]
+    pub text: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgItemDrop {
+    #[prost(int64, optional, tag = "1")]
+    pub itemid: ::core::option::Option<i64>,
+    #[prost(bool, optional, tag = "2")]
+    pub death: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgItemPickup {
+    #[prost(string, optional, tag = "1")]
+    pub item: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgKeyHintText {
+    #[prost(string, repeated, tag = "1")]
+    pub messages: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgKillCam {
+    #[prost(int32, optional, tag = "1")]
+    pub obs_mode: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub first_target: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3", default = "-1")]
+    pub second_target: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgMarkAchievement {
+    #[prost(string, optional, tag = "1")]
+    pub achievement: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgMatchEndConditions {
+    #[prost(int32, optional, tag = "1")]
+    pub fraglimit: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub mp_maxrounds: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub mp_winlimit: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "4")]
+    pub mp_timelimit: ::core::option::Option<f32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgMatchStatsUpdate {
+    #[prost(string, optional, tag = "1")]
+    pub update: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgPlayerDecalDigitalSignature {
+    #[prost(message, optional, tag = "1")]
+    pub data: ::core::option::Option<PlayerDecalDigitalSignature>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgPlayerStatsUpdate {
+    #[prost(int32, optional, tag = "1")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(message, repeated, tag = "4")]
+    pub stats: ::prost::alloc::vec::Vec<ccs_usr_msg_player_stats_update::Stat>,
+    #[prost(uint32, optional, tag = "5")]
+    pub ehandle: ::core::option::Option<u32>,
+    #[prost(int32, optional, tag = "6")]
+    pub crc: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgPostRoundDamageReport {
+    #[prost(uint64, optional, tag = "1")]
+    pub other_xuid: ::core::option::Option<u64>,
+    #[prost(int32, optional, tag = "2")]
+    pub given_kill_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub given_health_removed: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "4")]
+    pub given_num_hits: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "5")]
+    pub taken_kill_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "6")]
+    pub taken_health_removed: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "7")]
+    pub taken_num_hits: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgPreMatchSayText {
+    #[prost(uint32, optional, tag = "1")]
+    pub account_id: ::core::option::Option<u32>,
+    #[prost(string, optional, tag = "2")]
+    pub text: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "3")]
+    pub all_chat: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgProcessSpottedEntityUpdate {
+    #[prost(bool, optional, tag = "1")]
+    pub new_update: ::core::option::Option<bool>,
+    #[prost(message, repeated, tag = "2")]
+    pub entity_updates: ::prost::alloc::vec::Vec<ccs_usr_msg_process_spotted_entity_update::SpottedEntityUpdate>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgQuestProgress {
+    #[prost(uint32, optional, tag = "1")]
+    pub quest_id: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "2")]
+    pub normal_points: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "3")]
+    pub bonus_points: ::core::option::Option<u32>,
+    #[prost(bool, optional, tag = "4")]
+    pub is_event_quest: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgRadioText {
+    #[prost(int32, optional, tag = "1")]
+    pub msg_dst: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub client: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "3")]
+    pub msg_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "4")]
+    pub params: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgRawAudio {
+    #[prost(int32, optional, tag = "1")]
+    pub pitch: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub entidx: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "3")]
+    pub duration: ::core::option::Option<f32>,
+    #[prost(string, optional, tag = "4")]
+    pub voice_filename: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgRecurringMissionSchema {
+    #[prost(uint32, optional, tag = "1")]
+    pub period: ::core::option::Option<u32>,
+    #[prost(bytes = "vec", optional, tag = "2")]
+    pub mission_schema: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgReloadEffect {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub entidx: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub actanim: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "3")]
+    pub origin_x: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "4")]
+    pub origin_y: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "5")]
+    pub origin_z: ::core::option::Option<f32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgReportHit {
+    #[prost(float, optional, tag = "1")]
+    pub pos_x: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "2")]
+    pub pos_y: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "4")]
+    pub timestamp: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "3")]
+    pub pos_z: ::core::option::Option<f32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgRequestState {
+    #[prost(int32, optional, tag = "1")]
+    pub dummy: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgResetHud {
+    #[prost(bool, optional, tag = "1")]
+    pub reset: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgRoundBackupFilenames {
+    #[prost(int32, optional, tag = "1")]
+    pub count: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub index: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "3")]
+    pub filename: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "4")]
+    pub nicename: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgRoundEndReportData {
+    #[prost(message, optional, tag = "1")]
+    pub init_conditions: ::core::option::Option<ccs_usr_msg_round_end_report_data::InitialConditions>,
+    #[prost(message, repeated, tag = "2")]
+    pub all_rer_event_data: ::prost::alloc::vec::Vec<ccs_usr_msg_round_end_report_data::RerEvent>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgRumble {
+    #[prost(int32, optional, tag = "1")]
+    pub index: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub data: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub flags: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgScoreLeaderboardData {
+    #[prost(message, optional, tag = "1")]
+    pub data: ::core::option::Option<ScoreLeaderboardData>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgSendAudio {
+    #[prost(string, optional, tag = "1")]
+    pub radio_sound: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgSendLastKillerDamageToClient {
+    #[prost(int32, optional, tag = "1")]
+    pub num_hits_given: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub damage_given: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub num_hits_taken: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "4")]
+    pub damage_taken: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "5")]
+    pub actual_damage_given: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "6")]
+    pub actual_damage_taken: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgSendPlayerItemDrops {
+    #[prost(message, repeated, tag = "1")]
+    pub entity_updates: ::prost::alloc::vec::Vec<CEconItemPreviewDataBlock>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgSendPlayerItemFound {
+    #[prost(message, optional, tag = "1")]
+    pub iteminfo: ::core::option::Option<CEconItemPreviewDataBlock>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub playerslot: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgSendPlayerLoadout {
+    #[prost(message, repeated, tag = "1")]
+    pub loadout: ::prost::alloc::vec::Vec<ccs_usr_msg_send_player_loadout::LoadoutItem>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub playerslot: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgServerRankRevealAll {
+    #[prost(int32, optional, tag = "1")]
+    pub seconds_till_shutdown: ::core::option::Option<i32>,
+    #[prost(message, optional, tag = "2")]
+    pub reservation: ::core::option::Option<CMsgGccStrike15V2MatchmakingGc2ServerReserve>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgServerRankUpdate {
+    #[prost(message, repeated, tag = "1")]
+    pub rank_update: ::prost::alloc::vec::Vec<ccs_usr_msg_server_rank_update::RankUpdate>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgShake {
+    #[prost(int32, optional, tag = "1")]
+    pub command: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "2")]
+    pub local_amplitude: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "3")]
+    pub frequency: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "4")]
+    pub duration: ::core::option::Option<f32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgShootInfo {
+    #[prost(int32, optional, tag = "1")]
+    pub frame_number: ::core::option::Option<i32>,
+    #[prost(message, repeated, tag = "2")]
+    pub hitbox_transforms: ::prost::alloc::vec::Vec<CMsgTransform>,
+    #[prost(message, optional, tag = "3")]
+    pub shoot_pos: ::core::option::Option<CMsgVector>,
+    #[prost(message, optional, tag = "4")]
+    pub shoot_dir: ::core::option::Option<CMsgQAngle>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgShowMenu {
+    #[prost(int32, optional, tag = "1")]
+    pub bits_valid_slots: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub display_time: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "3")]
+    pub menu_string: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgSsui {
+    #[prost(bool, optional, tag = "1")]
+    pub show: ::core::option::Option<bool>,
+    #[prost(float, optional, tag = "2")]
+    pub start_time: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "3")]
+    pub end_time: ::core::option::Option<f32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgStopSpectatorMode {
+    #[prost(int32, optional, tag = "1")]
+    pub dummy: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgSurvivalStats {
+    #[prost(uint64, optional, tag = "1")]
+    pub xuid: ::core::option::Option<u64>,
+    #[prost(message, repeated, tag = "2")]
+    pub facts: ::prost::alloc::vec::Vec<ccs_usr_msg_survival_stats::Fact>,
+    #[prost(message, repeated, tag = "3")]
+    pub users: ::prost::alloc::vec::Vec<ccs_usr_msg_survival_stats::Placement>,
+    #[prost(message, repeated, tag = "5")]
+    pub damages: ::prost::alloc::vec::Vec<ccs_usr_msg_survival_stats::Damage>,
+    #[prost(int32, optional, tag = "4")]
+    pub ticknumber: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgTrain {
+    #[prost(int32, optional, tag = "1")]
+    pub train: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgUpdateScreenHealthBar {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub entidx: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "2")]
+    pub healthratio_old: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "3")]
+    pub healthratio_new: ::core::option::Option<f32>,
+    #[prost(int32, optional, tag = "4")]
+    pub style: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgVguiMenu {
+    #[prost(string, optional, tag = "1")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "2")]
+    pub show: ::core::option::Option<bool>,
+    #[prost(message, repeated, tag = "3")]
+    pub keys: ::prost::alloc::vec::Vec<ccs_usr_msg_vgui_menu::Keys>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgVoiceMask {
+    #[prost(message, repeated, tag = "1")]
+    pub player_masks: ::prost::alloc::vec::Vec<ccs_usr_msg_voice_mask::PlayerMask>,
+    #[prost(bool, optional, tag = "2")]
+    pub player_mod_enable: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgVoteFailed {
+    #[prost(int32, optional, tag = "1")]
+    pub team: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub reason: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgVotePass {
+    #[prost(int32, optional, tag = "1")]
+    pub team: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub vote_type: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "3")]
+    pub disp_str: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "4")]
+    pub details_str: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgVoteSetup {
+    #[prost(string, repeated, tag = "1")]
+    pub potential_issues: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgVoteStart {
+    #[prost(int32, optional, tag = "1")]
+    pub team: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub player_slot: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub vote_type: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "4")]
+    pub disp_str: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "5")]
+    pub details_str: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub other_team_str: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "7")]
+    pub is_yes_no_vote: ::core::option::Option<bool>,
+    #[prost(int32, optional, tag = "8", default = "-1")]
+    pub player_slot_target: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgWeaponSound {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub entidx: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "2")]
+    pub origin_x: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "3")]
+    pub origin_y: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "4")]
+    pub origin_z: ::core::option::Option<f32>,
+    #[prost(string, optional, tag = "5")]
+    pub sound: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(float, optional, tag = "6")]
+    pub game_timestamp: ::core::option::Option<f32>,
+    #[prost(fixed32, optional, tag = "7")]
+    pub source_soundscapeid: ::core::option::Option<u32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgXRankGet {
+    #[prost(int32, optional, tag = "1")]
+    pub mode_idx: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub controller: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgXRankUpd {
+    #[prost(int32, optional, tag = "1")]
+    pub mode_idx: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub controller: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub ranking: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CCsUsrMsgXpUpdate {
+    #[prost(message, optional, tag = "1")]
+    pub data: ::core::option::Option<CMsgGcCstrike15V2Gc2ServerNotifyXpRewarded>,
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDataGccStrike15V2MatchInfo {
     #[prost(uint64, optional, tag = "1")]
@@ -789,9 +1475,9 @@ pub struct CMsgGccStrike15V2Gc2ClientInitSystemResponse {
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgGccStrike15V2Gc2ClientNotifyXpShop {
     #[prost(message, optional, tag = "1")]
-    pub prematch: ::core::option::Option<CsoAccountXpShop>,
+    pub prematch: ::core::option::Option<CSoAccountXpShop>,
     #[prost(message, optional, tag = "2")]
-    pub postmatch: ::core::option::Option<CsoAccountXpShop>,
+    pub postmatch: ::core::option::Option<CSoAccountXpShop>,
     #[prost(uint32, optional, tag = "3")]
     pub current_xp: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "4")]
@@ -1648,694 +2334,8 @@ pub struct CPreMatchInfoData {
     pub wins: ::prost::alloc::vec::Vec<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgAchievementEvent {
-    #[prost(int32, optional, tag = "1")]
-    pub achievement: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub count: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub user_id: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgAdjustMoney {
-    #[prost(int32, optional, tag = "1")]
-    pub amount: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgAmmoDenied {
-    #[prost(int32, optional, tag = "1")]
-    pub ammoidx: ::core::option::Option<i32>,
-}
-
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgBarTime {
-    #[prost(string, optional, tag = "1")]
-    pub time: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgCallVoteFailed {
-    #[prost(int32, optional, tag = "1")]
-    pub reason: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub time: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgClientInfo {
-    #[prost(int32, optional, tag = "1")]
-    pub dummy: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgCloseCaption {
-    #[prost(uint32, optional, tag = "1")]
-    pub hash: ::core::option::Option<u32>,
-    #[prost(int32, optional, tag = "2")]
-    pub duration: ::core::option::Option<i32>,
-    #[prost(bool, optional, tag = "3")]
-    pub from_player: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "4")]
-    pub cctoken: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgCloseCaptionDirect {
-    #[prost(uint32, optional, tag = "1")]
-    pub hash: ::core::option::Option<u32>,
-    #[prost(int32, optional, tag = "2")]
-    pub duration: ::core::option::Option<i32>,
-    #[prost(bool, optional, tag = "3")]
-    pub from_player: ::core::option::Option<bool>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgCounterStrafe {
-    #[prost(int32, optional, tag = "1")]
-    pub press_to_release_ns: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub total_keys_down: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgCurrentRoundOdds {
-    #[prost(int32, optional, tag = "1")]
-    pub odds: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgCurrentTimescale {
-    #[prost(float, optional, tag = "1")]
-    pub cur_timescale: ::core::option::Option<f32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgDamage {
-    #[prost(int32, optional, tag = "1")]
-    pub amount: ::core::option::Option<i32>,
-    #[prost(message, optional, tag = "2")]
-    pub inflictor_world_pos: ::core::option::Option<CMsgVector>,
-    #[prost(int32, optional, tag = "3", default = "-1")]
-    pub victim_entindex: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgDamagePrediction {
-    #[prost(int32, optional, tag = "1")]
-    pub command_num: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub pellet_idx: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub victim_slot: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "4")]
-    pub victim_starting_health: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "5")]
-    pub victim_damage: ::core::option::Option<i32>,
-    #[prost(message, optional, tag = "6")]
-    pub shoot_pos: ::core::option::Option<CMsgVector>,
-    #[prost(message, optional, tag = "7")]
-    pub shoot_dir: ::core::option::Option<CMsgQAngle>,
-    #[prost(message, optional, tag = "8")]
-    pub aim_punch: ::core::option::Option<CMsgQAngle>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgDeepStats {
-    #[prost(message, optional, tag = "1")]
-    pub stats: ::core::option::Option<CMsgGccStrike15ClientDeepStats>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgDesiredTimescale {
-    #[prost(float, optional, tag = "1")]
-    pub desired_timescale: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "2")]
-    pub duration_realtime_sec: ::core::option::Option<f32>,
-    #[prost(int32, optional, tag = "3")]
-    pub interpolator_type: ::core::option::Option<i32>,
-    #[prost(float, optional, tag = "4")]
-    pub start_blend_time: ::core::option::Option<f32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgDisconnectToLobby {
-    #[prost(int32, optional, tag = "1")]
-    pub dummy: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgEndOfMatchAllPlayersData {
-    #[prost(message, repeated, tag = "1")]
-    pub allplayerdata: ::prost::alloc::vec::Vec<ccs_usr_msg_end_of_match_all_players_data::PlayerData>,
-    #[prost(int32, optional, tag = "2")]
-    pub scene: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgEntityOutlineHighlight {
-    #[prost(int32, optional, tag = "1", default = "-1")]
-    pub entidx: ::core::option::Option<i32>,
-    #[prost(bool, optional, tag = "2")]
-    pub removehighlight: ::core::option::Option<bool>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgFade {
-    #[prost(int32, optional, tag = "1")]
-    pub duration: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub hold_time: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub flags: ::core::option::Option<i32>,
-    #[prost(message, optional, tag = "4")]
-    pub clr: ::core::option::Option<CMsgRgba>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgGameTitle {
-    #[prost(int32, optional, tag = "1")]
-    pub dummy: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgGeiger {
-    #[prost(int32, optional, tag = "1")]
-    pub range: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgHintText {
-    #[prost(string, optional, tag = "1")]
-    pub message: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgHudMsg {
-    #[prost(int32, optional, tag = "1")]
-    pub channel: ::core::option::Option<i32>,
-    #[prost(message, optional, tag = "2")]
-    pub pos: ::core::option::Option<CMsgVector2D>,
-    #[prost(message, optional, tag = "3")]
-    pub clr1: ::core::option::Option<CMsgRgba>,
-    #[prost(message, optional, tag = "4")]
-    pub clr2: ::core::option::Option<CMsgRgba>,
-    #[prost(int32, optional, tag = "5")]
-    pub effect: ::core::option::Option<i32>,
-    #[prost(float, optional, tag = "6")]
-    pub fade_in_time: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "7")]
-    pub fade_out_time: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "9")]
-    pub hold_time: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "10")]
-    pub fx_time: ::core::option::Option<f32>,
-    #[prost(string, optional, tag = "11")]
-    pub text: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgHudText {
-    #[prost(string, optional, tag = "1")]
-    pub text: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgItemDrop {
-    #[prost(int64, optional, tag = "1")]
-    pub itemid: ::core::option::Option<i64>,
-    #[prost(bool, optional, tag = "2")]
-    pub death: ::core::option::Option<bool>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgItemPickup {
-    #[prost(string, optional, tag = "1")]
-    pub item: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgKeyHintText {
-    #[prost(string, repeated, tag = "1")]
-    pub messages: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgKillCam {
-    #[prost(int32, optional, tag = "1")]
-    pub obs_mode: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2", default = "-1")]
-    pub first_target: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3", default = "-1")]
-    pub second_target: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgMarkAchievement {
-    #[prost(string, optional, tag = "1")]
-    pub achievement: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgMatchEndConditions {
-    #[prost(int32, optional, tag = "1")]
-    pub fraglimit: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub mp_maxrounds: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub mp_winlimit: ::core::option::Option<i32>,
-    #[prost(float, optional, tag = "4")]
-    pub mp_timelimit: ::core::option::Option<f32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgMatchStatsUpdate {
-    #[prost(string, optional, tag = "1")]
-    pub update: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgPlayerDecalDigitalSignature {
-    #[prost(message, optional, tag = "1")]
-    pub data: ::core::option::Option<PlayerDecalDigitalSignature>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgPlayerStatsUpdate {
-    #[prost(int32, optional, tag = "1")]
-    pub version: ::core::option::Option<i32>,
-    #[prost(message, repeated, tag = "4")]
-    pub stats: ::prost::alloc::vec::Vec<ccs_usr_msg_player_stats_update::Stat>,
-    #[prost(uint32, optional, tag = "5")]
-    pub ehandle: ::core::option::Option<u32>,
-    #[prost(int32, optional, tag = "6")]
-    pub crc: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgPostRoundDamageReport {
-    #[prost(uint64, optional, tag = "1")]
-    pub other_xuid: ::core::option::Option<u64>,
-    #[prost(int32, optional, tag = "2")]
-    pub given_kill_type: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub given_health_removed: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "4")]
-    pub given_num_hits: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "5")]
-    pub taken_kill_type: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "6")]
-    pub taken_health_removed: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "7")]
-    pub taken_num_hits: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgPreMatchSayText {
-    #[prost(uint32, optional, tag = "1")]
-    pub account_id: ::core::option::Option<u32>,
-    #[prost(string, optional, tag = "2")]
-    pub text: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "3")]
-    pub all_chat: ::core::option::Option<bool>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgProcessSpottedEntityUpdate {
-    #[prost(bool, optional, tag = "1")]
-    pub new_update: ::core::option::Option<bool>,
-    #[prost(message, repeated, tag = "2")]
-    pub entity_updates: ::prost::alloc::vec::Vec<ccs_usr_msg_process_spotted_entity_update::SpottedEntityUpdate>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgQuestProgress {
-    #[prost(uint32, optional, tag = "1")]
-    pub quest_id: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "2")]
-    pub normal_points: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "3")]
-    pub bonus_points: ::core::option::Option<u32>,
-    #[prost(bool, optional, tag = "4")]
-    pub is_event_quest: ::core::option::Option<bool>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgRadioText {
-    #[prost(int32, optional, tag = "1")]
-    pub msg_dst: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2", default = "-1")]
-    pub client: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "3")]
-    pub msg_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "4")]
-    pub params: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgRawAudio {
-    #[prost(int32, optional, tag = "1")]
-    pub pitch: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2", default = "-1")]
-    pub entidx: ::core::option::Option<i32>,
-    #[prost(float, optional, tag = "3")]
-    pub duration: ::core::option::Option<f32>,
-    #[prost(string, optional, tag = "4")]
-    pub voice_filename: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgRecurringMissionSchema {
-    #[prost(uint32, optional, tag = "1")]
-    pub period: ::core::option::Option<u32>,
-    #[prost(bytes = "vec", optional, tag = "2")]
-    pub mission_schema: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgReloadEffect {
-    #[prost(int32, optional, tag = "1", default = "-1")]
-    pub entidx: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub actanim: ::core::option::Option<i32>,
-    #[prost(float, optional, tag = "3")]
-    pub origin_x: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "4")]
-    pub origin_y: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "5")]
-    pub origin_z: ::core::option::Option<f32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgReportHit {
-    #[prost(float, optional, tag = "1")]
-    pub pos_x: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "2")]
-    pub pos_y: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "4")]
-    pub timestamp: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "3")]
-    pub pos_z: ::core::option::Option<f32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgRequestState {
-    #[prost(int32, optional, tag = "1")]
-    pub dummy: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgResetHud {
-    #[prost(bool, optional, tag = "1")]
-    pub reset: ::core::option::Option<bool>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgRoundBackupFilenames {
-    #[prost(int32, optional, tag = "1")]
-    pub count: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub index: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "3")]
-    pub filename: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "4")]
-    pub nicename: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgRoundEndReportData {
-    #[prost(message, optional, tag = "1")]
-    pub init_conditions: ::core::option::Option<ccs_usr_msg_round_end_report_data::InitialConditions>,
-    #[prost(message, repeated, tag = "2")]
-    pub all_rer_event_data: ::prost::alloc::vec::Vec<ccs_usr_msg_round_end_report_data::RerEvent>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgRumble {
-    #[prost(int32, optional, tag = "1")]
-    pub index: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub data: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub flags: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgScoreLeaderboardData {
-    #[prost(message, optional, tag = "1")]
-    pub data: ::core::option::Option<ScoreLeaderboardData>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgSendAudio {
-    #[prost(string, optional, tag = "1")]
-    pub radio_sound: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgSendLastKillerDamageToClient {
-    #[prost(int32, optional, tag = "1")]
-    pub num_hits_given: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub damage_given: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub num_hits_taken: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "4")]
-    pub damage_taken: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "5")]
-    pub actual_damage_given: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "6")]
-    pub actual_damage_taken: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgSendPlayerItemDrops {
-    #[prost(message, repeated, tag = "1")]
-    pub entity_updates: ::prost::alloc::vec::Vec<CEconItemPreviewDataBlock>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgSendPlayerItemFound {
-    #[prost(message, optional, tag = "1")]
-    pub iteminfo: ::core::option::Option<CEconItemPreviewDataBlock>,
-    #[prost(int32, optional, tag = "2", default = "-1")]
-    pub playerslot: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgSendPlayerLoadout {
-    #[prost(message, repeated, tag = "1")]
-    pub loadout: ::prost::alloc::vec::Vec<ccs_usr_msg_send_player_loadout::LoadoutItem>,
-    #[prost(int32, optional, tag = "2", default = "-1")]
-    pub playerslot: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgServerRankRevealAll {
-    #[prost(int32, optional, tag = "1")]
-    pub seconds_till_shutdown: ::core::option::Option<i32>,
-    #[prost(message, optional, tag = "2")]
-    pub reservation: ::core::option::Option<CMsgGccStrike15V2MatchmakingGc2ServerReserve>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgServerRankUpdate {
-    #[prost(message, repeated, tag = "1")]
-    pub rank_update: ::prost::alloc::vec::Vec<ccs_usr_msg_server_rank_update::RankUpdate>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgShake {
-    #[prost(int32, optional, tag = "1")]
-    pub command: ::core::option::Option<i32>,
-    #[prost(float, optional, tag = "2")]
-    pub local_amplitude: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "3")]
-    pub frequency: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "4")]
-    pub duration: ::core::option::Option<f32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgShootInfo {
-    #[prost(int32, optional, tag = "1")]
-    pub frame_number: ::core::option::Option<i32>,
-    #[prost(message, repeated, tag = "2")]
-    pub hitbox_transforms: ::prost::alloc::vec::Vec<CMsgTransform>,
-    #[prost(message, optional, tag = "3")]
-    pub shoot_pos: ::core::option::Option<CMsgVector>,
-    #[prost(message, optional, tag = "4")]
-    pub shoot_dir: ::core::option::Option<CMsgQAngle>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgShowMenu {
-    #[prost(int32, optional, tag = "1")]
-    pub bits_valid_slots: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub display_time: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "3")]
-    pub menu_string: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgSsui {
-    #[prost(bool, optional, tag = "1")]
-    pub show: ::core::option::Option<bool>,
-    #[prost(float, optional, tag = "2")]
-    pub start_time: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "3")]
-    pub end_time: ::core::option::Option<f32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgStopSpectatorMode {
-    #[prost(int32, optional, tag = "1")]
-    pub dummy: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgSurvivalStats {
-    #[prost(uint64, optional, tag = "1")]
-    pub xuid: ::core::option::Option<u64>,
-    #[prost(message, repeated, tag = "2")]
-    pub facts: ::prost::alloc::vec::Vec<ccs_usr_msg_survival_stats::Fact>,
-    #[prost(message, repeated, tag = "3")]
-    pub users: ::prost::alloc::vec::Vec<ccs_usr_msg_survival_stats::Placement>,
-    #[prost(message, repeated, tag = "5")]
-    pub damages: ::prost::alloc::vec::Vec<ccs_usr_msg_survival_stats::Damage>,
-    #[prost(int32, optional, tag = "4")]
-    pub ticknumber: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgTrain {
-    #[prost(int32, optional, tag = "1")]
-    pub train: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgUpdateScreenHealthBar {
-    #[prost(int32, optional, tag = "1", default = "-1")]
-    pub entidx: ::core::option::Option<i32>,
-    #[prost(float, optional, tag = "2")]
-    pub healthratio_old: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "3")]
-    pub healthratio_new: ::core::option::Option<f32>,
-    #[prost(int32, optional, tag = "4")]
-    pub style: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgVguiMenu {
-    #[prost(string, optional, tag = "1")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "2")]
-    pub show: ::core::option::Option<bool>,
-    #[prost(message, repeated, tag = "3")]
-    pub keys: ::prost::alloc::vec::Vec<ccs_usr_msg_vgui_menu::Keys>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgVoiceMask {
-    #[prost(message, repeated, tag = "1")]
-    pub player_masks: ::prost::alloc::vec::Vec<ccs_usr_msg_voice_mask::PlayerMask>,
-    #[prost(bool, optional, tag = "2")]
-    pub player_mod_enable: ::core::option::Option<bool>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgVoteFailed {
-    #[prost(int32, optional, tag = "1")]
-    pub team: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub reason: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgVotePass {
-    #[prost(int32, optional, tag = "1")]
-    pub team: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub vote_type: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "3")]
-    pub disp_str: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "4")]
-    pub details_str: ::core::option::Option<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgVoteSetup {
-    #[prost(string, repeated, tag = "1")]
-    pub potential_issues: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgVoteStart {
-    #[prost(int32, optional, tag = "1")]
-    pub team: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2", default = "-1")]
-    pub player_slot: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub vote_type: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "4")]
-    pub disp_str: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "5")]
-    pub details_str: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "6")]
-    pub other_team_str: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "7")]
-    pub is_yes_no_vote: ::core::option::Option<bool>,
-    #[prost(int32, optional, tag = "8", default = "-1")]
-    pub player_slot_target: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgWeaponSound {
-    #[prost(int32, optional, tag = "1", default = "-1")]
-    pub entidx: ::core::option::Option<i32>,
-    #[prost(float, optional, tag = "2")]
-    pub origin_x: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "3")]
-    pub origin_y: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "4")]
-    pub origin_z: ::core::option::Option<f32>,
-    #[prost(string, optional, tag = "5")]
-    pub sound: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(float, optional, tag = "6")]
-    pub game_timestamp: ::core::option::Option<f32>,
-    #[prost(fixed32, optional, tag = "7")]
-    pub source_soundscapeid: ::core::option::Option<u32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgXRankGet {
-    #[prost(int32, optional, tag = "1")]
-    pub mode_idx: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub controller: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CcsUsrMsgXRankUpd {
-    #[prost(int32, optional, tag = "1")]
-    pub mode_idx: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub controller: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "3")]
-    pub ranking: ::core::option::Option<i32>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CcsUsrMsgXpUpdate {
-    #[prost(message, optional, tag = "1")]
-    pub data: ::core::option::Option<CMsgGcCstrike15V2Gc2ServerNotifyXpRewarded>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoAccountItemPersonalStore {
+pub struct CSoAccountItemPersonalStore {
     #[prost(uint32, optional, tag = "1")]
     pub generation_time: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2345,13 +2345,13 @@ pub struct CsoAccountItemPersonalStore {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoAccountKeychainRemoveToolCharges {
+pub struct CSoAccountKeychainRemoveToolCharges {
     #[prost(uint32, optional, tag = "1")]
     pub charges: ::core::option::Option<u32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoAccountRecurringMission {
+pub struct CSoAccountRecurringMission {
     #[prost(uint32, optional, tag = "1")]
     pub account_id: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2363,7 +2363,7 @@ pub struct CsoAccountRecurringMission {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoAccountRecurringSubscription {
+pub struct CSoAccountRecurringSubscription {
     #[prost(uint32, optional, tag = "1")]
     pub time_next_cycle: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2371,7 +2371,7 @@ pub struct CsoAccountRecurringSubscription {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoAccountSeasonalOperation {
+pub struct CSoAccountSeasonalOperation {
     #[prost(uint32, optional, tag = "1")]
     pub season_value: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2389,7 +2389,7 @@ pub struct CsoAccountSeasonalOperation {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoAccountXpShop {
+pub struct CSoAccountXpShop {
     #[prost(uint32, optional, tag = "1")]
     pub generation_time: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2399,7 +2399,7 @@ pub struct CsoAccountXpShop {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoAccountXpShopBids {
+pub struct CSoAccountXpShopBids {
     #[prost(uint32, optional, tag = "1")]
     pub campaign_id: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2411,7 +2411,7 @@ pub struct CsoAccountXpShopBids {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoEconCoupon {
+pub struct CSoEconCoupon {
     #[prost(uint32, optional, tag = "1")]
     pub entryid: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2421,7 +2421,7 @@ pub struct CsoEconCoupon {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoGameAccountSteamChina {
+pub struct CSoGameAccountSteamChina {
     #[prost(uint32, optional, tag = "1")]
     pub time_last_update: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2431,7 +2431,7 @@ pub struct CsoGameAccountSteamChina {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoPersonaDataPublic {
+pub struct CSoPersonaDataPublic {
     #[prost(int32, optional, tag = "1")]
     pub player_level: ::core::option::Option<i32>,
     #[prost(message, optional, tag = "2")]
@@ -2445,7 +2445,7 @@ pub struct CsoPersonaDataPublic {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoQuestProgress {
+pub struct CSoQuestProgress {
     #[prost(uint32, optional, tag = "1")]
     pub questid: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "2")]
@@ -2455,7 +2455,7 @@ pub struct CsoQuestProgress {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoVolatileItemClaimedRewards {
+pub struct CSoVolatileItemClaimedRewards {
     #[prost(uint32, optional, tag = "1")]
     pub defidx: ::core::option::Option<u32>,
     #[prost(uint32, repeated, packed = "false", tag = "2")]
@@ -2465,7 +2465,7 @@ pub struct CsoVolatileItemClaimedRewards {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CsoVolatileItemOffer {
+pub struct CSoVolatileItemOffer {
     #[prost(uint32, optional, tag = "1")]
     pub defidx: ::core::option::Option<u32>,
     #[prost(uint64, repeated, packed = "false", tag = "2")]

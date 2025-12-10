@@ -69,7 +69,26 @@ fn main() -> std::io::Result<()> {
         clean_blocks("dota.rs", "common.rs")?;
         clean_blocks("citadel.rs", "common.rs")?;
         clean_blocks("cs2.rs", "common.rs")?;
+
+        format_rust_file("dota.rs")?;
+        format_rust_file("common.rs")?;
+        format_rust_file("citadel.rs")?;
+        format_rust_file("cs2.rs")?;
     }
+    Ok(())
+}
+
+fn format_rust_file(filename: &str) -> std::io::Result<()> {
+    use std::process::Command;
+
+    let output = Command::new("rustfmt")
+        .arg(filename)
+        .output()?;
+
+    if !output.status.success() {
+        eprintln!("Warning: rustfmt failed for {}: {}", filename, String::from_utf8_lossy(&output.stderr));
+    }
+
     Ok(())
 }
 

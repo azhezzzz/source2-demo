@@ -39,6 +39,11 @@ pub mod prelude {
     pub use crate::proto::CitadelUserMessageIds;
     #[cfg(feature = "deadlock")]
     pub use crate::proto::ECitadelGameEvents;
+
+    #[cfg(feature = "cs2")]
+    pub use crate::proto::ECstrike15UserMessages;
+    #[cfg(feature = "cs2")]
+    pub use crate::proto::ECsgoGameEvents;
 }
 
 pub use crate::entity::field::FieldValue;

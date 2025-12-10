@@ -16,3 +16,4 @@ proc-macro2 = "1.0"
 [features]
 dota = []
 citadel = []
+cs2 = []

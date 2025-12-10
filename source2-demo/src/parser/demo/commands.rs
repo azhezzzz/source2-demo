@@ -162,6 +162,15 @@ impl DemoCommands for Parser<'_> {
                 continue;
             }
 
+            #[cfg(feature = "cs2")]
+            if let Ok(msg) = ECstrike15UserMessages::try_from(msg_type) {
+                self.on_cs2_user_message(msg, &msg_buf)?;
+                continue;
+            } else if let Ok(msg) = ECsgoGameEvents::try_from(msg_type) {
+                self.on_cs2_game_event(msg, &msg_buf)?;
+                continue;
+            }
+
             if let Ok(msg) = SvcMessages::try_from(msg_type) {
                 self.on_svc_message(msg, &msg_buf)?;
             } else if let Ok(msg) = EBaseUserMessages::try_from(msg_type) {

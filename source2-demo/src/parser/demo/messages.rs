@@ -49,6 +49,20 @@ pub trait DemoMessages {
         msg_type: CitadelUserMessageIds,
         msg: &[u8],
     ) -> Result<(), ParserError>;
+
+    #[cfg(feature = "cs2")]
+    fn on_cs2_user_message(
+        &mut self,
+        msg_type: ECstrike15UserMessages,
+        msg: &[u8],
+    ) -> Result<(), ParserError>;
+
+    #[cfg(feature = "cs2")]
+    fn on_cs2_game_event(
+        &mut self,
+        msg_type: ECsgoGameEvents,
+        msg: &[u8],
+    ) -> Result<(), ParserError>;
 }
 
 impl DemoMessages for Parser<'_> {
@@ -192,6 +206,26 @@ impl DemoMessages for Parser<'_> {
         msg: &[u8],
     ) -> Result<(), ParserError> {
         try_observers!(self, CITA_UM, on_citadel_user_message(&self.context, msg_type, msg))?;
+        Ok(())
+    }
+
+    #[cfg(feature = "cs2")]
+    fn on_cs2_user_message(
+        &mut self,
+        msg_type: ECstrike15UserMessages,
+        msg: &[u8],
+    ) -> Result<(), ParserError> {
+        try_observers!(self, CS2_UM, on_cs2_user_message(&self.context, msg_type, msg))?;
+        Ok(())
+    }
+
+    #[cfg(feature = "cs2")]
+    fn on_cs2_game_event(
+        &mut self,
+        msg_type: ECsgoGameEvents,
+        msg: &[u8],
+    ) -> Result<(), ParserError> {
+        try_observers!(self, CS2_GE, on_cs2_game_event(&self.context, msg_type, msg))?;
         Ok(())
     }
 }

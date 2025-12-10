@@ -64,6 +64,11 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     #[cfg(feature = "citadel")]
     let mut has_cita_ge = false;
 
+    #[cfg(feature = "cs2")]
+    let mut has_cs2_um = false;
+    #[cfg(feature = "cs2")]
+    let mut has_cs2_ge = false;
+
     #[cfg(feature = "dota")]
     let mut on_combat_log_body = quote!();
     #[cfg(feature = "dota")]
@@ -73,6 +78,11 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut on_citadel_user_message_body = quote!();
     #[cfg(feature = "citadel")]
     let mut on_citadel_game_event_body = quote!();
+
+    #[cfg(feature = "cs2")]
+    let mut on_cs2_user_message_body = quote!();
+    #[cfg(feature = "cs2")]
+    let mut on_cs2_game_event_body = quote!();
 
     let mut on_svc_message_body = quote!();
     let mut on_net_message_body = quote!();
@@ -225,6 +235,10 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                                 "CitadelUserMessageIds" => has_cita_um = true,
                                 #[cfg(feature = "citadel")]
                                 "ECitadelGameEvents" => has_cita_ge = true,
+                                #[cfg(feature = "cs2")]
+                                "ECstrike15UserMessages" => has_cs2_um = true,
+                                #[cfg(feature = "cs2")]
+                                "ECsgoGameEvents" => has_cs2_ge = true,
                                 _ => {}
                             }
 
@@ -242,6 +256,10 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                                 "CitadelUserMessageIds" => extend!(on_citadel_user_message_body),
                                 #[cfg(feature = "citadel")]
                                 "ECitadelGameEvents" => extend!(on_citadel_game_event_body),
+                                #[cfg(feature = "cs2")]
+                                "ECstrike15UserMessages" => extend!(on_cs2_user_message_body),
+                                #[cfg(feature = "cs2")]
+                                "ECsgoGameEvents" => extend!(on_cs2_game_event_body),
 
                                 x => unreachable!("{}", x),
                             }
@@ -403,6 +421,29 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     });
 
+    #[cfg(feature = "cs2")]
+    obs_body.extend(quote! {
+        fn on_cs2_user_message(
+            &mut self,
+            ctx: &Context,
+            msg_type: ECstrike15UserMessages,
+            msg: &[u8],
+        ) -> ObserverResult {
+            #on_cs2_user_message_body
+            Ok(())
+        }
+
+        fn on_cs2_game_event(
+            &mut self,
+            ctx: &Context,
+            msg_type: ECsgoGameEvents,
+            msg: &[u8],
+        ) -> ObserverResult {
+            #on_cs2_game_event_body
+            Ok(())
+        }
+    });
+
     macro_rules! add_if { ($cond:expr, $flag:ident) => {
         if $cond { interests = quote!(#interests | ::source2_demo::Interests::$flag); }
     }}
@@ -433,6 +474,11 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     add_if!(has_cita_um,    CITA_UM);
     #[cfg(feature = "citadel")]
     add_if!(has_cita_ge,    CITA_GE);
+
+    #[cfg(feature = "cs2")]
+    add_if!(has_cs2_um,     CS2_UM);
+    #[cfg(feature = "cs2")]
+    add_if!(has_cs2_ge,     CS2_GE);
 
     let ret = quote! {
         impl Observer for #struct_name {

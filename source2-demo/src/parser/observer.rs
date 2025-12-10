@@ -41,6 +41,12 @@ bitflags::bitflags! {
 
         #[cfg(feature = "deadlock")]
         const CITA_GE    = 1 << 15; // ECitadelGameEvents
+
+        #[cfg(feature = "cs2")]
+        const CS2_UM     = 1 << 16; // ECstrike15UserMessages
+
+        #[cfg(feature = "cs2")]
+        const CS2_GE     = 1 << 17; // ECsgoGameEvents
     }
 }
 
@@ -188,6 +194,30 @@ pub trait Observer {
         &mut self,
         ctx: &Context,
         msg_type: CitadelUserMessageIds,
+        msg: &[u8],
+    ) -> ObserverResult {
+        Ok(())
+    }
+
+    #[cold]
+    #[inline(never)]
+    #[cfg(feature = "cs2")]
+    fn on_cs2_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: ECstrike15UserMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        Ok(())
+    }
+
+    #[cold]
+    #[inline(never)]
+    #[cfg(feature = "cs2")]
+    fn on_cs2_game_event(
+        &mut self,
+        ctx: &Context,
+        msg_type: ECsgoGameEvents,
         msg: &[u8],
     ) -> ObserverResult {
         Ok(())

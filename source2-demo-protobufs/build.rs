@@ -114,7 +114,14 @@ fn clean_rust_file(filename: &str) -> std::io::Result<()> {
     let cleaned_code = clean_impl_blocks(&rust_code);
     let cleaned_code = clean_comments(&cleaned_code);
 
-    let cleaned_code = cleaned_code.replace("Cnet", "CNet").replace("Csvc", "CSvc").replace("Cdota", "CDota");
+    let cleaned_code = cleaned_code
+        .replace("Cnet", "CNet")
+        .replace("Csvc", "CSvc")
+        .replace("Cdota", "CDota")
+        .replace("Ccs", "CCs")
+        .replace("Cso", "CSo")
+        .replace("Cgc", "CGc")
+        .replace("Cip", "CIp");
 
     fs::write(filename, cleaned_code)
 }

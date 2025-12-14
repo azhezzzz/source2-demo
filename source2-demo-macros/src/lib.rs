@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 mod protobuf_map;
 
 use crate::protobuf_map::get_enum_from_struct;

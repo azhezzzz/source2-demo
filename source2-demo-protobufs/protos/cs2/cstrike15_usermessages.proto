@@ -1,8 +1,5 @@
-syntax = "proto2";
-
 import "networkbasetypes.proto";
 import "cstrike15_gcmessages.proto";
-
 
 enum ECstrike15UserMessages {
 	CS_UM_VGUIMenu = 301;

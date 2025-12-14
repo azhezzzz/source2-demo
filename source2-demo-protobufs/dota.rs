@@ -1134,6 +1134,34 @@ pub struct CDotaUserMsgModifierAlert {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CDotaUserMsgMonsterHunterHuntAlert {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub hero_id: ::core::option::Option<i32>,
+    #[prost(enumeration = "cdota_user_msg_monster_hunter_hunt_alert::EHuntAlertType", optional, tag = "3", default = "MainObjective")]
+    pub hunt_alert_type: ::core::option::Option<i32>,
+    #[prost(enumeration = "cdota_user_msg_monster_hunter_hunt_alert::EHuntStatusType", optional, tag = "4", default = "Pending")]
+    pub hunt_status_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "5")]
+    pub index: ::core::option::Option<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CDotaUserMsgMonsterHunterInvestigationGameState {
+    #[prost(message, optional, tag = "1")]
+    pub investigation_game_state: ::core::option::Option<CMsgMonsterHunterInvestigationGameState>,
+    #[prost(bool, optional, tag = "2")]
+    pub investigations_locked: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CDotaUserMsgMonsterHunterInvestigationsAvailable {
+    #[prost(message, repeated, tag = "1")]
+    pub investigations: ::prost::alloc::vec::Vec<CMsgMonsterHunterInvestigation>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMoveCameraToUnit {
     #[prost(uint32, optional, tag = "1", default = "16777215")]
     pub unit_ehandle: ::core::option::Option<u32>,
@@ -2303,6 +2331,46 @@ pub struct CMsgHeroAbilityStat {
     pub float_value: ::core::option::Option<f32>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CMsgMonsterHunterCodexUpdateData {
+    #[prost(int32, optional, tag = "1")]
+    pub player_hero: ::core::option::Option<i32>,
+    #[prost(int32, repeated, packed = "false", tag = "2")]
+    pub allies: ::prost::alloc::vec::Vec<i32>,
+    #[prost(int32, repeated, packed = "false", tag = "3")]
+    pub enemies: ::prost::alloc::vec::Vec<i32>,
+    #[prost(message, repeated, tag = "4")]
+    pub player_kills: ::prost::alloc::vec::Vec<c_msg_monster_hunter_codex_update_data::KillInfo>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CMsgMonsterHunterInvestigation {
+    #[prost(int32, optional, tag = "1")]
+    pub hero_id: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub persona_id: ::core::option::Option<i32>,
+    #[prost(message, optional, tag = "3")]
+    pub match_rewards: ::core::option::Option<CMsgMonsterHunterMaterialQuantity>,
+    #[prost(message, optional, tag = "4")]
+    pub hunt_rewards: ::core::option::Option<CMsgMonsterHunterMaterialQuantity>,
+    #[prost(bool, optional, tag = "5")]
+    pub success_state: ::core::option::Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CMsgMonsterHunterInvestigationGameState {
+    #[prost(message, optional, tag = "1")]
+    pub selected_investigation: ::core::option::Option<CMsgMonsterHunterInvestigation>,
+    #[prost(message, repeated, tag = "2")]
+    pub hunted_by: ::prost::alloc::vec::Vec<c_msg_monster_hunter_investigation_game_state::HuntedBy>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CMsgMonsterHunterMaterialQuantity {
+    #[prost(message, repeated, tag = "1")]
+    pub material_counts: ::prost::alloc::vec::Vec<c_msg_monster_hunter_material_quantity::MaterialCountsEntry>,
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgPendingEventAward {
     #[prost(enumeration = "EEvent", optional, tag = "1", default = "EventIdNone")]
@@ -2406,6 +2474,7 @@ pub enum DotaBotMode {
     TutorialBoss = 24,
     Minion = 25,
     Outpost = 26,
+    BotChallengeEndgame = 27,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2702,6 +2771,7 @@ pub enum DotaGameMode {
     DotaGamemodeTurbo = 23,
     DotaGamemodeMutation = 24,
     DotaGamemodeCoachesChallenge = 25,
+    DotaGamemodeBotChallenge = 26,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3189,6 +3259,9 @@ pub enum EDotaUserMessages {
     DotaUmTimerAlert = 628,
     DotaUmMadstoneAlert = 629,
     DotaUmCourierLeftFountainAlert = 630,
+    DotaUmMonsterHunterInvestigationsAvailable = 631,
+    DotaUmMonsterHunterInvestigationGameState = 632,
+    DotaUmMonsterHunterHuntAlert = 633,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3244,8 +3317,10 @@ pub enum EEvent {
     EventIdFrostivus2023 = 48,
     EventIdInternational2024 = 49,
     EventIdFrostivus2024 = 50,
+    EventIdMonsterHunter = 51,
     EventIdInternational2025 = 52,
     EventIdFall2025 = 53,
+    EventIdWinter2025 = 55,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3742,6 +3817,40 @@ pub struct VersusScenePlaybackRate {
     pub rate: ::core::option::Option<f32>,
 }
 
+pub mod c_msg_monster_hunter_codex_update_data {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+    pub struct KillInfo {
+        #[prost(int32, optional, tag = "1")]
+        pub hero_id: ::core::option::Option<i32>,
+        #[prost(int32, optional, tag = "2")]
+        pub kill_count: ::core::option::Option<i32>,
+    }
+}
+
+pub mod c_msg_monster_hunter_investigation_game_state {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+    pub struct HuntedBy {
+        #[prost(int32, optional, tag = "1")]
+        pub hero_id: ::core::option::Option<i32>,
+        #[prost(int32, optional, tag = "2")]
+        pub persona_id: ::core::option::Option<i32>,
+        #[prost(message, optional, tag = "3")]
+        pub hunt_rewards: ::core::option::Option<super::CMsgMonsterHunterMaterialQuantity>,
+        #[prost(bool, optional, tag = "4")]
+        pub success_state: ::core::option::Option<bool>,
+    }
+}
+
+pub mod c_msg_monster_hunter_material_quantity {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+    pub struct MaterialCountsEntry {
+        #[prost(uint32, optional, tag = "1")]
+        pub key: ::core::option::Option<u32>,
+        #[prost(int32, optional, tag = "2")]
+        pub value: ::core::option::Option<i32>,
+    }
+}
+
 pub mod cdota_response_query_serialized {
     #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Fact {
@@ -3873,6 +3982,27 @@ pub mod cdota_user_msg_mini_kill_cam_info {
             #[prost(int32, optional, tag = "2")]
             pub damage: ::core::option::Option<i32>,
         }
+    }
+}
+
+pub mod cdota_user_msg_monster_hunter_hunt_alert {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[repr(i32)]
+    pub enum EHuntAlertType {
+        MainObjective = 0,
+        MainObjectiveAll = 1,
+        HuntedBy = 2,
+        HuntedByAll = 3,
+        HunterDuel = 4,
+        HunterDuelAll = 5,
+        HuntSelection = 6,
+    }
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[repr(i32)]
+    pub enum EHuntStatusType {
+        Pending = 0,
+        Success = 1,
+        Failed = 2,
     }
 }
 

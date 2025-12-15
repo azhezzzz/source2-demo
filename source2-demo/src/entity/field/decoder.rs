@@ -1,6 +1,10 @@
 use crate::entity::field::{FieldEncoder, FieldProperties, FieldType, FieldValue};
 use crate::reader::*;
 
+pub(crate) trait Decode {
+    fn decode(&self, reader: &mut Reader) -> FieldValue;
+}
+
 pub(crate) enum FieldDecoder {
     Boolean,
     String,
@@ -11,14 +15,15 @@ pub(crate) enum FieldDecoder {
     Unsigned16,
     Unsigned32,
 
-    Vector(FieldProperties, u8),
-    Unsigned64(FieldProperties),
-    Float32(FieldProperties),
-    QuantizedFloat(FieldProperties),
-    QAngle(FieldProperties),
+    Vector(VectorDecoder),
+    Unsigned64(Unsigned64Decoder),
+    Float32(Float32Decoder),
+    QuantizedFloat(QuantizedFloatDecoder),
+    QAngle(QAngleDecoder),
 
     CCSGameModeRules
 }
+
 
 impl FieldDecoder {
     #[inline]
@@ -30,14 +35,25 @@ impl FieldDecoder {
 
             "char" | "CUtlString" | "CUtlSymbolLarge" => FieldDecoder::String,
 
-            "Vector" | "VectorWS" => FieldDecoder::Vector(properties, 3),
-            "Vector2D" => FieldDecoder::Vector(properties, 2),
-            "Vector4D" | "Quaternion" => FieldDecoder::Vector(properties, 4),
+            "Vector" | "VectorWS" => FieldDecoder::Vector(VectorDecoder {
+                properties,
+                dimensions: 3
+            }),
+            "Vector2D" => FieldDecoder::Vector(VectorDecoder {
+                properties,
+                dimensions: 2
+            }),
+            "Vector4D" | "Quaternion" => FieldDecoder::Vector(VectorDecoder {
+                properties,
+                dimensions: 4
+            }),
 
-            "QAngle" => FieldDecoder::QAngle(properties),
+            "QAngle" => FieldDecoder::QAngle(QAngleDecoder { properties }),
 
-            "CNetworkedQuantizedFloat" => FieldDecoder::QuantizedFloat(properties),
-            "float32" | "GameTime_t" => FieldDecoder::Float32(properties),
+            "CNetworkedQuantizedFloat" => FieldDecoder::QuantizedFloat(
+                QuantizedFloatDecoder::new(&properties)
+            ),
+            "float32" | "GameTime_t" => FieldDecoder::Float32(Float32Decoder { properties }),
 
             "int8" => FieldDecoder::Signed8,
             "int16" => FieldDecoder::Signed16,
@@ -48,7 +64,9 @@ impl FieldDecoder {
 
             "uint8" | "BloodType" => FieldDecoder::Unsigned8,
             "uint16" => FieldDecoder::Unsigned16,
-            "uint64" | "CStrongHandle" | "HeroFacetKey_t" => FieldDecoder::Unsigned64(properties),
+            "uint64" | "CStrongHandle" | "HeroFacetKey_t" => {
+                FieldDecoder::Unsigned64(Unsigned64Decoder { properties })
+            }
 
             _ => FieldDecoder::Unsigned32,
         }
@@ -62,123 +80,20 @@ impl FieldDecoder {
                 reader.read_bool()
             }),
             FieldDecoder::String => FieldValue::String(reader.read_string()),
+
             FieldDecoder::Signed8 => FieldValue::Signed8(reader.read_var_i32() as i8),
             FieldDecoder::Signed16 => FieldValue::Signed16(reader.read_var_i32() as i16),
             FieldDecoder::Signed32 => FieldValue::Signed32(reader.read_var_i32()),
+
             FieldDecoder::Unsigned8 => FieldValue::Unsigned8(reader.read_var_u32() as u8),
             FieldDecoder::Unsigned16 => FieldValue::Unsigned16(reader.read_var_u32() as u16),
             FieldDecoder::Unsigned32 => FieldValue::Unsigned32(reader.read_var_u32()),
-            FieldDecoder::Float32(fp) => match fp.encoder {
-                Some(FieldEncoder::Coord) => FieldValue::Float(reader.read_coordinate()),
-                Some(FieldEncoder::SimTime) => {
-                    FieldValue::Float(reader.read_var_u32() as f32 / 30.0)
-                }
-                Some(FieldEncoder::RuneTime) => {
-                    FieldValue::Float(f32::from_bits(reader.read_bits(4)))
-                }
-                _ => {
-                    if fp.bit_count == 32 {
-                        return FieldValue::Float(reader.read_f32());
-                    }
-                    FieldDecoder::QuantizedFloat(*fp).decode(reader)
-                }
-            },
-            FieldDecoder::Vector(fp, n) => match n {
-                2 => FieldValue::Vector2D([
-                    FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                    FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                ]),
-                3 => {
-                    if fp.encoder == Some(FieldEncoder::Normal) {
-                        FieldValue::Vector3D(reader.read_3bit_normal())
-                    } else {
-                        FieldValue::Vector3D([
-                            FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                            FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                            FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                        ])
-                    }
-                }
-                4 => FieldValue::Vector4D([
-                    FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                    FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                    FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                    FieldDecoder::Float32(*fp).decode(reader).as_float(),
-                ]),
-                _ => unreachable!(),
-            },
-            FieldDecoder::Unsigned64(fp) => {
-                if fp.encoder == Some(FieldEncoder::Fixed64) {
-                    return FieldValue::Unsigned64(reader.read_le_u64());
-                }
-                FieldValue::Unsigned64(reader.read_var_u64())
-            }
-            FieldDecoder::QuantizedFloat(fp) => {
-                if fp.bit_count == 32 {
-                    return FieldValue::Float(reader.read_f32());
-                }
-                FieldValue::Float(QuantizedFloatDecoder::new(fp).decode(reader))
-            }
-            FieldDecoder::QAngle(fp) => {
-                reader.refill();
-                if fp.encoder == Some(FieldEncoder::QAnglePitchYaw) {
-                    return FieldValue::Vector3D([
-                        reader.read_angle(fp.bit_count as u32),
-                        reader.read_angle(fp.bit_count as u32),
-                        0.0,
-                    ]);
-                }
 
-                if fp.encoder == Some(FieldEncoder::QAnglePrecise) {
-                    let mut v = [0f32; 3];
-                    let x = reader.read_bool();
-                    let y = reader.read_bool();
-                    let z = reader.read_bool();
-                    if x {
-                        v[0] = reader.read_angle(20);
-                    }
-                    if y {
-                        v[1] = reader.read_angle(20);
-                    }
-                    if z {
-                        v[2] = reader.read_angle(20);
-                    }
-
-                    return FieldValue::Vector3D(v);
-                }
-                if fp.bit_count != 0 && fp.bit_count != 32 {
-                    let n = fp.bit_count as u32;
-                    return FieldValue::Vector3D([
-                        reader.read_angle(n),
-                        reader.read_angle(n),
-                        reader.read_angle(n),
-                    ]);
-                }
-
-                if fp.bit_count == 32 {
-                    return FieldValue::Vector3D([
-                        reader.read_f32(),
-                        reader.read_f32(),
-                        reader.read_f32(),
-                    ]);
-                }
-
-                let mut v = [0f32; 3];
-                let x = reader.read_bool();
-                let y = reader.read_bool();
-                let z = reader.read_bool();
-                if x {
-                    v[0] = reader.read_coordinate();
-                }
-                if y {
-                    v[1] = reader.read_coordinate();
-                }
-                if z {
-                    v[2] = reader.read_coordinate();
-                }
-
-                FieldValue::Vector3D(v)
-            }
+            FieldDecoder::Vector(decoder) => decoder.decode(reader),
+            FieldDecoder::Unsigned64(decoder) => decoder.decode(reader),
+            FieldDecoder::Float32(decoder) => decoder.decode(reader),
+            FieldDecoder::QuantizedFloat(decoder) => decoder.decode(reader),
+            FieldDecoder::QAngle(decoder) => decoder.decode(reader),
 
             FieldDecoder::CCSGameModeRules => FieldValue::Boolean({
                 reader.refill();
@@ -190,6 +105,158 @@ impl FieldDecoder {
     }
 }
 
+#[derive(Clone, Copy)]
+pub(crate) struct VectorDecoder {
+    properties: FieldProperties,
+    pub(crate) dimensions: u8,
+}
+
+impl VectorDecoder {
+    pub(crate) fn dimensions(&self) -> u8 {
+        self.dimensions
+    }
+}
+
+impl Decode for VectorDecoder {
+    fn decode(&self, reader: &mut Reader) -> FieldValue {
+        match self.dimensions {
+            2 => FieldValue::Vector2D([
+                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+            ]),
+            3 => {
+                if self.properties.encoder == Some(FieldEncoder::Normal) {
+                    FieldValue::Vector3D(reader.read_3bit_normal())
+                } else {
+                    FieldValue::Vector3D([
+                        Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                        Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                        Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                    ])
+                }
+            }
+            4 => FieldValue::Vector4D([
+                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+            ]),
+            _ => unreachable!("Invalid vector dimension: {}", self.dimensions),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct Unsigned64Decoder {
+    properties: FieldProperties,
+}
+
+impl Decode for Unsigned64Decoder {
+    fn decode(&self, reader: &mut Reader) -> FieldValue {
+        if self.properties.encoder == Some(FieldEncoder::Fixed64) {
+            FieldValue::Unsigned64(reader.read_le_u64())
+        } else {
+            FieldValue::Unsigned64(reader.read_var_u64())
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct Float32Decoder {
+    properties: FieldProperties,
+}
+
+impl Decode for Float32Decoder {
+    fn decode(&self, reader: &mut Reader) -> FieldValue {
+        match self.properties.encoder {
+            Some(FieldEncoder::Coord) => FieldValue::Float(reader.read_coordinate()),
+            Some(FieldEncoder::SimTime) => {
+                FieldValue::Float(reader.read_var_u32() as f32 / 30.0)
+            }
+            Some(FieldEncoder::RuneTime) => {
+                FieldValue::Float(f32::from_bits(reader.read_bits(4)))
+            }
+            _ => {
+                if self.properties.bit_count == 32 {
+                    FieldValue::Float(reader.read_f32())
+                } else {
+                    QuantizedFloatDecoder::new(&self.properties).decode(reader)
+                }
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct QAngleDecoder {
+    properties: FieldProperties,
+}
+
+impl Decode for QAngleDecoder {
+    fn decode(&self, reader: &mut Reader) -> FieldValue {
+        reader.refill();
+
+        if self.properties.encoder == Some(FieldEncoder::QAnglePitchYaw) {
+            return FieldValue::Vector3D([
+                reader.read_angle(self.properties.bit_count as u32),
+                reader.read_angle(self.properties.bit_count as u32),
+                0.0,
+            ]);
+        }
+
+        if self.properties.encoder == Some(FieldEncoder::QAnglePrecise) {
+            let mut v = [0f32; 3];
+            let x = reader.read_bool();
+            let y = reader.read_bool();
+            let z = reader.read_bool();
+            if x {
+                v[0] = reader.read_angle(20);
+            }
+            if y {
+                v[1] = reader.read_angle(20);
+            }
+            if z {
+                v[2] = reader.read_angle(20);
+            }
+            return FieldValue::Vector3D(v);
+        }
+
+        if self.properties.bit_count != 0 && self.properties.bit_count != 32 {
+            let n = self.properties.bit_count as u32;
+            return FieldValue::Vector3D([
+                reader.read_angle(n),
+                reader.read_angle(n),
+                reader.read_angle(n),
+            ]);
+        }
+
+        if self.properties.bit_count == 32 {
+            return FieldValue::Vector3D([
+                reader.read_f32(),
+                reader.read_f32(),
+                reader.read_f32(),
+            ]);
+        }
+
+        let mut v = [0f32; 3];
+        let x = reader.read_bool();
+        let y = reader.read_bool();
+        let z = reader.read_bool();
+        if x {
+            v[0] = reader.read_coordinate();
+        }
+        if y {
+            v[1] = reader.read_coordinate();
+        }
+        if z {
+            v[2] = reader.read_coordinate();
+        }
+
+        FieldValue::Vector3D(v)
+    }
+}
+
+
 // Quantized float decoder
 
 enum QuantizedFloatFlags {
@@ -199,7 +266,7 @@ enum QuantizedFloatFlags {
     EncodeInteger = 1 << 3,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct QuantizedFloatDecoder {
     bit_count: u32,
     low: f32,
@@ -370,7 +437,7 @@ impl QuantizedFloatDecoder {
         self.low + (self.high - self.low) * i as f32 * self.dec_mul
     }
 
-    pub(crate) fn decode(&self, reader: &mut Reader) -> f32 {
+    fn decode_float(&self, reader: &mut Reader) -> f32 {
         reader.refill();
 
         if self.flags & (QuantizedFloatFlags::RoundDown as u32) != 0 && reader.read_bool() {
@@ -391,3 +458,10 @@ impl QuantizedFloatDecoder {
                 * self.dec_mul
     }
 }
+
+impl Decode for QuantizedFloatDecoder {
+    fn decode(&self, reader: &mut Reader) -> FieldValue {
+        FieldValue::Float(self.decode_float(reader))
+    }
+}
+

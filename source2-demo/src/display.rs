@@ -210,7 +210,7 @@ impl Display for FieldDecoder {
             FieldDecoder::Unsigned8 => "u8",
             FieldDecoder::Unsigned16 => "u16",
             FieldDecoder::Unsigned32 => "u32",
-            FieldDecoder::Vector(_, count) => &format!("[f32; {}]", count),
+            FieldDecoder::Vector(decoder) => &format!("[f32; {}]", decoder.dimensions()),
             FieldDecoder::Unsigned64(_) => "u64",
             FieldDecoder::Float32(_) => "f32",
             FieldDecoder::QuantizedFloat(_) => "f32",

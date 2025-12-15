@@ -34,7 +34,7 @@ impl FieldType {
                 "MAX_ITEM_STOCKS" => 8,
                 "MAX_ABILITY_DRAFT_ABILITIES" => 48,
                 "DOTA_ABILITY_DRAFT_HEROES_PER_GAME" => 10,
-                s => s.parse::<i32>().unwrap(),
+                s => s.parse::<i32>().unwrap_or_default(),
             };
             base_end = open_bracket_pos;
         }

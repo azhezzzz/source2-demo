@@ -1,8 +1,8 @@
 # source2-demo
 
-[![Crates.io](https://img.shields.io/crates/v/source2-demo.svg)](https://crates.io/crates/source2-demo)
-[![Docs.rs](https://docs.rs/source2-demo/badge.svg)](https://docs.rs/source2-demo)
-[![License](https://img.shields.io/crates/l/source2-demo.svg)](https://github.com/Rupas1k/source2-demo/blob/master/LICENSE-MIT)
+[![Crates.io](https://img.shields.io/crates/v/source2-demo)](https://crates.io/crates/source2-demo)
+[![Documentation](https://docs.rs/source2-demo/badge.svg)](https://docs.rs/source2-demo)
+[![License](https://img.shields.io/crates/l/source2-demo)](https://github.com/Rupas1k/source2-demo)
 
 `source2-demo` is a Rust library for parsing Source 2 engine demo files.
 

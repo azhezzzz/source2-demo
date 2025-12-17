@@ -221,7 +221,7 @@ impl FieldOp {
                     }
                 }
             }
-            FieldOp::FieldPathEncodeFinish => {}
+            FieldOp::FieldPathEncodeFinish => unreachable!()
         }
     }
 }

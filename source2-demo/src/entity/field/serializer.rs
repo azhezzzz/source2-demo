@@ -1,13 +1,35 @@
 use crate::entity::field::*;
 use crate::error::SerializerError;
 use crate::HashMap;
-use std::cell::RefCell;
+use std::cell::UnsafeCell;
 use std::rc::Rc;
 
-#[derive(Clone, Default)]
+struct CacheCell<T>(UnsafeCell<T>);
+
+impl<T> CacheCell<T> {
+    fn new(value: T) -> Self {
+        Self(UnsafeCell::new(value))
+    }
+
+    #[inline(always)]
+    fn get(&self) -> &T {
+        unsafe { &*self.0.get() }
+    }
+}
+
+#[derive(Clone)]
 pub(crate) struct Serializer {
     pub(crate) fields: Vec<Rc<Field>>,
-    pub(crate) fp_cache: RefCell<HashMap<Box<str>, FieldPath>>,
+    fp_cache: Rc<CacheCell<HashMap<Box<str>, FieldPath>>>,
+}
+
+impl Default for Serializer {
+    fn default() -> Self {
+        Self {
+            fields: Vec::new(),
+            fp_cache: Rc::new(CacheCell::new(HashMap::default())),
+        }
+    }
 }
 
 impl Serializer {
@@ -126,11 +148,8 @@ impl Serializer {
 
     #[inline]
     pub(crate) fn get_field_path_for_name(&self, name: &str) -> Result<FieldPath, SerializerError> {
-        {
-            let cache = self.fp_cache.borrow();
-            if let Some(&fp) = cache.get(name) {
-                return Ok(fp);
-            }
+        if let Some(&fp) = self.fp_cache.get().get(name) {
+            return Ok(fp);
         }
 
         let mut current_serializer = self;
@@ -173,7 +192,9 @@ impl Serializer {
             return Err(SerializerError::NoFieldPath(name.to_string()));
         }
 
-        self.fp_cache.borrow_mut().insert(name.into(), fp);
+        unsafe {
+            (*self.fp_cache.0.get()).insert(name.into(), fp);
+        }
 
         Ok(fp)
     }

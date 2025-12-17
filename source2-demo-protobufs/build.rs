@@ -2,9 +2,16 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::fs;
 
+const GITHUB_RAW_URL: &str = "https://raw.githubusercontent.com/SteamDatabase/Protobufs/master";
+
 fn main() -> std::io::Result<()> {
     let update = std::env::var_os("UPDATE_PROTOBUFS").map(|v| v == "1").unwrap_or(false);
+    let fetch_from_github = std::env::var_os("FETCH_PROTOBUFS_FROM_GITHUB").map(|v| v == "1").unwrap_or(false);
+
     if update {
+        if fetch_from_github {
+            fetch_protobufs_from_github()?;
+        }
         let mut config = prost_build::Config::new();
         config.out_dir(".");
         config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");
@@ -200,3 +207,69 @@ fn clean_blocks(input_file: &str, common_file: &str) -> std::io::Result<()> {
 
     fs::write(input_file, result)
 }
+
+fn fetch_protobufs_from_github() -> std::io::Result<()> {
+    let proto_files = vec![
+        ("dota2", "common", vec![
+            "base_gcmessages.proto",
+            "demo.proto",
+            "gameevents.proto",
+            "gcsdk_gcmessages.proto",
+            "netmessages.proto",
+            "network_connection.proto",
+            "networkbasetypes.proto",
+            "steammessages.proto",
+            "steammessages_steamlearn.steamworkssdk.proto",
+            "steammessages_unified_base.steamworkssdk.proto",
+            "usermessages.proto",
+            "valveextensions.proto",
+        ]),
+        ("dota2", "dota", vec![
+            "dota_commonmessages.proto",
+            "dota_modifiers.proto",
+            "dota_shared_enums.proto",
+            "dota_usermessages.proto",
+        ]),
+        ("deadlock", "citadel", vec![
+            "citadel_gameevents.proto",
+            "citadel_gcmessages_common.proto",
+            "citadel_usermessages.proto",
+            "base_modifier.proto",
+        ]),
+        ("csgo", "cs2", vec![
+            "cs_gameevents.proto",
+            "cstrike15_gcmessages.proto",
+            "cstrike15_usermessages.proto",
+            "engine_gcmessages.proto",
+        ]),
+    ];
+
+    for (github_dir, local_dir, files) in proto_files {
+        let proto_dir = format!("./protos/{}", local_dir);
+        fs::create_dir_all(&proto_dir)?;
+
+        for file in files {
+            let url = format!("{}/{}/{}", GITHUB_RAW_URL, github_dir, file);
+
+            match ureq::get(&url).call() {
+                Ok(mut response) => {
+                    let content = response.body_mut().read_to_string().map_err(|e| {
+                        std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Failed to read response: {}", e))
+                    })?;
+
+                    let file_path = format!("{}/{}", proto_dir, file);
+                    fs::write(&file_path, content)?;
+                }
+                Err(e) => {
+                    eprintln!("Failed to fetch {}: {}", file, e);
+                    return Err(std::io::Error::other(
+                        format!("Failed to fetch {}: {}", file, e),
+                    ));
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+

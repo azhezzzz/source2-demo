@@ -610,11 +610,11 @@ pub struct CCitadelUserMsgReturnIdol {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CCitadelUserMsgSeasonalAchievementUnlocked {
-    #[prost(uint32, optional, tag = "1")]
-    pub account_id: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "2")]
-    pub hero_id: ::core::option::Option<u32>,
+pub struct CCitadelUserMsgSeasonalKill {
+    #[prost(uint32, optional, tag = "1", default = "16777215")]
+    pub killer: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "2", default = "16777215")]
+    pub victim: ::core::option::Option<u32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
@@ -851,6 +851,8 @@ pub struct CMsgBulletImpact {
     pub weapon_subclass_id: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "11", default = "16777215")]
     pub shooter_ehandle: ::core::option::Option<u32>,
+    #[prost(float, optional, tag = "12")]
+    pub bullet_radius_override: ::core::option::Option<f32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
@@ -922,6 +924,8 @@ pub struct CMsgFireBullets {
     pub bullet_gravity_override: ::core::option::Option<f32>,
     #[prost(int32, optional, tag = "24")]
     pub muzzle_number: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "25")]
+    pub ability_as_bullet: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
@@ -1413,7 +1417,7 @@ pub enum CitadelUserMessageIds {
     KEUserMsgCallCheaterVote = 354,
     KEUserMsgMeleeHit = 355,
     KEUserMsgFlexSlotUnlocked = 356,
-    KEUserMsgSeasonalAchievementUnlocked = 357,
+    KEUserMsgSeasonalKill = 357,
     KEUserMsgMusicQueue = 358,
     KEUserMsgAg2ParamTrigger = 359,
     KEUserMsgItemPurchaseNotification = 360,
@@ -2201,6 +2205,8 @@ pub mod c_msg_match_meta_data_contents {
         pub hero_data: ::core::option::Option<super::CMsgPlayerHeroData>,
         #[prost(bool, optional, tag = "26")]
         pub rewards_eligible: ::core::option::Option<bool>,
+        #[prost(bool, optional, tag = "29")]
+        pub earned_holiday_award_2025: ::core::option::Option<bool>,
     }
     #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct Objective {
@@ -2512,8 +2518,10 @@ pub mod cso_citadel_hideout_lobby {
     pub struct Member {
         #[prost(uint32, optional, tag = "1")]
         pub account_id: ::core::option::Option<u32>,
-        #[prost(uint32, repeated, tag = "20")]
-        pub account_awards: ::prost::alloc::vec::Vec<u32>,
+        #[prost(bool, optional, tag = "30")]
+        pub hideout_holiday_award_2024: ::core::option::Option<bool>,
+        #[prost(uint32, repeated, tag = "31")]
+        pub hideout_holiday_awards_2025: ::prost::alloc::vec::Vec<u32>,
     }
 }
 

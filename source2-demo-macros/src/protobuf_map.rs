@@ -77,6 +77,7 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CCitadelUserMsgCallCheaterVote" => quote! { CitadelUserMessageIds::KEUserMsgCallCheaterVote },
         "CCitadelUserMessageMeleeHit" => quote! { CitadelUserMessageIds::KEUserMsgMeleeHit },
         "CCitadelUserMsgFlexSlotUnlocked" => quote! { CitadelUserMessageIds::KEUserMsgFlexSlotUnlocked },
+        "CCitadelUserMsgSeasonalKill" => quote! { CitadelUserMessageIds::KEUserMsgSeasonalKill },
         "CCitadelUserMsgSeasonalAchievementUnlocked" => quote! { CitadelUserMessageIds::KEUserMsgSeasonalAchievementUnlocked },
         "CCitadelUserMsgMusicQueue" => quote! { CitadelUserMessageIds::KEUserMsgMusicQueue },
         "CCitadelUserMsgAg2ParamTrigger" => quote! { CitadelUserMessageIds::KEUserMsgAg2ParamTrigger },
@@ -256,6 +257,8 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CDotaUserMsgMonsterHunterInvestigationsAvailable" => quote! { EDotaUserMessages::DotaUmMonsterHunterInvestigationsAvailable },
         "CDotaUserMsgMonsterHunterInvestigationGameState" => quote! { EDotaUserMessages::DotaUmMonsterHunterInvestigationGameState },
         "CDotaUserMsgMonsterHunterHuntAlert" => quote! { EDotaUserMessages::DotaUmMonsterHunterHuntAlert },
+        "CDotaUserMsgTormentorTimer" => quote! { EDotaUserMessages::DotaUmTormentorTimer },
+        "CDotaUserMsgKillEffect" => quote! { EDotaUserMessages::DotaUmKillEffect },
         // "CDotaUserMsgAddUnitToSelection" => quote! { EDotaUserMessages::DotaUmAddUnitToSelection },
         // "CDotaUserMsgCombatLogData" => quote! { EDotaUserMessages::DotaUmCombatLogData },
         // "CDotaUserMsgParticleManager" => quote! { EDotaUserMessages::DotaUmParticleManager },
@@ -298,6 +301,7 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CSvcMsgHltvFixupOperatorStatus" => quote! { SvcMessages::SvcHltvFixupOperatorStatus },
         "CSvcMsgGameEventList" => quote! { EBaseGameEvents::GeSource1LegacyGameEventList },
         "CSvcMsgGameEvent" => quote! { EBaseGameEvents::GeSource1LegacyGameEvent },
+        "CSvcMsgNextMsgPredicted" => quote! { EBaseGameEvents::SvcNextMsgPredicted },
 
         // EBaseUserMessages
         "CUserMessageAchievementEvent" => quote! { EBaseUserMessages::UmAchievementEvent },

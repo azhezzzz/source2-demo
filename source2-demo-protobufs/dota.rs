@@ -106,6 +106,8 @@ pub struct CDotaModifierBuffTableEntry {
     pub custom_entity: ::core::option::Option<u32>,
     #[prost(bool, optional, tag = "39")]
     pub aura_within_range: ::core::option::Option<bool>,
+    #[prost(float, optional, tag = "40")]
+    pub move_slow: ::core::option::Option<f32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -1019,6 +1021,14 @@ pub struct CDotaUserMsgItemSold {
     pub item_ability_id: ::core::option::Option<i32>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CDotaUserMsgKillEffect {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub victim_ent_index: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub killer_player_id: ::core::option::Option<i32>,
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgKillcamDamageTaken {
     #[prost(int32, required, tag = "1", default = "-1")]
@@ -1860,6 +1870,8 @@ pub struct CDotaUserMsgTeProjectile {
     pub original_move_speed: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "18", default = "16777215")]
     pub ability: ::core::option::Option<u32>,
+    #[prost(int32, optional, tag = "19")]
+    pub target_projectile_handle: ::core::option::Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
@@ -1938,6 +1950,14 @@ pub struct CDotaUserMsgTipAlert {
     pub player_id: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
     pub tip_text: ::core::option::Option<::prost::alloc::string::String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CDotaUserMsgTormentorTimer {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "2")]
+    pub negative: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
@@ -2925,6 +2945,7 @@ pub enum DotaOverheadAlert {
     OverheadAlertDeadlyBlow = 24,
     OverheadAlertForceMiss = 25,
     OverheadAlertAegis = 26,
+    OverheadAlertDispel = 27,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3262,6 +3283,8 @@ pub enum EDotaUserMessages {
     DotaUmMonsterHunterInvestigationsAvailable = 631,
     DotaUmMonsterHunterInvestigationGameState = 632,
     DotaUmMonsterHunterHuntAlert = 633,
+    DotaUmTormentorTimer = 634,
+    DotaUmKillEffect = 635,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3321,6 +3344,10 @@ pub enum EEvent {
     EventIdInternational2025 = 52,
     EventIdFall2025 = 53,
     EventIdWinter2025 = 55,
+    EventIdSpring2026 = 56,
+    EventIdSummer2026 = 57,
+    EventIdFall2026 = 58,
+    EventIdWinter2026 = 59,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]

@@ -2091,7 +2091,7 @@ pub struct CDemoFileHeader {
     #[prost(string, required, tag = "1")]
     pub demo_file_stamp: ::prost::alloc::string::String,
     #[prost(int32, optional, tag = "2")]
-    pub network_protocol: ::core::option::Option<i32>,
+    pub patch_version: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "3")]
     pub server_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "4")]
@@ -4095,6 +4095,13 @@ pub struct CSvcMsgUserCommands {
     #[prost(message, repeated, tag = "1")]
     pub commands: ::prost::alloc::vec::Vec<CMsgServerUserCmd>,
 }
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CSvcMsgNextMsgPredicted {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub predicted_by_player_slot: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "2")]
+    pub message_type_id: ::core::option::Option<u32>,
+}
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ClcMessages {
@@ -4146,6 +4153,7 @@ pub enum SvcMessages {
     SvcBroadcastCommand = 74,
     SvcHltvFixupOperatorStatus = 75,
     SvcUserCmds = 76,
+    SvcNextMsgPredicted = 77,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]

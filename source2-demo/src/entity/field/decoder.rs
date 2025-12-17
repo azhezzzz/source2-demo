@@ -174,7 +174,7 @@ impl Decode for Float32Decoder {
                 FieldValue::Float(reader.read_var_u32() as f32 / 30.0)
             }
             Some(FieldEncoder::RuneTime) => {
-                FieldValue::Float(f32::from_bits(reader.read_bits(4)))
+                FieldValue::Float(f32::from_bits(reader.read_bits(self.properties.bit_count as u32)))
             }
             _ => {
                 if self.properties.bit_count == 32 {

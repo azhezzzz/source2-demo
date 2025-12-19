@@ -291,7 +291,7 @@ impl QuantizedFloatDecoder {
 
         decoder.validate_flags();
 
-        let mut steps = (1 << decoder.bit_count) as u32;
+        let mut steps = 1_u32.wrapping_shl(decoder.bit_count);
 
         if decoder.flags & (QuantizedFloatFlags::RoundDown as u32) != 0 {
             decoder.offset = (decoder.high - decoder.low) / (steps as f32);

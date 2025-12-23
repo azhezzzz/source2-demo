@@ -440,6 +440,10 @@ impl QuantizedFloatDecoder {
     fn decode_float(&self, reader: &mut Reader) -> f32 {
         reader.refill();
 
+        if self.bit_count == 32 {
+            return f32::from_bits(reader.read_bits_no_refill(32));
+        }
+
         if self.flags & (QuantizedFloatFlags::RoundDown as u32) != 0 && reader.read_bool() {
             return self.low;
         }

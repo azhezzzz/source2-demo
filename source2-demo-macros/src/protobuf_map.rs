@@ -57,7 +57,8 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CCitadelUserMsgDeathReplayData" => quote! { CitadelUserMessageIds::KEUserMsgDeathReplayData },
         "CCitadelUserMsgPlayerLifetimeStatInfo" => quote! { CitadelUserMessageIds::KEUserMsgPlayerLifetimeStatInfo },
         "CCitadelUserMsgForceShopClosed" => quote! { CitadelUserMessageIds::KEUserMsgForceShopClosed },
-        "CCitadelUserMsgStaminaDrained" => quote! { CitadelUserMessageIds::KEUserMsgStaminaDrained },
+        // "CCitadelUserMsgStaminaDrained" => quote! { CitadelUserMessageIds::KEUserMsgStaminaDrained },
+        "CCitadelUserMsgStaminaConsumed" => quote! { CitadelUserMessageIds::KEUserMsgStaminaConsumed },
         "CCitadelUserMessageAbilityNotify" => quote! { CitadelUserMessageIds::KEUserMsgAbilityNotify },
         "CCitadelUserMsgGetDamageStatsResponse" => quote! { CitadelUserMessageIds::KEUserMsgGetDamageStatsResponse },
         "CCitadelUserMsgParticipantStartSoundEvent" => quote! { CitadelUserMessageIds::KEUserMsgParticipantStartSoundEvent },
@@ -83,6 +84,11 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CCitadelUserMsgAg2ParamTrigger" => quote! { CitadelUserMessageIds::KEUserMsgAg2ParamTrigger },
         "CCitadelUserMessageItemPurchaseNotification" => quote! { CitadelUserMessageIds::KEUserMsgItemPurchaseNotification },
         "CCitadelUserMsgEntityPortalled" => quote! { CitadelUserMessageIds::KEUserMsgEntityPortalled },
+        "CCitadelUserMsgStreetBrawlScoring" => quote! { CitadelUserMessageIds::KEUserMsgStreetBrawlScoring },
+        "CCitadelUserMsgHudGameAnnouncement" => quote! { CitadelUserMessageIds::KEUserMsgHudGameAnnouncement },
+        "CCitadelUserMsgItemDraftReaction" => quote! { CitadelUserMessageIds::KEUserMsgItemDraftReaction },
+        "CCitadelUserMessageImportantAbilityUsed" => quote! { CitadelUserMessageIds::KEUserMsgImportantAbilityUsed },
+        "CCitadelUserMsgBannedHeroes" => quote! { CitadelUserMessageIds::KEUserMsgBannedHeroes },
         // "CCitadelUserMsgAbilityFailed" => quote! { CitadelUserMessageIds::KEUserMsgAbilityFailed },
 
         // ECitadelGameEvents

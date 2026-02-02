@@ -1,6 +1,7 @@
 use crate::error::ParserError;
 use crate::parser::demo::svc::SvcMsg;
 use crate::proto::*;
+use crate::reader::{BitsReader, MessageReader};
 use crate::{Interests, Parser};
 use crate::{try_observers, GameEvent, GameEventList};
 
@@ -65,7 +66,10 @@ pub trait DemoMessages {
     ) -> Result<(), ParserError>;
 }
 
-impl DemoMessages for Parser<'_> {
+impl<'a, R> DemoMessages for Parser<'a, R>
+where
+    R: BitsReader + MessageReader,
+{
     fn on_base_user_message(
         &mut self,
         msg_type: EBaseUserMessages,

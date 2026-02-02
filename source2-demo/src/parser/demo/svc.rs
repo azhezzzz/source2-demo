@@ -24,14 +24,17 @@ pub trait SvcMsg {
         packet_entities: CSvcMsgPacketEntities,
     ) -> Result<(), ParserError>;
 
-    fn entity_created(&mut self, reader: &mut Reader, index: usize) -> Result<(), ParserError>;
+    fn entity_created(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError>;
 
-    fn entity_updated(&mut self, reader: &mut Reader, index: usize) -> Result<(), ParserError>;
+    fn entity_updated(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError>;
 
     fn entity_deleted(&mut self, index: usize) -> Result<(), ParserError>;
 }
 
-impl SvcMsg for Parser<'_> {
+impl<'a, R> SvcMsg for Parser<'a, R>
+where
+    R: BitsReader + MessageReader,
+{
     fn server_info(&mut self, server_info: CSvcMsgServerInfo) -> Result<(), ParserError> {
         self.context.classes.class_id_size =
             (f64::log2(server_info.max_classes() as f64) + 1.0) as u32;
@@ -137,14 +140,14 @@ impl SvcMsg for Parser<'_> {
         &mut self,
         packet_entities: CSvcMsgPacketEntities,
     ) -> Result<(), ParserError> {
-        let mut reader = Reader::new(packet_entities.entity_data());
+        let mut reader = SliceReader::new(packet_entities.entity_data());
 
         let mut index = usize::MAX;
 
         for _ in 0..packet_entities.updated_entries() {
             index = index.wrapping_add((reader.read_ubit_var() + 1) as usize);
 
-            let cmd = reader.read_bits_no_refill(2);
+            let cmd = reader.read_bits_unchecked(2);
 
             if cmd == 1 {
                 continue;
@@ -160,9 +163,9 @@ impl SvcMsg for Parser<'_> {
         Ok(())
     }
 
-    fn entity_created(&mut self, reader: &mut Reader, index: usize) -> Result<(), ParserError> {
-        let class_id = reader.read_bits_no_refill(self.context.classes.class_id_size) as i32;
-        let serial = reader.read_bits_no_refill(17);
+    fn entity_created(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError> {
+        let class_id = reader.read_bits_unchecked(self.context.classes.class_id_size) as i32;
+        let serial = reader.read_bits_unchecked(17);
         let _ = reader.read_var_u32();
 
         let class = self.context.classes.get_by_id_rc(class_id as usize).clone();
@@ -176,7 +179,7 @@ impl SvcMsg for Parser<'_> {
                 let mut state = FieldState::default();
                 if let Some(baseline) = self.context.baselines.baselines.get(&class_id) {
                     self.field_reader.read_fields(
-                        &mut Reader::new(baseline.as_ref()),
+                        &mut SliceReader::new(baseline.as_ref()),
                         &class.serializer,
                         &mut state,
                     );
@@ -212,7 +215,7 @@ impl SvcMsg for Parser<'_> {
         Ok(())
     }
 
-    fn entity_updated(&mut self, reader: &mut Reader, index: usize) -> Result<(), ParserError> {
+    fn entity_updated(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError> {
         let entity = &mut self.context.entities.entities_vec[index];
 
         self.field_reader

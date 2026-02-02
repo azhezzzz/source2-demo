@@ -47,16 +47,16 @@ pub(crate) enum FieldOp {
 
 impl FieldOp {
     #[inline]
-    pub(crate) fn execute(&self, r: &mut Reader, fp: &mut FieldPath) {
+    pub(crate) fn execute(&self, r: &mut SliceReader, fp: &mut FieldPath) {
         match &self {
             FieldOp::PlusOne => fp.inc_curr(1),
             FieldOp::PlusTwo => fp.inc_curr(2),
             FieldOp::PlusThree => fp.inc_curr(3),
             FieldOp::PlusFour => fp.inc_curr(4),
-            FieldOp::PlusN => fp.inc_curr(r.read_ubit_var_fp_no_refill() as u16 + 5),
+            FieldOp::PlusN => fp.inc_curr(r.read_ubit_var_fp_unchecked() as u16 + 5),
             FieldOp::PushOneLeftDeltaZeroRightZero => fp.push(0),
             FieldOp::PushOneLeftDeltaZeroRightNonZero => {
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
             }
             FieldOp::PushOneLeftDeltaOneRightZero => {
                 fp.inc_curr(1);
@@ -64,85 +64,85 @@ impl FieldOp {
             }
             FieldOp::PushOneLeftDeltaOneRightNonZero => {
                 fp.inc_curr(1);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
             }
             FieldOp::PushOneLeftDeltaNRightZero => {
-                fp.inc_curr(r.read_ubit_var_fp_no_refill() as u16);
+                fp.inc_curr(r.read_ubit_var_fp_unchecked() as u16);
                 fp.push(0);
             }
             FieldOp::PushOneLeftDeltaNRightNonZero => {
-                fp.inc_curr(r.read_ubit_var_fp_no_refill() as u16 + 2);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16 + 1);
+                fp.inc_curr(r.read_ubit_var_fp_unchecked() as u16 + 2);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16 + 1);
             }
             FieldOp::PushOneLeftDeltaNRightNonZeroPack6Bits => {
-                fp.inc_curr(r.read_bits_no_refill(3) as u16 + 2);
-                fp.push(r.read_bits_no_refill(3) as u16 + 1);
+                fp.inc_curr(r.read_bits_unchecked(3) as u16 + 2);
+                fp.push(r.read_bits_unchecked(3) as u16 + 1);
             }
             FieldOp::PushOneLeftDeltaNRightNonZeroPack8Bits => {
-                fp.inc_curr(r.read_bits_no_refill(4) as u16 + 2);
-                fp.push(r.read_bits_no_refill(4) as u16 + 1);
+                fp.inc_curr(r.read_bits_unchecked(4) as u16 + 2);
+                fp.push(r.read_bits_unchecked(4) as u16 + 1);
             }
             FieldOp::PushTwoLeftDeltaZero => {
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
             }
             FieldOp::PushTwoPack5LeftDeltaZero => {
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
             }
             FieldOp::PushThreeLeftDeltaZero => {
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
             }
             FieldOp::PushThreePack5LeftDeltaZero => {
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
             }
             FieldOp::PushTwoLeftDeltaOne => {
                 fp.inc_curr(1);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
             }
             FieldOp::PushTwoPack5LeftDeltaOne => {
                 fp.inc_curr(1);
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
             }
             FieldOp::PushThreeLeftDeltaOne => {
                 fp.inc_curr(1);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
             }
             FieldOp::PushThreePack5LeftDeltaOne => {
                 fp.inc_curr(1);
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
             }
             FieldOp::PushTwoLeftDeltaN => {
                 fp.inc_curr(r.read_ubit_var() as u16 + 2);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
             }
             FieldOp::PushTwoPack5LeftDeltaN => {
                 fp.inc_curr(r.read_ubit_var() as u16 + 2);
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
             }
             FieldOp::PushThreeLeftDeltaN => {
                 fp.inc_curr(r.read_ubit_var() as u16 + 2);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
-                fp.push(r.read_ubit_var_fp_no_refill() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16);
             }
             FieldOp::PushThreePack5LeftDeltaN => {
                 fp.inc_curr(r.read_ubit_var() as u16 + 2);
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
-                fp.push(r.read_bits_no_refill(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
+                fp.push(r.read_bits_unchecked(5) as u16);
             }
             FieldOp::PushN => {
                 let n = r.read_ubit_var() as i32;
@@ -169,7 +169,7 @@ impl FieldOp {
 
             FieldOp::PopOnePlusN => {
                 fp.pop(1);
-                fp.inc_curr(r.read_ubit_var_fp_no_refill() as u16 + 1);
+                fp.inc_curr(r.read_ubit_var_fp_unchecked() as u16 + 1);
             }
             FieldOp::PopAllButOnePlusOne => {
                 fp.pop(fp.last);
@@ -177,26 +177,26 @@ impl FieldOp {
             }
             FieldOp::PopAllButOnePlusN => {
                 fp.pop(fp.last);
-                fp.inc(0, r.read_ubit_var_fp_no_refill() as u16 + 1);
+                fp.inc(0, r.read_ubit_var_fp_unchecked() as u16 + 1);
             }
             FieldOp::PopAllButOnePlusNPack3Bits => {
                 fp.pop(fp.last);
-                fp.inc(0, r.read_bits_no_refill(3) as u16 + 1);
+                fp.inc(0, r.read_bits_unchecked(3) as u16 + 1);
             }
             FieldOp::PopAllButOnePlusNPack6Bits => {
                 fp.pop(fp.last);
-                fp.inc(0, r.read_bits_no_refill(6) as u16 + 1);
+                fp.inc(0, r.read_bits_unchecked(6) as u16 + 1);
             }
             FieldOp::PopNPlusOne => {
-                fp.pop(r.read_ubit_var_fp_no_refill() as usize);
+                fp.pop(r.read_ubit_var_fp_unchecked() as usize);
                 fp.inc_curr(1);
             }
             FieldOp::PopNPlusN => {
-                fp.pop(r.read_ubit_var_fp_no_refill() as usize);
+                fp.pop(r.read_ubit_var_fp_unchecked() as usize);
                 fp.inc_curr(r.read_var_i32() as u16);
             }
             FieldOp::PopNAndNonTopographical => {
-                fp.pop(r.read_ubit_var_fp_no_refill() as usize);
+                fp.pop(r.read_ubit_var_fp_unchecked() as usize);
                 for i in 0..=fp.last {
                     if r.read_bool() {
                         fp.inc(i, r.read_var_i32() as u16);
@@ -216,7 +216,7 @@ impl FieldOp {
             FieldOp::NonTopoComplexPack4Bits => {
                 for i in 0..=fp.last {
                     if r.read_bool() {
-                        fp.inc(i, r.read_bits_no_refill(4) as u16);
+                        fp.inc(i, r.read_bits_unchecked(4) as u16);
                         fp.sub(i, 7);
                     }
                 }

@@ -6,7 +6,7 @@ pub mod error;
 mod event;
 mod macros;
 mod parser;
-mod reader;
+pub mod reader;
 mod string_table;
 
 pub mod proto {
@@ -18,6 +18,7 @@ pub mod prelude {
     pub use crate::entity::{Entity, EntityEvents};
     pub use crate::event::{EventValue, GameEvent, GameEventList};
     pub use crate::parser::*;
+    pub use crate::reader::{BitsReader};
     pub use crate::string_table::*;
     pub use crate::{property, try_property};
 

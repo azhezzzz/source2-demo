@@ -6,7 +6,7 @@ pub use row::*;
 
 use crate::entity::BaselineContainer;
 use crate::error::StringTableError;
-use crate::reader::{BitsReader, Reader};
+use crate::reader::{BitsReader, SliceReader};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -53,7 +53,7 @@ impl StringTable {
         num_updates: i32,
     ) -> Result<Vec<i32>, StringTableError> {
         let items = &mut self.items;
-        let mut reader = Reader::new(buf);
+        let mut reader = SliceReader::new(buf);
         let mut index = -1;
         let mut delta_pos = 0;
         let mut keys = self.keys.borrow_mut();
@@ -75,17 +75,17 @@ impl StringTable {
             let key = reader.read_bool().then(|| {
                 let delta_zero = if delta_pos > 32 { delta_pos & 31 } else { 0 };
                 let key = if reader.read_bool() {
-                    let pos = (delta_zero + reader.read_bits_no_refill(5) as usize) & 31;
-                    let size = reader.read_bits_no_refill(5) as usize;
+                    let pos = (delta_zero + reader.read_bits_unchecked(5) as usize) & 31;
+                    let size = reader.read_bits_unchecked(5) as usize;
 
                     if delta_pos < pos || keys[pos].len() < size {
-                        reader.read_string()
+                        reader.read_cstring()
                     } else {
                         let x = String::new();
-                        x + &keys[pos][..size] + &reader.read_string()
+                        x + &keys[pos][..size] + &reader.read_cstring()
                     }
                 } else {
-                    reader.read_string()
+                    reader.read_cstring()
                 };
                 keys[delta_pos & 31].clone_from(&key);
                 delta_pos += 1;
@@ -103,7 +103,7 @@ impl StringTable {
                     if self.var_int_bit_counts {
                         reader.read_ubit_var() * 8
                     } else {
-                        reader.read_bits_no_refill(17) * 8
+                        reader.read_bits_unchecked(17) * 8
                     }
                 };
 

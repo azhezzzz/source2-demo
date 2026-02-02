@@ -5,7 +5,7 @@ use huff::*;
 use op::*;
 
 use crate::field::{FieldPath, FieldState, Serializer};
-use crate::reader::{BitsReader, Reader};
+use crate::reader::{BitsReader, SliceReader};
 
 pub(crate) struct FieldReader {
     tree: HTree,
@@ -25,7 +25,7 @@ impl FieldReader {
     #[inline]
     pub(crate) fn read_fields(
         &mut self,
-        reader: &mut Reader,
+        reader: &mut SliceReader,
         serializer: &Serializer,
         state: &mut FieldState,
     ) {

@@ -5,27 +5,31 @@ use crate::proto::{
 };
 use crate::proto::{CDemoFileInfo, EDemoCommands, Message};
 use crate::reader::bits::BitsReader;
-use crate::reader::Reader;
+use crate::reader::slice::SliceReader;
+use crate::reader::seekable::SeekableReader;
+use std::io::{Read, Seek};
 
-pub(crate) struct OuterMessage {
-    pub(crate) msg_type: EDemoCommands,
-    pub(crate) tick: u32,
-    pub(crate) buf: Vec<u8>,
+pub struct OuterMessage {
+    pub msg_type: EDemoCommands,
+    pub tick: u32,
+    pub buf: Vec<u8>,
 }
 
-pub(crate) trait MessageReader {
+pub trait MessageReader {
     fn read_next_message(&mut self) -> Result<Option<OuterMessage>, ParserError>;
+}
 
+pub(crate) trait ReplayInfoReader: MessageReader {
     fn read_replay_info(&mut self) -> Result<CDemoFileInfo, ParserError>;
 
     #[cfg(feature = "deadlock")]
     fn read_deadlock_match_details(&mut self) -> Result<CMsgMatchMetaDataContents, ParserError>;
 }
 
-impl MessageReader for Reader<'_> {
+impl MessageReader for SliceReader<'_> {
     #[inline]
     fn read_next_message(&mut self) -> Result<Option<OuterMessage>, ParserError> {
-        if self.bytes_remaining() == 0 {
+        if self.remaining_bytes() == 0 {
             return Ok(None);
         }
 
@@ -50,15 +54,18 @@ impl MessageReader for Reader<'_> {
             buf,
         }))
     }
+}
 
+impl<'a> ReplayInfoReader for SliceReader<'a> {
     fn read_replay_info(&mut self) -> Result<CDemoFileInfo, ParserError> {
-        let offset = u32::from_le_bytes(self.buf[8..12].try_into().unwrap()) as usize;
+        let source_data = self.source_buffer;
+        let offset = u32::from_le_bytes(source_data[8..12].try_into().unwrap()) as usize;
 
-        if self.buf.len() < offset {
+        if source_data.len() < offset {
             return Err(ParserError::ReplayEncodingError);
         }
 
-        let mut reader = Reader::new(&self.buf[offset..]);
+        let mut reader = SliceReader::new(&source_data[offset..]);
         Ok(CDemoFileInfo::decode(
             reader.read_next_message()?.unwrap().buf.as_slice(),
         )?)
@@ -66,16 +73,17 @@ impl MessageReader for Reader<'_> {
 
     #[cfg(feature = "deadlock")]
     fn read_deadlock_match_details(&mut self) -> Result<CMsgMatchMetaDataContents, ParserError> {
-        let mut temp_reader = Reader::new(self.buf);
-        temp_reader.reset_to(16);
+        let source_data = self.source_buffer;
+        let mut temp_reader = SliceReader::new(source_data);
+        temp_reader.seek(16);
         while let Some(message) = temp_reader.read_next_message()? {
             if message.msg_type != EDemoCommands::DemPacket {
                 continue;
             }
 
             let packet = CDemoPacket::decode(message.buf.as_slice())?;
-            let mut packet_reader = Reader::new(packet.data());
-            while packet_reader.bytes_remaining() != 0 {
+            let mut packet_reader = SliceReader::new(packet.data());
+            while packet_reader.remaining_bytes() != 0 {
                 let msg_type = packet_reader.read_ubit_var() as i32;
                 let size = packet_reader.read_var_u32();
                 let packet_buf = packet_reader.read_bytes(size);
@@ -89,6 +97,41 @@ impl MessageReader for Reader<'_> {
             }
         }
 
-        Err(ParserError::MatchDetailsNotFound)
+        Err(ParserError::ReplayEncodingError)
     }
 }
+
+impl<R: Read + Seek> MessageReader for SeekableReader<R> {
+    #[inline]
+    fn read_next_message(&mut self) -> Result<Option<OuterMessage>, ParserError> {
+        self.refill();
+        if self.remaining_bytes() == 0 {
+            return Ok(None);
+        }
+
+        let cmd = self.read_var_u32() as i32;
+        let tick = self.read_var_u32();
+        let size = self.read_var_u32();
+
+        let msg_type = EDemoCommands::try_from(cmd & !(EDemoCommands::DemIsCompressed as i32))?;
+        let msg_compressed = cmd & EDemoCommands::DemIsCompressed as i32 != 0;
+
+        let raw_bytes = self.read_bytes(size);
+
+        let buf = if msg_compressed {
+            let mut decoder = snap::raw::Decoder::new();
+            let decompressed = decoder.decompress_vec(&raw_bytes)?;
+            
+            decompressed
+        } else {
+            raw_bytes
+        };
+
+        Ok(Some(OuterMessage {
+            msg_type,
+            tick,
+            buf,
+        }))
+    }
+}
+

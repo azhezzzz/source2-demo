@@ -1,8 +1,8 @@
 use crate::entity::field::{FieldEncoder, FieldProperties, FieldType, FieldValue};
-use crate::reader::*;
+use crate::reader::{BitsReader, SliceReader};
 
 pub(crate) trait Decode {
-    fn decode(&self, reader: &mut Reader) -> FieldValue;
+    fn decode(&self, reader: &mut SliceReader) -> FieldValue;
 }
 
 pub(crate) enum FieldDecoder {
@@ -73,13 +73,13 @@ impl FieldDecoder {
     }
 
     #[inline]
-    pub(crate) fn decode(&self, reader: &mut Reader) -> FieldValue {
+    pub(crate) fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         match self {
             FieldDecoder::Boolean => FieldValue::Boolean({
                 reader.refill();
                 reader.read_bool()
             }),
-            FieldDecoder::String => FieldValue::String(reader.read_string()),
+            FieldDecoder::String => FieldValue::String(reader.read_cstring()),
 
             FieldDecoder::Signed8 => FieldValue::Signed8(reader.read_var_i32() as i8),
             FieldDecoder::Signed16 => FieldValue::Signed16(reader.read_var_i32() as i16),
@@ -118,7 +118,7 @@ impl VectorDecoder {
 }
 
 impl Decode for VectorDecoder {
-    fn decode(&self, reader: &mut Reader) -> FieldValue {
+    fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         match self.dimensions {
             2 => FieldValue::Vector2D([
                 Float32Decoder { properties: self.properties }.decode(reader).as_float(),
@@ -126,7 +126,7 @@ impl Decode for VectorDecoder {
             ]),
             3 => {
                 if self.properties.encoder == Some(FieldEncoder::Normal) {
-                    FieldValue::Vector3D(reader.read_3bit_normal())
+                    FieldValue::Vector3D(reader.read_normal_vec3())
                 } else {
                     FieldValue::Vector3D([
                         Float32Decoder { properties: self.properties }.decode(reader).as_float(),
@@ -152,9 +152,9 @@ pub(crate) struct Unsigned64Decoder {
 }
 
 impl Decode for Unsigned64Decoder {
-    fn decode(&self, reader: &mut Reader) -> FieldValue {
+    fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         if self.properties.encoder == Some(FieldEncoder::Fixed64) {
-            FieldValue::Unsigned64(reader.read_le_u64())
+            FieldValue::Unsigned64(reader.read_u64_le())
         } else {
             FieldValue::Unsigned64(reader.read_var_u64())
         }
@@ -167,7 +167,7 @@ pub(crate) struct Float32Decoder {
 }
 
 impl Decode for Float32Decoder {
-    fn decode(&self, reader: &mut Reader) -> FieldValue {
+    fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         match self.properties.encoder {
             Some(FieldEncoder::Coord) => FieldValue::Float(reader.read_coordinate()),
             Some(FieldEncoder::SimTime) => {
@@ -193,7 +193,7 @@ pub(crate) struct QAngleDecoder {
 }
 
 impl Decode for QAngleDecoder {
-    fn decode(&self, reader: &mut Reader) -> FieldValue {
+    fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         reader.refill();
 
         if self.properties.encoder == Some(FieldEncoder::QAnglePitchYaw) {
@@ -437,11 +437,11 @@ impl QuantizedFloatDecoder {
         self.low + (self.high - self.low) * i as f32 * self.dec_mul
     }
 
-    fn decode_float(&self, reader: &mut Reader) -> f32 {
+    fn decode_float(&self, reader: &mut SliceReader) -> f32 {
         reader.refill();
 
         if self.bit_count == 32 {
-            return f32::from_bits(reader.read_bits_no_refill(32));
+            return f32::from_bits(reader.read_bits_unchecked(32));
         }
 
         if self.flags & (QuantizedFloatFlags::RoundDown as u32) != 0 && reader.read_bool() {
@@ -458,13 +458,13 @@ impl QuantizedFloatDecoder {
 
         self.low
             + (self.high - self.low)
-                * (reader.read_bits_no_refill(self.bit_count) as f32)
+                * (reader.read_bits_unchecked(self.bit_count) as f32)
                 * self.dec_mul
     }
 }
 
 impl Decode for QuantizedFloatDecoder {
-    fn decode(&self, reader: &mut Reader) -> FieldValue {
+    fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         FieldValue::Float(self.decode_float(reader))
     }
 }

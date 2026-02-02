@@ -19,7 +19,10 @@ pub trait DemoRunner {
     fn jump_to_tick(&mut self, target_tick: u32) -> Result<(), ParserError>;
 }
 
-impl DemoRunner for Parser<'_> {
+impl<'a, R> DemoRunner for Parser<'a, R>
+where
+    R: BitsReader + MessageReader,
+{
     fn run_to_end(&mut self) -> Result<(), ParserError> {
         self.prologue()?;
 
@@ -64,7 +67,7 @@ impl DemoRunner for Parser<'_> {
             self.context.last_full_packet_tick = u32::MAX;
             self.context.tick = u32::MAX;
             self.context.net_tick = u32::MAX;
-            self.reader.reset_to(16);
+            self.reader.seek(16);
 
             self.context.entities.entities_vec = vec![Entity::default(); 8192];
 

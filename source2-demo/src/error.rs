@@ -34,6 +34,9 @@ pub enum ParserError {
     #[error("Supports only Source 2 replays")]
     WrongMagic,
 
+    #[error("IO error: {0}")]
+    IoError(String),
+
     #[cfg(feature = "dota")]
     #[error(transparent)]
     CombatLog(#[from] CombatLogError),

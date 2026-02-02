@@ -2,10 +2,11 @@ use crate::entity::field::*;
 use crate::entity::Class;
 use crate::error::ParserError;
 use crate::parser::demo::DemoMessages;
+use crate::parser::Parser;
 use crate::proto::*;
 use crate::reader::*;
 use crate::HashMap;
-use crate::{Parser, StringTableRow};
+use crate::StringTableRow;
 use std::rc::Rc;
 
 pub trait DemoCommands {
@@ -24,11 +25,14 @@ pub trait DemoCommands {
     }
 }
 
-impl DemoCommands for Parser<'_> {
+impl<'a, R> DemoCommands for Parser<'a, R>
+where
+    R: BitsReader + MessageReader,
+{
     fn dem_send_tables(&mut self, send_tables: CDemoSendTables) -> Result<(), ParserError> {
         let serializers = &mut self.context.serializers;
 
-        let mut reader = Reader::new(send_tables.data());
+        let mut reader = SliceReader::new(send_tables.data());
         let amount = reader.read_var_u32();
         let buf = reader.read_bytes(amount);
 
@@ -141,8 +145,8 @@ impl DemoCommands for Parser<'_> {
     }
 
     fn dem_packet(&mut self, packet: CDemoPacket) -> Result<(), ParserError> {
-        let mut packet_reader = Reader::new(packet.data());
-        while packet_reader.bytes_remaining() != 0 {
+        let mut packet_reader = SliceReader::new(packet.data());
+        while packet_reader.remaining_bytes() != 0 {
             let msg_type = packet_reader.read_ubit_var() as i32;
             let size = packet_reader.read_var_u32();
             let msg_buf = packet_reader.read_bytes(size);

@@ -19,7 +19,7 @@ pub trait MessageReader {
     fn read_next_message(&mut self) -> Result<Option<OuterMessage>, ParserError>;
 }
 
-pub(crate) trait ReplayInfoReader: MessageReader {
+pub trait ReplayInfoReader: MessageReader {
     fn read_replay_info(&mut self) -> Result<CDemoFileInfo, ParserError>;
 
     #[cfg(feature = "deadlock")]

@@ -673,11 +673,9 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    let replay = unsafe { memmap2::Mmap::map(&std::fs::File::open(filepath)?)? };
-
     let start = std::time::Instant::now();
 
-    let mut parser = Parser::new(&replay)?;
+    let mut parser = Parser::from_reader(std::fs::File::open(filepath)?)?;
 
     let game_time = parser.register_observer::<GameTime>();
     let wards = parser.register_observer::<Wards>();

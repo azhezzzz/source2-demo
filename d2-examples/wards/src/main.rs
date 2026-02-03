@@ -36,8 +36,7 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    let replay = unsafe { memmap2::Mmap::map(&std::fs::File::open(filepath)?)? };
-    let mut parser = Parser::new(&replay)?;
+    let mut parser = Parser::from_reader(std::fs::File::open(filepath)?)?;
 
     let wards = parser.register_observer::<Wards>();
     let ward_events = parser.register_observer::<WardEvents>();

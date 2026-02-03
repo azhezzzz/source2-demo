@@ -5,7 +5,7 @@ mod seekable;
 mod slice;
 
 pub use bits::BitsReader;
-pub use msg::MessageReader;
+pub use msg::{MessageReader, ReplayInfoReader};
 
 #[doc(hidden)]
 pub use seekable::SeekableReader;
@@ -13,6 +13,5 @@ pub use seekable::SeekableReader;
 pub use slice::SliceReader;
 
 pub(crate) use field::*;
-pub(crate) use msg::*;
 
 

@@ -65,11 +65,8 @@ impl Chat {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Read the replay file
-    let replay = unsafe { memmap2::Mmap::map(&std::fs::File::open("replay.dem")?)? };
-
     // Create a parser
-    let mut parser = Parser::new(&replay)?;
+    let mut parser = Parser::from_reader(std::fs::File::open("replay.dem")?)?;
 
     // Register observers
     parser.register_observer::<Chat>();

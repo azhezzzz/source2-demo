@@ -71,7 +71,7 @@ impl<'a> BitsReader for SliceReader<'a> {
     #[inline]
     fn read_var_u32(&mut self) -> u32 {
         let mut x: u32 = 0;
-        let mut y: u32 = 0;
+        let mut shift: u32 = 0;
         let mut byte: u8;
 
         self.refill();
@@ -79,10 +79,10 @@ impl<'a> BitsReader for SliceReader<'a> {
         loop {
             byte = self.read_bits_unchecked(8) as u8;
 
-            x |= ((byte & 0x7F) as u32) << y;
-            y += 7;
+            x |= ((byte & 0x7F) as u32) << shift;
+            shift += 7;
 
-            if (byte & 0x80) == 0 {
+            if (byte & 0x80) == 0 || shift == 35 {
                 return x;
             }
         }
@@ -91,7 +91,7 @@ impl<'a> BitsReader for SliceReader<'a> {
     #[inline]
     fn read_var_u64(&mut self) -> u64 {
         let mut x: u64 = 0;
-        let mut y: u8 = 0;
+        let mut shift: u8 = 0;
         let mut byte: u8;
         loop {
             if self.bit_reader.lookahead_bits() < 8 {
@@ -100,8 +100,8 @@ impl<'a> BitsReader for SliceReader<'a> {
 
             byte = self.read_bits_unchecked(8) as u8;
 
-            x |= (byte as u64 & 0x7F) << y;
-            y += 7;
+            x |= (byte as u64 & 0x7F) << shift;
+            shift += 7;
 
             if (byte & 0x80) == 0 {
                 return x;

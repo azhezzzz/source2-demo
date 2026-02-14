@@ -180,7 +180,7 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
             let byte = self.read_bits_unchecked(8) as u8;
             x |= ((byte & 0x7F) as u32) << shift;
 
-            if (byte & 0x80) == 0 {
+            if (byte & 0x80) == 0 || shift == 35 {
                 return x;
             }
 

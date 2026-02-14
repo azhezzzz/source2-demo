@@ -72,7 +72,7 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
 
                     if remaining >= 4 {
                         let ptr = self.read_buffer.as_ptr().add(self.read_position) as *const u32;
-                        self.lookahead_buffer |= ((*ptr).to_le() as u64) << self.lookahead_bit_count;
+                        self.lookahead_buffer |= (ptr.read_unaligned().to_le() as u64) << self.lookahead_bit_count;
                         self.lookahead_bit_count += 32;
                         self.read_position += 4;
                         self.bytes_read_total += 4;

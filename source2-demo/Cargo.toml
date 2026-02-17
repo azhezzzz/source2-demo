@@ -15,7 +15,7 @@ rust-version.workspace = true
 hashbrown = "0.16"
 rustc-hash = "2.1"
 snap = "1.1"
-bitter = "0.8"
+bitter = "0.9"
 thiserror = "2.0"
 anyhow = "1.0"
 prettytable = { version = "0.10", default-features = false }

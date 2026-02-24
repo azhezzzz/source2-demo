@@ -4,8 +4,8 @@ mod msg;
 mod seekable;
 mod slice;
 
-pub use bits::BitsReader;
-pub use msg::{MessageReader, ReplayInfoReader};
+pub(crate) use bits::BitsReader;
+pub(crate) use msg::{MessageReader, ReplayInfoReader};
 
 #[doc(hidden)]
 pub use seekable::SeekableReader;

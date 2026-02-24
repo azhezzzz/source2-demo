@@ -1,3 +1,8 @@
+/// Internal macro for calling observer methods efficiently.
+///
+/// This macro checks if any observers are interested in a particular event type
+/// before iterating through them, improving performance.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! try_observers {
     ($self:ident, $flag:ident, $method:ident ( $($arg:expr),* )) => {{

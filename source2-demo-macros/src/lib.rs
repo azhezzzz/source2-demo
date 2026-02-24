@@ -1,4 +1,120 @@
 #![doc = include_str!("../README.md")]
+//!
+//! # Procedural Macros for Source 2 Replay Parser
+//!
+//! This crate provides procedural macros that simplify implementing the Observer trait.
+//!
+//! ## Overview
+//!
+//! The macros automate much of the boilerplate required for handling replay events:
+//! - Automatically implement the Observer trait
+//! - Generate protobuf message decoding
+//! - Set up interest flags based on used methods
+//! - Handle optional `Context` parameters
+//!
+//! ## Main Macros
+//!
+//! ### `#[observer]` - Main implementation macro
+//!
+//! Automatically implements the Observer trait with all necessary methods.
+//! Takes an impl block with event handlers and generates the full implementation.
+//!
+//! ```no_run
+//! # use source2_demo::prelude::*;
+//! #[derive(Default)]
+//! struct MyObserver;
+//!
+//! #[observer]
+//! impl MyObserver {
+//!     #[on_tick_start]
+//!     fn on_tick(&mut self, ctx: &Context) -> ObserverResult {
+//!         println!("Tick: {}", ctx.tick());
+//!         Ok(())
+//!     }
+//! }
+//! ```
+//!
+//! ### Event Handler Macros
+//!
+//! These attributes mark methods as event handlers within an #[observer] impl:
+//!
+//! - `#[on_message]` - Handles protobuf messages
+//! - `#[on_tick_start]` - Called at tick start
+//! - `#[on_tick_end]` - Called at tick end
+//! - `#[on_entity]` - Called for entity changes
+//! - `#[on_game_event]` - Called for game events
+//! - `#[on_string_table]` - Called for string table updates
+//! - `#[on_stop]` - Called when replay ends
+//! - `#[on_combat_log]` - Called for combat log entries (Dota 2 only)
+//!
+//! ### Trait Markers
+//!
+//! These mark impl blocks with which data types to track:
+//!
+//! - `#[uses_entities]` - Track entities
+//! - `#[uses_string_tables]` - Track string tables
+//! - `#[uses_game_events]` - Track game events
+//! - `#[uses_combat_log]` - Track combat log (Dota 2 only)
+//!
+//! ## How the Macros Work
+//!
+//! The `#[observer]` macro:
+//!
+//! 1. Scans all methods for event handler attributes
+//! 2. Collects parameter types to generate interest flags
+//! 3. Creates decoding logic for protobuf messages
+//! 4. Generates the full `Observer` trait implementation
+//! 5. Handles optional parameters (Context is optional)
+//!
+//! ## Complete Example
+//!
+//! ```no_run
+//! use source2_demo::prelude::*;
+//!
+//! #[derive(Default)]
+//! struct GameAnalyzer {
+//!     tick_count: u32,
+//!     entity_count: u32,
+//! }
+//!
+//! #[observer]
+//! #[uses_entities]
+//! impl GameAnalyzer {
+//!     #[on_tick_start]
+//!     fn on_tick(&mut self, ctx: &Context) -> ObserverResult {
+//!         self.tick_count += 1;
+//!         Ok(())
+//!     }
+//!
+//!     #[on_entity]
+//!     fn on_entity_create(&mut self, event: EntityEvents, entity: &Entity) -> ObserverResult {
+//!         if event == EntityEvents::Created {
+//!             self.entity_count += 1;
+//!         }
+//!         Ok(())
+//!     }
+//!
+//!     #[on_message]
+//!     fn on_chat(&mut self, msg: CDotaUserMsgChatMessage) -> ObserverResult {
+//!         println!("Chat: {}", msg.message_text());
+//!         Ok(())
+//!     }
+//! }
+//! ```
+//!
+//! ## Key Features
+//!
+//! - **Automatic Interest Management**: Macro automatically determines which interests
+//!   to set based on which handler methods are defined
+//! - **Optional Context**: Pass `ctx: &Context` to any handler or omit it
+//! - **Automatic Message Decoding**: `#[on_message]` handlers automatically decode
+//!   protobuf messages based on parameter type
+//! - **Filtering Attributes**: Filter events with string arguments:
+//!   - `#[on_entity("CDOTA_Unit_Hero_Axe")]` - Only heroes named Axe
+//!   - `#[on_game_event("player_death")]` - Only death events
+//!   - `#[on_string_table("userinfo")]` - Only userinfo table updates
+//! - **Game-Specific Handlers**: Use `#[on_dota_user_message]`, `#[on_citadel_user_message]`,
+//!   etc. for game-specific message types
 
 mod protobuf_map;
 
@@ -9,6 +125,158 @@ use syn::{parse_macro_input, parse::Parser, punctuated::Punctuated, Ident, ItemI
 
 #[allow(unused_mut)]
 #[proc_macro_attribute]
+/// Implements the Observer trait for your struct.
+///
+/// This is the main macro that ties everything together. Apply it to an `impl` block
+/// that contains event handler methods marked with `#[on_*]` attributes.
+///
+/// # What It Does
+///
+/// - Automatically implements the Observer trait
+/// - Generates code to call all handler methods at appropriate times
+/// - Sets up interest flags based on which handlers are defined
+/// - Decodes protobuf messages and passes them to handlers
+/// - Filters events based on optional string arguments
+///
+/// # Handler Attributes
+///
+/// Use these attributes inside the impl block to mark event handlers:
+///
+/// - `#[on_tick_start]` - Called at the start of each tick
+/// - `#[on_tick_end]` - Called at the end of each tick
+/// - `#[on_entity]` - Called when entities change
+/// - `#[on_entity("ClassName")]` - Only for specific entity classes
+/// - `#[on_message]` - Called for protobuf messages (type inferred from param)
+/// - `#[on_game_event]` - Called for all game events
+/// - `#[on_game_event("event_name")]` - Only for specific events
+/// - `#[on_string_table]` - Called when string tables update
+/// - `#[on_string_table("table_name")]` - Only for specific tables
+/// - `#[on_stop]` - Called when replay ends
+/// - `#[on_combat_log]` - Called for combat log entries (Dota 2 only)
+///
+/// # Trait Attributes
+///
+/// Apply these to the `impl` block or individual methods to enable tracking:
+///
+/// - `#[uses_entities]` - Enable entity tracking
+/// - `#[uses_string_tables]` - Enable string table tracking
+/// - `#[uses_game_events]` - Enable game event tracking
+/// - `#[uses_combat_log]` - Enable combat log tracking (Dota 2 only)
+///
+/// # Parameter Guidelines
+///
+/// Handlers can have these parameters (all optional except `&mut self`):
+/// - `ctx: &Context` - Current replay state (always optional)
+/// - Specific parameters depending on the handler:
+///   - `event: EntityEvents` (on_entity)
+///   - `entity: &Entity` (on_entity)
+///   - `ge: &GameEvent` (on_game_event)
+///   - `table: &StringTable` (on_string_table)
+///   - `modified: &[i32]` (on_string_table)
+///   - `cle: &CombatLogEntry` (on_combat_log)
+///   - Protobuf message types (on_message)
+///
+/// # Examples
+///
+/// ## Basic observer
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[derive(Default)]
+/// struct BasicObserver;
+///
+/// #[observer]
+/// impl BasicObserver {
+///     #[on_tick_start]
+///     fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {
+///         println!("Tick: {}", ctx.tick());
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// ## With entity tracking
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[derive(Default)]
+/// struct EntityTracker;
+///
+/// #[observer]
+/// #[uses_entities]
+/// impl EntityTracker {
+///     #[on_entity]
+///     fn on_hero_created(&mut self, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///         if event == EntityEvents::Created && entity.class().name().starts_with("CDOTA_Unit_Hero_") {
+///             println!("Hero created: {}", entity.class().name());
+///         }
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// ## With multiple handlers
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[derive(Default)]
+/// struct ComplexObserver {
+///     ticks: u32,
+///     messages: u32,
+/// }
+///
+/// #[observer]
+/// impl ComplexObserver {
+///     #[on_tick_start]
+///     fn on_tick(&mut self, ctx: &Context) -> ObserverResult {
+///         self.ticks += 1;
+///         Ok(())
+///     }
+///
+///     #[on_message]
+///     fn on_chat(&mut self, msg: CDotaUserMsgChatMessage) -> ObserverResult {
+///         self.messages += 1;
+///         println!("Message: {}", msg.message_text());
+///         Ok(())
+///     }
+///
+///     #[on_stop]
+///     fn on_replay_end(&mut self) -> ObserverResult {
+///         println!("Total ticks: {}, messages: {}", self.ticks, self.messages);
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// ## With game event filtering
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[derive(Default)]
+/// struct DeathTracker {
+///     deaths: u32,
+/// }
+///
+/// #[observer]
+/// impl DeathTracker {
+///     #[on_game_event("player_death")]
+///     fn on_death(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
+///         self.deaths += 1;
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// # Interest Flags
+///
+/// The macro automatically determines which interest flags to set based on which
+/// handlers are defined. For example:
+/// - If you have `#[on_tick_start]`, `Interests::TICK_START` is added
+/// - If you have `#[on_entity]`, both `ENABLE_ENTITY` and `TRACK_ENTITY` are added
+/// - If you have `#[on_message]` handlers, appropriate message interest flags are added
+///
+/// You can also use trait attributes like `#[uses_entities]` to manually ensure
+/// certain interests are set.
 pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut mode_all = false;
 
@@ -505,210 +773,541 @@ fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
     }
 }
 
-/// A method wrapped with `#[on_message]` macro is called whenever a specified protobuf message appears in replay.
+/// Marks a method as a protobuf message handler.
+///
+/// Use this to handle specific protobuf message types. The message type is inferred
+/// from the method's parameter type, which should be a protobuf message struct.
+///
+/// The method will automatically decode binary message data and call your handler
+/// with the decoded message object.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Access to current replay state
+/// - Message parameter - The decoded protobuf message (inferred from parameter type)
+/// - Message can be taken by value or reference
+///
+/// # Supported Message Types
+///
+/// - `CDotaUserMsgChatMessage` and other Dota 2 messages
+/// - `CCitadelUserMsgChatMsg` and other Deadlock messages
+/// - `CCSUserMessage_*` and other CS2 messages
+/// - Any protobuf message type with a `decode` method
 ///
 /// # Examples
 ///
-/// ```no_compile
+/// ## Handle Dota 2 chat messages
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
 /// #[on_message]
-/// fn message(&mut self, ctx: &Context, message: &CCitadelUserMsgChatMsg) -> ObserverResult {
+/// fn on_chat(&mut self, ctx: &Context, msg: CDotaUserMsgChatMessage) -> ObserverResult {
+///     println!("[{}] {}", ctx.tick(), msg.message_text());
 ///     Ok(())
 /// }
+/// # }
 /// ```
 ///
-/// ```no_compile
+/// ## Handle without context
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
 /// #[on_message]
-/// fn message(&mut self, message: CCitadelUserMsgChatMsg) -> ObserverResult {
+/// fn on_chat(&mut self, msg: CDotaUserMsgChatMessage) -> ObserverResult {
+///     println!("Message: {}", msg.message_text());
 ///     Ok(())
 /// }
+/// # }
+/// ```
+///
+/// ## Handle by reference
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_message]
+/// fn on_chat(&mut self, msg: &CDotaUserMsgChatMessage) -> ObserverResult {
+///     println!("Message: {}", msg.message_text());
+///     Ok(())
+/// }
+/// # }
 /// ```
 #[proc_macro_attribute]
 pub fn on_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// A method wrapped with `#[on_tick_start]` macro is called at the start of each tick.
+/// Marks a method as a tick-start handler.
+///
+/// This handler is called at the beginning of each game tick. Use it for
+/// per-tick logic like updating game state, tracking changes, or generating output.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Current replay state including tick number
+///
+/// # When It's Called
+///
+/// Called right after the tick number is incremented in the Context, but before
+/// any other tick-specific events are processed.
 ///
 /// # Examples
 ///
-/// ```no_compile
+/// ## Track entity state every tick
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
 /// #[on_tick_start]
-/// fn tick_start(&mut self, ctx: &Context) -> ObserverResult {
-///    Ok(())
+/// fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {
+///     if ctx.tick() % 30 == 0 {  // Every second (30 ticks/sec)
+///         println!("Ticks processed: {}", ctx.tick());
+///     }
+///     Ok(())
 /// }
+/// # }
 /// ```
 ///
-/// ```no_compile
+/// ## Without context
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
 /// #[on_tick_start]
-/// fn tick_start(&mut self) -> ObserverResult {
-///    Ok(())
+/// fn on_tick_start(&mut self) -> ObserverResult {
+///     // Do something without needing context
+///     Ok(())
 /// }
+/// # }
 /// ```
 #[proc_macro_attribute]
 pub fn on_tick_start(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// A method wrapped with `#[on_tick_end]` macro is called at the end of each tick.
+/// Marks a method as a tick-end handler.
+///
+/// This handler is called at the end of each game tick. Use it to finalize
+/// per-tick calculations, output results, or reset temporary state.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Current replay state
+///
+/// # When It's Called
+///
+/// Called after all events for the current tick have been processed.
 ///
 /// # Examples
 ///
-/// ```no_compile
-/// #[on_tick_end]
-/// fn tick_end(&mut self, ctx: &Context) -> ObserverResult {
-///    Ok(())
-/// }
-/// ```
+/// ## Flush buffered data at end of tick
 ///
-/// ```no_compile
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs {
+/// #     buffer: Vec<String>,
+/// # }
+/// # impl MyObs {
 /// #[on_tick_end]
-/// fn tick_end(&mut self) -> ObserverResult {
-///    Ok(())
+/// fn on_tick_end(&mut self, ctx: &Context) -> ObserverResult {
+///     // Output buffered data
+///     for item in self.buffer.drain(..) {
+///         println!("[{}] {}", ctx.tick(), item);
+///     }
+///     Ok(())
 /// }
+/// # }
 /// ```
 #[proc_macro_attribute]
 pub fn on_tick_end(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// A method wrapped with `#[on_entity]` macro is called whenever an entity is created, updated or deleted.
+/// Marks a method as an entity event handler.
+///
+/// This handler is called when entities are created, updated, or deleted.
+/// Optionally filter to specific entity class names.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Current replay state
+/// - `event: EntityEvents` (optional) - Type of entity event (Created, Updated, Deleted)
+/// - `entity: &Entity` - The entity that changed
+///
+/// # Filtering
+///
+/// Pass a class name to only handle entities of that type:
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_entity("CDOTA_Unit_Hero_Axe")]
+/// fn on_axe(&mut self, entity: &Entity) -> ObserverResult {
+///     // Only called for Axe hero entity
+///     Ok(())
+/// }
+/// # }
+/// ```
 ///
 /// # Examples
 ///
-/// ```no_compile
+/// ## Track all entity changes
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs {
+/// #     created: usize,
+/// # }
+/// # impl MyObs {
 /// #[on_entity]
-/// fn entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
-///    Ok(())
+/// fn on_entity(&mut self, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///     if event == EntityEvents::Created {
+///         self.created += 1;
+///     }
+///     Ok(())
 /// }
+/// # }
 /// ```
 ///
-/// ```no_compile
-/// #[on_entity("CCitadelPlayerPawn")] // Will be called for entities with class "CCitadelPlayerPawn"
-/// fn entity(&mut self, ctx: &Context, entity: &Entity) -> ObserverResult {
-///    Ok(())
-/// }
-/// ```
+/// ## Track specific entity type
 ///
-/// ```no_compile
-/// #[on_entity]
-/// fn entity(&mut self, entity: &Entity) -> ObserverResult {
-///    Ok(())
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_entity("CDOTA_PlayerResource")]
+/// fn on_player_resource(&mut self, ctx: &Context, entity: &Entity) -> ObserverResult {
+///     // Only called when player resource entity updates
+///     Ok(())
 /// }
+/// # }
 /// ```
 #[proc_macro_attribute]
 pub fn on_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// A method wrapped with `#[on_game_event]` macro is called whenever CSvcMsgGameEvent appears in replay.
+/// Marks a method as a game event handler.
+///
+/// This handler is called when game events occur (kills, deaths, item purchases, etc.).
+/// Optionally filter to specific event names.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Current replay state
+/// - `ge: &GameEvent` - The game event
+///
+/// # Filtering
+///
+/// Pass an event name to only handle that event type:
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_game_event("player_death")]
+/// fn on_death(&mut self, ge: &GameEvent) -> ObserverResult {
+///     // Only called for player_death events
+///     Ok(())
+/// }
+/// # }
+/// ```
 ///
 /// # Examples
 ///
-/// ```no_compile
-/// #[on_game_event] // Will be called for all game events
-/// fn event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
-///    Ok(())
-/// }
-/// ```
+/// ## Handle all game events
 ///
-/// ```no_compile
-/// #[on_game_event("player_death")] // Will be called for "player_death" event only
-/// fn event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
-///    Ok(())
-/// }
-/// ```
-///
-/// ```no_compile
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
 /// #[on_game_event]
-/// fn event(&mut self, ge: &GameEvent) -> ObserverResult {
-///    Ok(())
+/// fn on_event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
+///     println!("[{}] Event: {}", ctx.tick(), ge.name());
+///     Ok(())
 /// }
+/// # }
+/// ```
+///
+/// ## Handle specific event type
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs {
+/// #     kill_count: u32,
+/// # }
+/// # impl MyObs {
+/// #[on_game_event("dota_player_kill")]
+/// fn on_kill(&mut self, ge: &GameEvent) -> ObserverResult {
+///     self.kill_count += 1;
+///     Ok(())
+/// }
+/// # }
+/// ```
 #[proc_macro_attribute]
 pub fn on_game_event(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// A method wrapped with `#[on_string_table]` macro is called when string table is updated.
+/// Marks a method as a string table update handler.
+///
+/// This handler is called when string tables are updated. String tables contain
+/// game data like player names, modifiers, effects, etc.
+/// Optionally filter to specific table names.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Current replay state
+/// - `table: &StringTable` - The updated string table
+/// - `modified: &[i32]` - Indices of rows that were modified
+///
+/// # Filtering
+///
+/// Pass a table name to only handle that table:
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_string_table("userinfo")]
+/// fn on_userinfo(&mut self, table: &StringTable, modified: &[i32]) -> ObserverResult {
+///     // Only called when userinfo table updates
+///     Ok(())
+/// }
+/// # }
+/// ```
 ///
 /// # Examples
 ///
-/// ```no_compile
-/// #[on_string_table] // Will be called when any string table is updated
-/// fn string_table(&mut self, ctx: &Context, table: &StringTable, modified: &[i32]) -> ObserverResult {
-///    Ok(())
-/// }
-/// ```
+/// ## Track all string table updates
 ///
-/// ```no_compile
-/// #[on_string_table("EntityNames")] // Will be called when "EntityNames" table is updated
-/// fn string_table(&mut self, ctx: &Context, table: &StringTable, modified: &[i32]) -> ObserverResult {
-///    Ok(())
-/// }
-/// ```
-///
-/// ```no_compile
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
 /// #[on_string_table]
-/// fn string_table(&mut self, table: &StringTable, modified: &[i32]) -> ObserverResult {
-///    Ok(())
+/// fn on_table_update(&mut self, ctx: &Context, table: &StringTable, modified: &[i32]) -> ObserverResult {
+///     println!("[{}] Table {} updated: {} rows", ctx.tick(), table.name(), modified.len());
+///     Ok(())
 /// }
+/// # }
+/// ```
+///
+/// ## Monitor specific table
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_string_table("ActiveModifiers")]
+/// fn on_modifiers(&mut self, table: &StringTable, modified: &[i32]) -> ObserverResult {
+///     println!("Active modifiers changed: {} rows", modified.len());
+///     Ok(())
+/// }
+/// # }
 /// ```
 #[proc_macro_attribute]
 pub fn on_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// A method wrapped with `#[on_stop]` macro is called when CDemoStop appears in replay.
+/// Marks a method as a replay stop handler.
+///
+/// This handler is called when the replay ends (CDemoStop message).
+/// Use it to finalize results, output statistics, or clean up resources.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Final replay state
 ///
 /// # Examples
 ///
-/// ```no_compile
+/// ## Output final statistics
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs {
+/// #     ticks: u32,
+/// # }
+/// # impl MyObs {
 /// #[on_stop]
-/// fn stop(&mut self, ctx: &Context) -> ObserverResult {
-///    Ok(())
+/// fn on_stop(&mut self, ctx: &Context) -> ObserverResult {
+///     println!("Replay ended at tick {}", ctx.tick());
+///     println!("Total ticks processed: {}", self.ticks);
+///     Ok(())
 /// }
+/// # }
 /// ```
 ///
-/// ```no_compile
+/// ## Without context
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
 /// #[on_stop]
-/// fn stop(&mut self) -> ObserverResult {
-///    Ok(())
+/// fn on_stop(&mut self) -> ObserverResult {
+///     println!("Replay complete");
+///     Ok(())
 /// }
+/// # }
 /// ```
 #[proc_macro_attribute]
 pub fn on_stop(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// A method wrapped with `#[on_combat_log]` macro is called whenever CMsgDotaCombatLogEntry appears in replay.
+/// Marks a method as a combat log handler (Dota 2 only).
+///
+/// This handler is called whenever a combat log entry is generated.
+/// Combat log entries include damage, healing, kills, abilities, items, etc.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Current replay state
+/// - `cle: &CombatLogEntry` - The combat log entry
+///
+/// # Requires Feature
+///
+/// Only available when the `dota` feature is enabled.
 ///
 /// # Examples
 ///
-/// ```no_compile
-/// #[on_combat_log]
-/// fn combat_log(&mut self, ctx: &Context, cle: &CombatLogEntry) -> ObserverResult {
-///    Ok(())
-/// }
+/// ## Track damage in real-time
 ///
-/// ```no_compile
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::DotaCombatlogTypes;
+/// # struct MyObs {
+/// #     total_damage: u32,
+/// # }
+/// # impl MyObs {
 /// #[on_combat_log]
-/// fn combat_log(&mut self, cle: &CombatLogEntry) -> ObserverResult {
-///    Ok(())
+/// fn on_damage(&mut self, ctx: &Context, cle: &CombatLogEntry) -> ObserverResult {
+///     if cle.r#type() == DotaCombatlogTypes::DotaCombatlogDamage {
+///         if let Ok(damage) = cle.value() {
+///             self.total_damage += damage;
+///         }
+///     }
+///     Ok(())
 /// }
+/// # }
+/// ```
+///
+/// ## Track kills
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::DotaCombatlogTypes;
+/// # struct MyObs {
+/// #     kills: u32,
+/// # }
+/// # impl MyObs {
+/// #[on_combat_log]
+/// fn on_kill(&mut self, cle: &CombatLogEntry) -> ObserverResult {
+///     if cle.r#type() == DotaCombatlogTypes::DotaCombatlogDeath {
+///         self.kills += 1;
+///     }
+///     Ok(())
+/// }
+/// # }
+/// ```
 #[cfg(feature = "dota")]
 #[proc_macro_attribute]
 pub fn on_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
+/// Marks the impl block to enable entity tracking.
+///
+/// When applied to an impl block or individual method, automatically enables
+/// the `ENABLE_ENTITY` interest flag so entities are tracked during parsing.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[observer]
+/// #[uses_entities]
+/// impl MyObs {
+///     // Now you can use #[on_entity] handlers
+/// # fn dummy(&mut self) -> ObserverResult { Ok(()) }
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
 
+/// Marks the impl block to enable string table tracking.
+///
+/// When applied to an impl block or individual method, automatically enables
+/// the `ENABLE_STRINGTAB` interest flag so string tables are tracked during parsing.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[observer]
+/// #[uses_string_tables]
+/// impl MyObs {
+///     // Now you can use #[on_string_table] handlers
+/// # fn dummy(&mut self) -> ObserverResult { Ok(()) }
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
 
+/// Marks the impl block to enable game event tracking.
+///
+/// When applied to an impl block or individual method, automatically enables
+/// the `BASE_GE` interest flag so game events are tracked during parsing.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[observer]
+/// #[uses_game_events]
+/// impl MyObs {
+///     // Now you can use #[on_game_event] handlers
+/// # fn dummy(&mut self) -> ObserverResult { Ok(()) }
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
 
+/// Marks the impl block to enable combat log tracking (Dota 2 only).
+///
+/// When applied to an impl block, automatically enables the `COMBAT_LOG` and
+/// `ENABLE_STRINGTAB` interest flags for combat log parsing.
+///
+/// # Requires Feature
+///
+/// Only available when the `dota` feature is enabled.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[observer]
+/// #[uses_combat_log]
+/// impl MyObs {
+///     // Now you can use #[on_combat_log] handlers
+/// # fn dummy(&mut self) -> ObserverResult { Ok(()) }
+/// }
+/// ```
 #[cfg(feature = "dota")]
 #[proc_macro_attribute]
 pub fn uses_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream { item }

@@ -225,11 +225,19 @@ where
     }
 }
 
-impl<'a> Parser<'a, SliceReader<'a>> {
-    /// Extracts match details from a Deadlock replay.
+impl<S> Parser<'static, SeekableReader<S>>
+where
+    S: std::io::Read + std::io::Seek,
+{
     #[cfg(feature = "deadlock")]
     pub fn deadlock_match_details(&mut self) -> Result<CMsgMatchMetaDataContents, ParserError> {
         self.reader.read_deadlock_match_details()
     }
 }
 
+impl<'a> Parser<'a, SliceReader<'a>> {
+    #[cfg(feature = "deadlock")]
+    pub fn deadlock_match_details(&mut self) -> Result<CMsgMatchMetaDataContents, ParserError> {
+        self.reader.read_deadlock_match_details()
+    }
+}

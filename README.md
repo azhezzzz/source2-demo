@@ -19,13 +19,13 @@ Add the following to your `Cargo.toml` and enable the feature for the game you w
 ```toml
 [dependencies]
 # For Dota 2
-source2-demo = { version = "0.3", features = ["dota"] }
+source2-demo = { version = "0.4", features = ["dota"] }
 
 # For Deadlock
-# source2-demo = { version = "0.3", features = ["deadlock"] }
+# source2-demo = { version = "0.4", features = ["deadlock"] }
 
 # For Counter-Strike 2
-# source2-demo = { version = "0.3", features = ["cs2"] }
+# source2-demo = { version = "0.4", features = ["cs2"] }
 ```
 
 ## Quick Start: Parsing Chat Messages

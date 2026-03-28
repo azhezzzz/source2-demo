@@ -441,6 +441,31 @@ impl<S> Parser<'static, SeekableReader<S>>
 where
     S: std::io::Read + std::io::Seek,
 {
+    /// Extracts match details from a Deadlock replay.
+    ///
+    /// This method scans through the replay to find and extract post-match details
+    /// specific to Deadlock games. It searches for the `KEUserMsgPostMatchDetails`
+    /// message and returns the decoded match metadata.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ParserError::MatchDetailsNotFound` if the match details message
+    /// cannot be found in the replay.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use source2_demo::prelude::*;
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// let replay = std::fs::File::open("deadlock_replay.dem")?;
+    /// let mut parser = Parser::from_reader(&replay)?;
+    /// let match_details = parser.deadlock_match_details()?;
+    /// println!("Match ID: {:?}", match_details.match_id());
+    ///
+    /// Ok(())
+    /// }
+    /// ```
     #[cfg(feature = "deadlock")]
     pub fn deadlock_match_details(&mut self) -> Result<CMsgMatchMetaDataContents, ParserError> {
         self.reader.read_deadlock_match_details()
@@ -465,8 +490,8 @@ impl<'a> Parser<'a, SliceReader<'a>> {
     /// use source2_demo::prelude::*;
     ///
     /// # fn main() -> anyhow::Result<()> {
-    /// let replay = std::fs::File::open("deadlock_replay.dem")?;
-    /// let mut parser = Parser::from_reader(&replay)?;
+    /// let replay = std::fs::read("deadlock_replay.dem")?;
+    /// let mut parser = Parser::new(&replay)?;
     /// let match_details = parser.deadlock_match_details()?;
     /// println!("Match ID: {:?}", match_details.match_id());
     ///

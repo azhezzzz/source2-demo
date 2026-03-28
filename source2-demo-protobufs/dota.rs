@@ -20,22 +20,22 @@ pub struct CDotaClientHardwareSpecs {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaLuaModifierEntry {
-    #[prost(int32, required, tag = "1")]
-    pub modifier_type: i32,
-    #[prost(string, required, tag = "2")]
-    pub modifier_filename: ::prost::alloc::string::String,
+    #[prost(int32, optional, tag = "1")]
+    pub modifier_type: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub modifier_filename: ::core::option::Option<::prost::alloc::string::String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDotaModifierBuffTableEntry {
-    #[prost(enumeration = "DotaModifierEntryType", required, tag = "1", default = "Active")]
-    pub entry_type: i32,
-    #[prost(uint32, required, tag = "2", default = "16777215")]
-    pub parent: u32,
-    #[prost(int32, required, tag = "3")]
-    pub index: i32,
-    #[prost(int32, required, tag = "4")]
-    pub serial_num: i32,
+    #[prost(enumeration = "DotaModifierEntryType", optional, tag = "1", default = "Active")]
+    pub entry_type: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "2", default = "16777215")]
+    pub parent: ::core::option::Option<u32>,
+    #[prost(int32, optional, tag = "3")]
+    pub index: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "4")]
+    pub serial_num: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "5")]
     pub modifier_class: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "6")]
@@ -108,6 +108,10 @@ pub struct CDotaModifierBuffTableEntry {
     pub aura_within_range: ::core::option::Option<bool>,
     #[prost(float, optional, tag = "40")]
     pub move_slow: ::core::option::Option<f32>,
+    #[prost(bool, optional, tag = "41")]
+    pub has_scepter: ::core::option::Option<bool>,
+    #[prost(bool, optional, tag = "42")]
+    pub has_shard: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -418,8 +422,8 @@ pub struct CDotaUserMsgBuyBackStateAlert {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CDotaUserMsgChatEvent {
-    #[prost(enumeration = "DotaChatMessage", required, tag = "1", default = "ChatMessageInvalid")]
-    pub r#type: i32,
+    #[prost(enumeration = "DotaChatMessage", optional, tag = "1", default = "ChatMessageInvalid")]
+    pub r#type: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "2")]
     pub value: ::core::option::Option<u32>,
     #[prost(sint32, optional, tag = "3", default = "-1")]
@@ -675,12 +679,12 @@ pub struct CDotaUserMsgDamageReport {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDebugChallenge {
-    #[prost(uint32, required, tag = "1")]
-    pub challenge_type: u32,
-    #[prost(uint32, required, tag = "2")]
-    pub challenge_query_id: u32,
-    #[prost(uint32, required, tag = "3")]
-    pub event_id: u32,
+    #[prost(uint32, optional, tag = "1")]
+    pub challenge_type: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "2")]
+    pub challenge_query_id: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "3")]
+    pub event_id: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "4")]
     pub instance_id: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "5")]
@@ -705,8 +709,8 @@ pub struct CDotaUserMsgDismissAllStatPopups {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgDodgeTrackingProjectiles {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub entindex: i32,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub entindex: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "2")]
     pub attacks_only: ::core::option::Option<bool>,
 }
@@ -849,6 +853,18 @@ pub struct CDotaUserMsgGiftPlayer {
     pub target_player_id: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "3")]
     pub gift_item_def_index: ::core::option::Option<u32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CDotaUserMsgGiveItem {
+    #[prost(uint32, optional, tag = "1", default = "16777215")]
+    pub giver_ent_index: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "2", default = "16777215")]
+    pub receiver_ent_index: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "3", default = "16777215")]
+    pub item_ent_index: ::core::option::Option<u32>,
+    #[prost(enumeration = "cdota_user_msg_give_item::EGiveStatus", optional, tag = "4", default = "Start")]
+    pub give_status: ::core::option::Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
@@ -1031,8 +1047,8 @@ pub struct CDotaUserMsgKillEffect {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgKillcamDamageTaken {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub player_id: i32,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "2")]
     pub damage_taken: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "3")]
@@ -1179,16 +1195,16 @@ pub struct CDotaUserMsgMoveCameraToUnit {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgMuertaReleaseEventAssignedTargetKilled {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub player_id_killer: i32,
-    #[prost(int32, required, tag = "2", default = "-1")]
-    pub player_id_target: i32,
-    #[prost(int32, required, tag = "3")]
-    pub points: i32,
-    #[prost(int32, required, tag = "4")]
-    pub points_total: i32,
-    #[prost(bool, required, tag = "5")]
-    pub last_hit: bool,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id_killer: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2", default = "-1")]
+    pub player_id_target: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub points: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "4")]
+    pub points_total: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "5")]
+    pub last_hit: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -1262,8 +1278,8 @@ pub struct CDotaUserMsgOutpostGrantedXp {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgOverheadEvent {
-    #[prost(enumeration = "DotaOverheadAlert", required, tag = "1", default = "OverheadAlertGold")]
-    pub message_type: i32,
+    #[prost(enumeration = "DotaOverheadAlert", optional, tag = "1", default = "OverheadAlertGold")]
+    pub message_type: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2")]
     pub value: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "3", default = "-1")]
@@ -1368,8 +1384,8 @@ pub struct CDotaUserMsgQoPArcanaSummary {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CDotaUserMsgQuestStatus {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub player_id: i32,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "2")]
     pub quest_id: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "3")]
@@ -1426,8 +1442,8 @@ pub struct CDotaUserMsgReceivedXmasGift {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgReplaceQueryUnit {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub player_id: i32,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2", default = "-1")]
     pub source_entindex: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "3", default = "-1")]
@@ -1494,8 +1510,8 @@ pub struct CDotaUserMsgSalutePlayer {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSelectPenaltyGold {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub player_id: i32,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
     #[prost(sint32, optional, tag = "2")]
     pub cost: ::core::option::Option<i32>,
 }
@@ -1578,10 +1594,10 @@ pub struct CDotaUserMsgShovelUnearth {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgShowGenericPopup {
-    #[prost(string, required, tag = "1")]
-    pub header: ::prost::alloc::string::String,
-    #[prost(string, required, tag = "2")]
-    pub body: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "1")]
+    pub header: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "2")]
+    pub body: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "3")]
     pub param1: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "4")]
@@ -1610,8 +1626,8 @@ pub struct CDotaUserMsgShowSurvey {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSpectatorPlayerClick {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub entindex: i32,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub entindex: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2")]
     pub order_type: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "3", default = "0")]
@@ -1778,8 +1794,8 @@ pub struct CDotaUserMsgStatsTeamMinuteDetails {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSuggestHeroPick {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub player_id: i32,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2")]
     pub hero_id: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "3")]
@@ -1790,8 +1806,8 @@ pub struct CDotaUserMsgSuggestHeroPick {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDotaUserMsgSuggestHeroRole {
-    #[prost(int32, required, tag = "1", default = "-1")]
-    pub player_id: i32,
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub player_id: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
     pub hero_role: ::core::option::Option<::prost::alloc::string::String>,
 }
@@ -2008,10 +2024,10 @@ pub struct CDotaUserMsgTutorialTipInfo {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CDotaUserMsgUnitEvent {
-    #[prost(enumeration = "EDotaEntityMessages", required, tag = "1", default = "DotaUnitSpeech")]
-    pub msg_type: i32,
-    #[prost(int32, required, tag = "2")]
-    pub entity_index: i32,
+    #[prost(enumeration = "EDotaEntityMessages", optional, tag = "1", default = "DotaUnitSpeech")]
+    pub msg_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub entity_index: ::core::option::Option<i32>,
     #[prost(message, optional, tag = "3")]
     pub speech: ::core::option::Option<cdota_user_msg_unit_event::Speech>,
     #[prost(message, optional, tag = "4")]
@@ -2339,6 +2355,8 @@ pub struct CMsgDotaCombatLogEntry {
     pub uses_charges: ::core::option::Option<bool>,
     #[prost(uint32, optional, tag = "80")]
     pub tracked_stat_id: ::core::option::Option<u32>,
+    #[prost(float, optional, tag = "81")]
+    pub modifier_purged_duration: ::core::option::Option<f32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
@@ -2495,6 +2513,9 @@ pub enum DotaBotMode {
     Minion = 25,
     Outpost = 26,
     BotChallengeEndgame = 27,
+    Watcher = 28,
+    WisdomShrine = 29,
+    LotusPool = 30,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2655,6 +2676,8 @@ pub enum DotaChatMessage {
     ChatMessageProtectorSpawned = 121,
     ChatMessageCraftingXp = 122,
     ChatMessageRoshanRoar = 123,
+    ChatMessageStoneOfRecallUsed = 124,
+    ChatMessageDeityBlessing = 125,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2946,6 +2969,7 @@ pub enum DotaOverheadAlert {
     OverheadAlertForceMiss = 25,
     OverheadAlertAegis = 26,
     OverheadAlertDispel = 27,
+    OverheadAlertBonusPureDamage = 28,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3285,6 +3309,7 @@ pub enum EDotaUserMessages {
     DotaUmMonsterHunterHuntAlert = 633,
     DotaUmTormentorTimer = 634,
     DotaUmKillEffect = 635,
+    DotaUmGiveItem = 636,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -3881,10 +3906,10 @@ pub mod c_msg_monster_hunter_material_quantity {
 pub mod cdota_response_query_serialized {
     #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
     pub struct Fact {
-        #[prost(int32, required, tag = "1")]
-        pub key: i32,
-        #[prost(enumeration = "fact::ValueType", required, tag = "2", default = "Numeric")]
-        pub valtype: i32,
+        #[prost(int32, optional, tag = "1")]
+        pub key: ::core::option::Option<i32>,
+        #[prost(enumeration = "fact::ValueType", optional, tag = "2", default = "Numeric")]
+        pub valtype: ::core::option::Option<i32>,
         #[prost(float, optional, tag = "3")]
         pub val_numeric: ::core::option::Option<f32>,
         #[prost(string, optional, tag = "4")]
@@ -3959,6 +3984,15 @@ pub mod cdota_user_msg_courier_killed_alert {
         pub item_ability_id: ::core::option::Option<i32>,
         #[prost(uint32, optional, tag = "2")]
         pub quantity: ::core::option::Option<u32>,
+    }
+}
+
+pub mod cdota_user_msg_give_item {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[repr(i32)]
+    pub enum EGiveStatus {
+        Start = 0,
+        End = 1,
     }
 }
 

@@ -265,6 +265,7 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CDotaUserMsgMonsterHunterHuntAlert" => quote! { EDotaUserMessages::DotaUmMonsterHunterHuntAlert },
         "CDotaUserMsgTormentorTimer" => quote! { EDotaUserMessages::DotaUmTormentorTimer },
         "CDotaUserMsgKillEffect" => quote! { EDotaUserMessages::DotaUmKillEffect },
+        "CDotaUserMsgGiveItem" => quote! { EDotaUserMessages::DotaUmGiveItem },
         // "CDotaUserMsgAddUnitToSelection" => quote! { EDotaUserMessages::DotaUmAddUnitToSelection },
         // "CDotaUserMsgCombatLogData" => quote! { EDotaUserMessages::DotaUmCombatLogData },
         // "CDotaUserMsgParticleManager" => quote! { EDotaUserMessages::DotaUmParticleManager },
@@ -375,6 +376,8 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CMsgSosSetSoundEventParams" => quote! { EBaseGameEvents::GeSosSetSoundEventParams },
         "CMsgSosSetLibraryStackFields" => quote! { EBaseGameEvents::GeSosSetLibraryStackFields },
         "CMsgSosStopSoundEventHash" => quote! { EBaseGameEvents::GeSosStopSoundEventHash },
+        "CMsgClothStiffenAnimEvent" => quote! { EBaseGameEvents::GeClothStiffenAnimEvent },
+        "CMsgClothEffectAnimEvent" => quote! { EBaseGameEvents::GeClothEffectAnimEvent },
 
         // NetMessages
         "CNetMsgNop" => quote! { NetMessages::NetNop },

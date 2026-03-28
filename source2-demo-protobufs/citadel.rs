@@ -1596,6 +1596,8 @@ pub enum ECitadelGameMode {
     KECitadelGameMode1v1Test = 2,
     KECitadelGameModeSandbox = 3,
     KECitadelGameModeStreetBrawl = 4,
+    KECitadelGameModeExploreNyc = 5,
+    KECitadelGameModeInternal = 6,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -2315,8 +2317,6 @@ pub mod c_msg_match_meta_data_contents {
         pub denies: ::core::option::Option<u32>,
         #[prost(uint32, optional, tag = "15")]
         pub ability_points: ::core::option::Option<u32>,
-        #[prost(uint32, optional, tag = "16")]
-        pub party: ::core::option::Option<u32>,
         #[prost(uint32, optional, tag = "17")]
         pub assigned_lane: ::core::option::Option<u32>,
         #[prost(uint32, optional, tag = "18")]
@@ -2495,6 +2495,7 @@ pub mod c_msg_match_meta_data_contents {
         KEItemTrophyCollector = 10,
         KEItemCultistSacrifice = 11,
         KEBreakable = 12,
+        KEItemGooseEgg = 13,
     }
 }
 

@@ -2318,6 +2318,11 @@ pub struct CDemoSpawnGroups {
     pub msgs: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CDemoSpawnGroupsHltvBroadcast {
+    #[prost(bytes = "vec", optional, tag = "1")]
+    pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CDemoRecovery {
     #[prost(message, optional, tag = "1")]
     pub initial_spawn_group: ::core::option::Option<c_demo_recovery::DemoInitialSpawnGroupEntry>,
@@ -2888,6 +2893,8 @@ pub struct CMsgPlaceDecalEvent {
     pub material_id: ::core::option::Option<u64>,
     #[prost(uint32, optional, tag = "12")]
     pub sequence_name: ::core::option::Option<u32>,
+    #[prost(message, optional, tag = "14")]
+    pub position_objectspace: ::core::option::Option<CMsgVector>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgClearWorldDecalsEvent {
@@ -3011,6 +3018,36 @@ pub struct CMsgSosSetLibraryStackFields {
     #[prost(bytes = "vec", optional, tag = "5")]
     pub packed_fields: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
+pub struct CMsgClothStiffenAnimEvent {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub source_entity_index: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub vertex_set_hash: ::core::option::Option<i32>,
+    #[prost(float, optional, tag = "3")]
+    pub intensity: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "4")]
+    pub length: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "5")]
+    pub speed_in: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "6")]
+    pub speed_out: ::core::option::Option<f32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CMsgClothEffectAnimEvent {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub source_entity_index: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub effect_name_hash: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub operation: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "4")]
+    pub flags: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub tags: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "6")]
+    pub pte: ::core::option::Option<CMsgVector>,
+}
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum EBaseGameEvents {
@@ -3027,116 +3064,8 @@ pub enum EBaseGameEvents {
     GeSosSetSoundEventParams = 210,
     GeSosSetLibraryStackFields = 211,
     GeSosStopSoundEventHash = 212,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgClientInfo {
-    #[prost(fixed32, optional, tag = "1")]
-    pub send_table_crc: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "2")]
-    pub server_count: ::core::option::Option<u32>,
-    #[prost(bool, optional, tag = "3")]
-    pub is_hltv: ::core::option::Option<bool>,
-    #[prost(uint32, optional, tag = "5")]
-    pub friends_id: ::core::option::Option<u32>,
-    #[prost(string, optional, tag = "6")]
-    pub friends_name: ::core::option::Option<::prost::alloc::string::String>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgMove {
-    #[prost(bytes = "vec", optional, tag = "3")]
-    pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(uint32, optional, tag = "4")]
-    pub last_command_number: ::core::option::Option<u32>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CMsgVoiceAudio {
-    #[prost(enumeration = "VoiceDataFormatT", optional, tag = "1", default = "VoicedataFormatSteam")]
-    pub format: ::core::option::Option<i32>,
-    #[prost(bytes = "vec", optional, tag = "2")]
-    pub voice_data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(int32, optional, tag = "3")]
-    pub sequence_bytes: ::core::option::Option<i32>,
-    #[prost(uint32, optional, tag = "4")]
-    pub section_number: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "5")]
-    pub sample_rate: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "6")]
-    pub uncompressed_sample_offset: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "7")]
-    pub num_packets: ::core::option::Option<u32>,
-    #[prost(uint32, repeated, tag = "8")]
-    pub packet_offsets: ::prost::alloc::vec::Vec<u32>,
-    #[prost(float, optional, tag = "9")]
-    pub voice_level: ::core::option::Option<f32>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CclcMsgVoiceData {
-    #[prost(message, optional, tag = "1")]
-    pub audio: ::core::option::Option<CMsgVoiceAudio>,
-    #[prost(fixed64, optional, tag = "2")]
-    pub xuid: ::core::option::Option<u64>,
-    #[prost(uint32, optional, tag = "3")]
-    pub tick: ::core::option::Option<u32>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgBaselineAck {
-    #[prost(int32, optional, tag = "1")]
-    pub baseline_tick: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub baseline_nr: ::core::option::Option<i32>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgListenEvents {
-    #[prost(fixed32, repeated, packed = "false", tag = "1")]
-    pub event_mask: ::prost::alloc::vec::Vec<u32>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgRespondCvarValue {
-    #[prost(int32, optional, tag = "1")]
-    pub cookie: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub status_code: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "3")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "4")]
-    pub value: ::core::option::Option<::prost::alloc::string::String>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgLoadingProgress {
-    #[prost(int32, optional, tag = "1")]
-    pub progress: ::core::option::Option<i32>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgSplitPlayerConnect {
-    #[prost(string, optional, tag = "1")]
-    pub playername: ::core::option::Option<::prost::alloc::string::String>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgSplitPlayerDisconnect {
-    #[prost(int32, optional, tag = "1")]
-    pub slot: ::core::option::Option<i32>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgServerStatus {
-    #[prost(bool, optional, tag = "1")]
-    pub simplified: ::core::option::Option<bool>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgRequestPause {
-    #[prost(enumeration = "RequestPauseT", optional, tag = "1", default = "RpPause")]
-    pub pause_type: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    pub pause_group: ::core::option::Option<i32>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgCmdKeyValues {
-    #[prost(bytes = "vec", optional, tag = "1")]
-    pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CclcMsgRconServerDetails {
-    #[prost(bytes = "vec", optional, tag = "1")]
-    pub token: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+    GeClothStiffenAnimEvent = 213,
+    GeClothEffectAnimEvent = 214,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgSource2SystemSpecs {
@@ -3333,19 +3262,6 @@ pub mod c_msg_source2_perf_interval_sample {
     }
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CclcMsgDiagnostic {
-    #[prost(message, optional, tag = "1")]
-    pub system_specs: ::core::option::Option<CMsgSource2SystemSpecs>,
-    #[prost(message, optional, tag = "2")]
-    pub vprof_report: ::core::option::Option<CMsgSource2VProfLiteReport>,
-    #[prost(message, optional, tag = "3")]
-    pub downstream_flow: ::core::option::Option<CMsgSource2NetworkFlowQuality>,
-    #[prost(message, optional, tag = "4")]
-    pub upstream_flow: ::core::option::Option<CMsgSource2NetworkFlowQuality>,
-    #[prost(message, repeated, tag = "5")]
-    pub perf_samples: ::prost::alloc::vec::Vec<CMsgSource2PerfIntervalSample>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSource2MetricsMatchPerfSummaryNotification {
     #[prost(uint32, optional, tag = "1")]
     pub appid: ::core::option::Option<u32>,
@@ -3380,6 +3296,243 @@ pub mod c_source2_metrics_match_perf_summary_notification {
         #[prost(message, repeated, tag = "11")]
         pub perf_samples: ::prost::alloc::vec::Vec<super::CMsgSource2PerfIntervalSample>,
     }
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CMsgSource2PlayStatsPackedRecordList {
+    #[prost(string, optional, tag = "1")]
+    pub record_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag = "2")]
+    pub field_defs: ::prost::alloc::vec::Vec<c_msg_source2_play_stats_packed_record_list::FieldDef>,
+    #[prost(uint32, optional, tag = "3")]
+    pub record_count: ::core::option::Option<u32>,
+    #[prost(uint64, repeated, tag = "4")]
+    pub uint64_vals: ::prost::alloc::vec::Vec<u64>,
+    #[prost(uint32, repeated, tag = "5")]
+    pub uint32_vals: ::prost::alloc::vec::Vec<u32>,
+    #[prost(uint32, repeated, tag = "6")]
+    pub uint16_vals: ::prost::alloc::vec::Vec<u32>,
+    #[prost(uint32, repeated, tag = "7")]
+    pub uint8_vals: ::prost::alloc::vec::Vec<u32>,
+    #[prost(int64, repeated, tag = "8")]
+    pub int64_vals: ::prost::alloc::vec::Vec<i64>,
+    #[prost(int32, repeated, tag = "9")]
+    pub int32_vals: ::prost::alloc::vec::Vec<i32>,
+    #[prost(int32, repeated, tag = "10")]
+    pub int16_vals: ::prost::alloc::vec::Vec<i32>,
+    #[prost(int32, repeated, tag = "11")]
+    pub int8_vals: ::prost::alloc::vec::Vec<i32>,
+    #[prost(double, repeated, tag = "12")]
+    pub float64_vals: ::prost::alloc::vec::Vec<f64>,
+    #[prost(float, repeated, tag = "13")]
+    pub float32_vals: ::prost::alloc::vec::Vec<f32>,
+    #[prost(bool, repeated, tag = "14")]
+    pub bool_vals: ::prost::alloc::vec::Vec<bool>,
+    #[prost(string, repeated, tag = "15")]
+    pub string_vals: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "16")]
+    pub low_cardinality_string_vals: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(fixed32, repeated, tag = "17")]
+    pub utcdatetime_vals: ::prost::alloc::vec::Vec<u32>,
+    #[prost(fixed64, repeated, tag = "18")]
+    pub steamidtrustbucket_vals: ::prost::alloc::vec::Vec<u64>,
+    #[prost(message, repeated, tag = "19")]
+    pub trustbucket_vals: ::prost::alloc::vec::Vec<c_msg_source2_play_stats_packed_record_list::SteamIdList>,
+}
+pub mod c_msg_source2_play_stats_packed_record_list {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+    pub struct FieldDef {
+        #[prost(string, optional, tag = "1")]
+        pub field_name: ::core::option::Option<::prost::alloc::string::String>,
+        #[prost(enumeration = "super::ESource2PlayStatsFieldType", optional, tag = "2", default = "Source2PlayStatsInvalid")]
+        pub field_type: ::core::option::Option<i32>,
+    }
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+    pub struct SteamIdList {
+        #[prost(fixed64, repeated, tag = "1")]
+        pub steamid: ::prost::alloc::vec::Vec<u64>,
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CSource2MetricsRecordPlayStatsNotification {
+    #[prost(message, repeated, tag = "1")]
+    pub record_types: ::prost::alloc::vec::Vec<CMsgSource2PlayStatsPackedRecordList>,
+    #[prost(uint32, optional, tag = "2")]
+    pub appid: ::core::option::Option<u32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CSource2MetricsFetchMapDataRequest {
+    #[prost(uint32, optional, tag = "1")]
+    pub appid: ::core::option::Option<u32>,
+    #[prost(string, optional, tag = "2")]
+    pub map_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(uint32, optional, tag = "3")]
+    pub game_type: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub game_mode: ::core::option::Option<u32>,
+    #[prost(string, optional, tag = "5")]
+    pub param: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(uint32, optional, tag = "6")]
+    pub time_span: ::core::option::Option<u32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CSource2MetricsFetchMapDataResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub results: ::prost::alloc::vec::Vec<c_source2_metrics_fetch_map_data_response::MapData>,
+}
+pub mod c_source2_metrics_fetch_map_data_response {
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+    pub struct MapData {
+        #[prost(string, optional, tag = "1")]
+        pub name: ::core::option::Option<::prost::alloc::string::String>,
+        #[prost(string, optional, tag = "2")]
+        pub r#type: ::core::option::Option<::prost::alloc::string::String>,
+        #[prost(string, optional, tag = "3")]
+        pub data: ::core::option::Option<::prost::alloc::string::String>,
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ESource2PlayStatsFieldType {
+    Source2PlayStatsInvalid = 0,
+    Source2PlayStatsUInt64 = 1,
+    Source2PlayStatsUInt32 = 2,
+    Source2PlayStatsUInt16 = 3,
+    Source2PlayStatsUInt8 = 4,
+    Source2PlayStatsInt64 = 5,
+    Source2PlayStatsInt32 = 6,
+    Source2PlayStatsInt16 = 7,
+    Source2PlayStatsInt8 = 8,
+    Source2PlayStatsFloat64 = 9,
+    Source2PlayStatsFloat32 = 10,
+    Source2PlayStatsBool = 11,
+    Source2PlayStatsString = 12,
+    Source2PlayStatsLowCardinalityString = 13,
+    Source2PlayStatsUtcDateTime = 14,
+    Source2PlayStatsSteamIdTrustBucket = 15,
+    Source2PlayStatsSteamIdTrustBucketMin = 16,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgClientInfo {
+    #[prost(fixed32, optional, tag = "1")]
+    pub send_table_crc: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "2")]
+    pub server_count: ::core::option::Option<u32>,
+    #[prost(bool, optional, tag = "3")]
+    pub is_hltv: ::core::option::Option<bool>,
+    #[prost(uint32, optional, tag = "5")]
+    pub friends_id: ::core::option::Option<u32>,
+    #[prost(string, optional, tag = "6")]
+    pub friends_name: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgMove {
+    #[prost(bytes = "vec", optional, tag = "3")]
+    pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+    #[prost(uint32, optional, tag = "4")]
+    pub last_command_number: ::core::option::Option<u32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CMsgVoiceAudio {
+    #[prost(enumeration = "VoiceDataFormatT", optional, tag = "1", default = "VoicedataFormatSteam")]
+    pub format: ::core::option::Option<i32>,
+    #[prost(bytes = "vec", optional, tag = "2")]
+    pub voice_data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+    #[prost(int32, optional, tag = "3")]
+    pub sequence_bytes: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub section_number: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "5")]
+    pub sample_rate: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "6")]
+    pub uncompressed_sample_offset: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "7")]
+    pub num_packets: ::core::option::Option<u32>,
+    #[prost(uint32, repeated, tag = "8")]
+    pub packet_offsets: ::prost::alloc::vec::Vec<u32>,
+    #[prost(float, optional, tag = "9")]
+    pub voice_level: ::core::option::Option<f32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CclcMsgVoiceData {
+    #[prost(message, optional, tag = "1")]
+    pub audio: ::core::option::Option<CMsgVoiceAudio>,
+    #[prost(fixed64, optional, tag = "2")]
+    pub xuid: ::core::option::Option<u64>,
+    #[prost(uint32, optional, tag = "3")]
+    pub tick: ::core::option::Option<u32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgBaselineAck {
+    #[prost(int32, optional, tag = "1")]
+    pub baseline_tick: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub baseline_nr: ::core::option::Option<i32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgListenEvents {
+    #[prost(fixed32, repeated, packed = "false", tag = "1")]
+    pub event_mask: ::prost::alloc::vec::Vec<u32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgRespondCvarValue {
+    #[prost(int32, optional, tag = "1")]
+    pub cookie: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub status_code: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "3")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "4")]
+    pub value: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgLoadingProgress {
+    #[prost(int32, optional, tag = "1")]
+    pub progress: ::core::option::Option<i32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgSplitPlayerConnect {
+    #[prost(string, optional, tag = "1")]
+    pub playername: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgSplitPlayerDisconnect {
+    #[prost(int32, optional, tag = "1")]
+    pub slot: ::core::option::Option<i32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgServerStatus {
+    #[prost(bool, optional, tag = "1")]
+    pub simplified: ::core::option::Option<bool>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgRequestPause {
+    #[prost(enumeration = "RequestPauseT", optional, tag = "1", default = "RpPause")]
+    pub pause_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub pause_group: ::core::option::Option<i32>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgCmdKeyValues {
+    #[prost(bytes = "vec", optional, tag = "1")]
+    pub data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CclcMsgRconServerDetails {
+    #[prost(bytes = "vec", optional, tag = "1")]
+    pub token: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+}
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
+pub struct CclcMsgDiagnostic {
+    #[prost(message, optional, tag = "1")]
+    pub system_specs: ::core::option::Option<CMsgSource2SystemSpecs>,
+    #[prost(message, optional, tag = "2")]
+    pub vprof_report: ::core::option::Option<CMsgSource2VProfLiteReport>,
+    #[prost(message, optional, tag = "3")]
+    pub downstream_flow: ::core::option::Option<CMsgSource2NetworkFlowQuality>,
+    #[prost(message, optional, tag = "4")]
+    pub upstream_flow: ::core::option::Option<CMsgSource2NetworkFlowQuality>,
+    #[prost(message, repeated, tag = "5")]
+    pub perf_samples: ::prost::alloc::vec::Vec<CMsgSource2PerfIntervalSample>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CSvcMsgServerInfo {
@@ -3916,10 +4069,10 @@ pub struct CBidirMsgRebroadcastSource {
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CBidirMsgPredictionEvent {
-    #[prost(uint32, required, tag = "1")]
-    pub event_id: u32,
-    #[prost(bytes = "vec", required, tag = "2")]
-    pub event_data: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint32, optional, tag = "1")]
+    pub event_id: ::core::option::Option<u32>,
+    #[prost(bytes = "vec", optional, tag = "2")]
+    pub event_data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
     #[prost(uint32, optional, tag = "3")]
     pub sync_type: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "4")]
@@ -4207,14 +4360,8 @@ pub enum SvcMessagesLowFrequency {
 pub enum BidirectionalMessages {
     BiRebroadcastGameEvent = 16,
     BiRebroadcastSource = 17,
-    BiGameEvent = 18,
+    BiGameEventDeprecated = 18,
     BiPredictionEvent = 19,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum BidirectionalMessagesLowFrequency {
-    BiRelayInfo = 700,
-    BiRelayPacket = 701,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -4557,10 +4704,10 @@ pub mod c_user_message_camera_transition {
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CUserMsgParticleManager {
-    #[prost(enumeration = "ParticleMessage", required, tag = "1", default = "GameParticleManagerEventCreate")]
-    pub r#type: i32,
-    #[prost(uint32, required, tag = "2")]
-    pub index: u32,
+    #[prost(enumeration = "ParticleMessage", optional, tag = "1", default = "GameParticleManagerEventCreate")]
+    pub r#type: ::core::option::Option<i32>,
+    #[prost(uint32, optional, tag = "2")]
+    pub index: ::core::option::Option<u32>,
     #[prost(message, optional, tag = "3")]
     pub release_particle_index: ::core::option::Option<c_user_msg_particle_manager::ReleaseParticleIndex>,
     #[prost(message, optional, tag = "4")]
@@ -4639,6 +4786,10 @@ pub struct CUserMsgParticleManager {
     pub set_particle_cluster_growth: ::core::option::Option<c_user_msg_particle_manager::SetParticleClusterGrowth>,
     #[prost(message, optional, tag = "42")]
     pub remove_fan: ::core::option::Option<c_user_msg_particle_manager::RemoveFan>,
+    #[prost(message, optional, tag = "43")]
+    pub create_smoke_grid: ::core::option::Option<c_user_msg_particle_manager::CreateSmokeGrid>,
+    #[prost(message, optional, tag = "44")]
+    pub set_override_texture: ::core::option::Option<c_user_msg_particle_manager::SetOverrideTexture>,
 }
 pub mod c_user_msg_particle_manager {
     #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
@@ -4822,12 +4973,19 @@ pub mod c_user_msg_particle_manager {
     pub struct SetParticleText {
         #[prost(string, optional, tag = "1")]
         pub text: ::core::option::Option<::prost::alloc::string::String>,
+        #[prost(bool, optional, tag = "2")]
+        pub localize: ::core::option::Option<bool>,
     }
     #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct SetTextureAttribute {
         #[prost(string, optional, tag = "1")]
         pub attribute_name: ::core::option::Option<::prost::alloc::string::String>,
         #[prost(string, optional, tag = "2")]
+        pub texture_name: ::core::option::Option<::prost::alloc::string::String>,
+    }
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+    pub struct SetOverrideTexture {
+        #[prost(string, optional, tag = "1")]
         pub texture_name: ::core::option::Option<::prost::alloc::string::String>,
     }
     #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
@@ -4934,6 +5092,11 @@ pub mod c_user_msg_particle_manager {
     }
     #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct DestroyPhysicsSim {}
+    #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
+    pub struct CreateSmokeGrid {
+        #[prost(string, optional, tag = "1")]
+        pub vdata_name: ::core::option::Option<::prost::alloc::string::String>,
+    }
     #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct SetVData {
         #[prost(string, optional, tag = "1")]
@@ -5503,6 +5666,8 @@ pub enum ParticleMessage {
     GameParticleManagerEventUpdateFan = 37,
     GameParticleManagerEventSetClusterGrowth = 38,
     GameParticleManagerEventRemoveFan = 39,
+    GameParticleManagerEventCreateSmokeGrid = 40,
+    GameParticleManagerEventSetOverrideTexture = 41,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]

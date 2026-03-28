@@ -1309,6 +1309,8 @@ pub struct CMsgGccStrike15V2ClientRequestJoinFriendData {
     pub res: ::core::option::Option<CMsgGccStrike15V2MatchmakingGc2ClientReserve>,
     #[prost(string, optional, tag = "6")]
     pub errormsg: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "7")]
+    pub is_local_server: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]

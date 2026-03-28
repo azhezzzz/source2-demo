@@ -10,56 +10,207 @@ pub type ObserverResult = anyhow::Result<()>;
 
 
 bitflags::bitflags! {
+    /// Bitflags for declaring observer interests.
+    ///
+    /// Use these flags in the [`Observer::interests`] method to specify which
+    /// events your observer wants to receive. This allows the parser to skip
+    /// unnecessary processing for events no observer cares about.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use source2_demo::prelude::*;
+    ///
+    /// #[derive(Default)]
+    /// struct EntityTracker;
+    ///
+    /// impl Observer for EntityTracker {
+    ///     fn interests(&self) -> Interests {
+    ///         // Track entities and receive tick events
+    ///         Interests::ENABLE_ENTITY | Interests::TRACK_ENTITY | Interests::TICK_START
+    ///     }
+    ///
+    ///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+    ///         // Handle entity updates
+    ///         Ok(())
+    ///     }
+    ///
+    ///     fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {
+    ///         // Handle tick start
+    ///         Ok(())
+    ///     }
+    /// }
+    /// ```
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct Interests: u64 {
-        const DEMO       = 1 << 0;  // EDemoCommands
-        const NET        = 1 << 1;  // NetMessages
-        const SVC        = 1 << 2;  // SvcMessages
+        /// Interest in demo commands (EDemoCommands)
+        const DEMO       = 1 << 0;
+        /// Interest in net messages (NetMessages)
+        const NET        = 1 << 1;
+        /// Interest in SVC messages (SvcMessages)
+        const SVC        = 1 << 2;
 
-        const BASE_UM    = 1 << 3;  // EBaseUserMessages
-        const BASE_GE    = 1 << 4;  // EBaseGameEvents and game events
+        /// Interest in base user messages (EBaseUserMessages)
+        const BASE_UM    = 1 << 3;
+        /// Interest in base game events (EBaseGameEvents) and game events
+        const BASE_GE    = 1 << 4;
 
+        /// Interest in tick start events
         const TICK_START = 1 << 5;
+        /// Interest in tick end events
         const TICK_END   = 1 << 6;
 
+        /// Enable entity tracking (required for entity callbacks)
         const ENABLE_ENTITY     = 1 << 7;
+        /// Interest in entity create/update/delete events
         const TRACK_ENTITY     = 1 << 8;
+        /// Enable string table tracking
         const ENABLE_STRINGTAB  = 1 << 9;
+        /// Interest in string table update events
         const TRACK_STRINGTAB  = 1 << 10;
 
+        /// Interest in replay end event
         const STOP       = 1 << 11;
 
         #[cfg(feature = "dota")]
-        const DOTA_UM    = 1 << 12; // EDotaUserMessages
+        /// Interest in Dota 2 user messages (EDotaUserMessages)
+        const DOTA_UM    = 1 << 12;
 
         #[cfg(feature = "dota")]
-        const COMBAT_LOG = 1 << 13; // Combat Log
+        /// Interest in combat log entries (Dota 2 only)
+        const COMBAT_LOG = 1 << 13;
 
 
         #[cfg(feature = "deadlock")]
-        const CITA_UM    = 1 << 14; // CitadelUserMessageIds
+        /// Interest in Citadel/Deadlock user messages (CitadelUserMessageIds)
+        const CITA_UM    = 1 << 14;
 
         #[cfg(feature = "deadlock")]
-        const CITA_GE    = 1 << 15; // ECitadelGameEvents
+        /// Interest in Citadel/Deadlock game events (ECitadelGameEvents)
+        const CITA_GE    = 1 << 15;
 
         #[cfg(feature = "cs2")]
-        const CS2_UM     = 1 << 16; // ECstrike15UserMessages
+        /// Interest in CS2 user messages (ECstrike15UserMessages)
+        const CS2_UM     = 1 << 16;
 
         #[cfg(feature = "cs2")]
-        const CS2_GE     = 1 << 17; // ECsgoGameEvents
+        /// Interest in CS2 game events (ECsgoGameEvents)
+        const CS2_GE     = 1 << 17;
     }
 }
 
 
-/// A trait defining methods for handling game event and protobuf messages. Can
-/// be attached to the [` crate::Parser `] instance with [`crate::Parser::register_observer`]
-/// method.
+/// Observer trait for handling demo file events.
+///
+/// Implement this trait to receive callbacks as the parser processes the demo file.
+/// You can either implement it manually or use the `#[observer]` attribute macro
+/// for a more convenient approach.
+///
+/// # Interest-based Filtering
+///
+/// The [`interests`](Observer::interests) method allows you to declare which events
+/// your observer wants to receive. This is crucial for performance as it allows the
+/// parser to skip processing events that no observer cares about.
+///
+/// # Examples
+///
+/// ## Using the `#[observer]` macro (recommended)
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+/// use source2_demo_protobufs::CDotaUserMsgChatMessage;
+///
+/// #[derive(Default)]
+/// struct GameStats {
+///     combat_logs: u32,
+///     messages: u32,
+/// }
+///
+/// #[observer]
+/// impl GameStats {
+///     #[on_message]
+///     fn on_chat_msg(&mut self, ctx: &Context, msg: CDotaUserMsgChatMessage) -> ObserverResult {
+///         self.messages += 1;
+///         Ok(())
+///     }
+///
+///     #[on_combat_log]
+///     fn on_combat_log(&mut self, ctx: &Context, entry: &CombatLogEntry) -> ObserverResult {
+///         self.combat_logs += 1;
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// ## Manual implementation
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+///
+/// #[derive(Default)]
+/// struct EntityCounter {
+///     count: usize,
+/// }
+///
+/// impl Observer for EntityCounter {
+///     fn interests(&self) -> Interests {
+///         Interests::ENABLE_ENTITY | Interests::TRACK_ENTITY
+///     }
+///
+///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///         if event == EntityEvents::Created {
+///             self.count += 1;
+///         }
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// ## Combining multiple interests
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+///
+/// #[derive(Default)]
+/// struct MultiObserver;
+///
+/// impl Observer for MultiObserver {
+///     fn interests(&self) -> Interests {
+///         Interests::TICK_START
+///             | Interests::TICK_END
+///             | Interests::ENABLE_ENTITY
+///             | Interests::TRACK_ENTITY
+///     }
+///
+///     fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {
+///         println!("Tick {}", ctx.tick());
+///         Ok(())
+///     }
+///
+///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///         // Process entities
+///         Ok(())
+///     }
+/// }
+/// ```
 #[allow(unused_variables)]
 pub trait Observer {
+    /// Declares which events this observer is interested in.
+    ///
+    /// Return an empty [`Interests`] to receive no events, or combine flags
+    /// using the `|` operator. This method is called once when the observer
+    /// is registered.
+    ///
+    /// # Default
+    ///
+    /// Returns [`Interests::empty()`] by default (no events).
     fn interests(&self) -> Interests {
         Interests::empty()
     }
 
+    /// Called when a demo command is received.
+    ///
+    /// Requires [`Interests::DEMO`] to be set.
     #[cold]
     #[inline(never)]
     fn on_demo_command(
@@ -71,6 +222,9 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when a net message is received.
+    ///
+    /// Requires [`Interests::NET`] to be set.
     #[cold]
     #[inline(never)]
     fn on_net_message(
@@ -82,6 +236,9 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when an SVC (server-to-client) message is received.
+    ///
+    /// Requires [`Interests::SVC`] to be set.
     #[cold]
     #[inline(never)]
     fn on_svc_message(
@@ -93,6 +250,9 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when a base user message is received.
+    ///
+    /// Requires [`Interests::BASE_UM`] to be set.
     #[cold]
     #[inline(never)]
     fn on_base_user_message(
@@ -104,6 +264,9 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when a base game event is received.
+    ///
+    /// Requires [`Interests::BASE_GE`] to be set.
     #[cold]
     #[inline(never)]
     fn on_base_game_event(
@@ -115,30 +278,45 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called at the start of each tick.
+    ///
+    /// Requires [`Interests::TICK_START`] to be set.
     #[cold]
     #[inline(never)]
     fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {
         Ok(())
     }
 
+    /// Called at the end of each tick.
+    ///
+    /// Requires [`Interests::TICK_END`] to be set.
     #[cold]
     #[inline(never)]
     fn on_tick_end(&mut self, ctx: &Context) -> ObserverResult {
         Ok(())
     }
 
+    /// Called when an entity is created, updated, or deleted.
+    ///
+    /// Requires [`Interests::TRACK_ENTITY`] and [`Interests::ENABLE_ENTITY`] to be set.
     #[cold]
     #[inline(never)]
     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
         Ok(())
     }
 
+    /// Called when a game event occurs.
+    ///
+    /// Requires [`Interests::BASE_GE`] to be set.
     #[cold]
     #[inline(never)]
     fn on_game_event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
         Ok(())
     }
 
+    /// Called when a string table is updated.
+    ///
+    /// Requires [`Interests::TRACK_STRINGTAB`] and [`Interests::ENABLE_STRINGTAB`] to be set.
     #[cold]
     #[inline(never)]
     fn on_string_table(
@@ -150,12 +328,26 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when the replay ends.
+    ///
+    /// Requires [`Interests::STOP`] to be set.
+    /// This is the last callback before parsing completes.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - Current replay context
     #[cold]
     #[inline(never)]
     fn on_stop(&mut self, ctx: &Context) -> ObserverResult {
         Ok(())
     }
 
+    /// Called when a combat log entry is received (Dota 2 only).
+    ///
+    /// Combat log entries describe in-game events like damage, healing, kills, etc.
+    /// Only available with the `dota` feature enabled.
+    ///
+    /// Requires [`Interests::COMBAT_LOG`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "dota")]
@@ -163,6 +355,11 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when a Dota 2 user message is received.
+    ///
+    /// Dota 2 specific user messages. Only available with the `dota` feature enabled.
+    ///
+    /// Requires [`Interests::DOTA_UM`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "dota")]
@@ -175,6 +372,11 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when a Citadel/Deadlock game event is received.
+    ///
+    /// Deadlock specific game events. Only available with the `deadlock` feature enabled.
+    ///
+    /// Requires [`Interests::CITA_GE`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "deadlock")]
@@ -187,6 +389,11 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when a Citadel/Deadlock user message is received.
+    ///
+    /// Deadlock specific user messages. Only available with the `deadlock` feature enabled.
+    ///
+    /// Requires [`Interests::CITA_UM`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "deadlock")]
@@ -199,6 +406,11 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when a Counter-Strike 2 user message is received.
+    ///
+    /// CS2 specific user messages. Only available with the `cs2` feature enabled.
+    ///
+    /// Requires [`Interests::CS2_UM`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "cs2")]
@@ -211,6 +423,11 @@ pub trait Observer {
         Ok(())
     }
 
+    /// Called when a Counter-Strike 2 game event is received.
+    ///
+    /// CS2 specific game events. Only available with the `cs2` feature enabled.
+    ///
+    /// Requires [`Interests::CS2_GE`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "cs2")]

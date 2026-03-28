@@ -1,8 +1,37 @@
+//! Combat log entry parsing for Dota 2.
+//!
+//! This module provides the [`CombatLogEntry`] type for working with Dota 2
+//! combat log entries.
+
 use crate::error::CombatLogError;
 use crate::proto::{CMsgDotaCombatLogEntry, DotaCombatlogTypes};
 use crate::string_table::StringTable;
 
-/// Wrapper for [`CMsgDotaCombatLogEntry`]
+/// Wrapper for Dota 2 combat log entries.
+///
+/// Provides convenient access to combat log data including damage, healing,
+/// kills, abilities, items, and modifiers.
+///
+/// # Examples
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+///
+/// #[derive(Default)]
+/// struct CombatLog;
+///
+/// #[observer]
+/// #[uses_combat_log]
+/// impl CombatLog {
+///     #[on_combat_log]
+///     fn on_combat(&mut self, entry: &CombatLogEntry) -> ObserverResult {
+///         if entry.r#type() == DotaCombatlogTypes::DotaCombatlogDeath {
+///             println!("{} killed {}", entry.attacker_name()?, entry.target_name()?);
+///         }
+///         Ok(())
+///     }
+/// }
+/// ```
 #[derive(Clone)]
 pub struct CombatLogEntry<'a> {
     pub(crate) names: &'a StringTable,
@@ -12,6 +41,7 @@ pub struct CombatLogEntry<'a> {
 macro_rules! define_combat_log_getters {
     ($($name:ident: $type:ty),*) => {
         $(
+            #[doc = concat!("Returns the `", stringify!($name), "` property from the combat log entry.")]
             pub fn $name(&self) -> Result<$type, CombatLogError> {
                 self.log.$name.ok_or_else(|| {
                     CombatLogError::EmptyProperty(stringify!($name).into(), format!("{:?}", self.r#type()))
@@ -24,6 +54,7 @@ macro_rules! define_combat_log_getters {
 macro_rules! define_name_getter {
     ($($fn_name:ident: $log_prop:ident),*) => {
         $(
+            #[doc = concat!("Returns the name associated with the `", stringify!($log_prop), "` property.")]
             pub fn $fn_name(&self) -> Result<&str, CombatLogError> {
                 self.log.$log_prop
                     .and_then(|id| self.names.items.get(id as usize).map(|name| name.key.as_ref()))
@@ -36,14 +67,23 @@ macro_rules! define_name_getter {
 }
 
 impl<'a> CombatLogEntry<'a> {
+    /// Returns the combat log entry type.
+    ///
+    /// Types include damage, healing, death, ability use, item use, etc.
     pub fn r#type(&self) -> DotaCombatlogTypes {
         self.log.r#type()
     }
 
+    /// Returns the underlying protobuf message.
+    ///
+    /// Provides direct access to all raw combat log data.
     pub fn log(&self) -> &CMsgDotaCombatLogEntry {
         &self.log
     }
 
+    /// Returns the list of assisting player IDs.
+    ///
+    /// For kill events, returns the players who assisted in the kill.
     pub fn assist_players(&self) -> &[i32] {
         self.log.assist_players.as_slice()
     }

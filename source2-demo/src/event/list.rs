@@ -3,6 +3,24 @@ use crate::HashMap;
 use source2_demo_protobufs::CSvcMsgGameEventList;
 use std::rc::Rc;
 
+/// Container for all game event definitions in a replay.
+///
+/// This stores the complete definitions for all game events that can occur
+/// during replay parsing. Each event definition specifies:
+/// - Event ID: Unique identifier
+/// - Event name: Human-readable name
+/// - Key definitions: Names and types of fields in the event
+///
+/// # Examples
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+///
+/// # fn example(ctx: &Context) {
+/// // Game events are automatically parsed from the event definitions
+/// // You access them through the observer callbacks or game event iteration
+/// # }
+/// ```
 #[derive(Default)]
 pub struct GameEventList {
     pub(crate) list: HashMap<i32, Rc<GameEventDefinition>>,

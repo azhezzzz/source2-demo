@@ -1,12 +1,35 @@
 use crate::error::GameEventError;
 
+/// Value type for game event fields.
+///
+/// Game events contain named fields with values. This enum represents
+/// all possible value types that can appear in game events.
+///
+/// # Examples
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+///
+/// # fn example(ge: &GameEvent) -> anyhow::Result<()> {
+/// // Get a value and convert it
+/// let value = ge.get_value("player_id")?;
+/// let player_id: i32 = value.try_into()?;
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug)]
 pub enum EventValue {
+    /// String value
     String(String),
+    /// 32-bit floating point value
     Float(f32),
+    /// Signed 32-bit integer
     Int(i32),
+    /// Boolean value
     Bool(bool),
+    /// Unsigned 8-bit integer (byte)
     Byte(u8),
+    /// Unsigned 64-bit integer
     U64(u64),
 }
 

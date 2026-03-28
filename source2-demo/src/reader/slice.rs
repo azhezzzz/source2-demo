@@ -1,5 +1,3 @@
-//! Slice-based implementation of BitsReader for zero-copy reading.
-
 use bitter::BitReader;
 use super::bits::BitsReader;
 

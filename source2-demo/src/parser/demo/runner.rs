@@ -1,3 +1,8 @@
+//! Demo runner implementations for parser execution.
+//!
+//! This module provides the [`DemoRunner`] trait which defines methods for
+//! controlling replay parsing execution.
+
 use crate::error::ParserError;
 use crate::parser::demo::DemoMessages;
 use crate::parser::Parser;
@@ -7,15 +12,104 @@ use crate::Entity;
 use std::cmp::min;
 use std::mem;
 
+/// Trait for controlling replay parsing execution.
+///
+/// Provides methods to run the parser to completion, to a specific tick,
+/// or to jump to a tick without full processing.
 pub trait DemoRunner {
-    /// Moves to the end of replay. The last packet is [`CDemoFileInfo`].
+    /// Processes the entire replay from start to finish.
+    ///
+    /// This method processes all demo commands sequentially, calling registered
+    /// observers for each event. The final packet is [`CDemoFileInfo`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ParserError`] if parsing fails.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use source2_demo::prelude::*;
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// let replay = std::fs::read("replay.dem")?;
+    /// let mut parser = Parser::new(&replay)?;
+    /// parser.register_observer::<MyObserver>();
+    /// parser.run_to_end()?;
+    /// # Ok(())
+    /// # }
+    /// # #[derive(Default)]
+    /// # struct MyObserver;
+    /// # impl Observer for MyObserver {}
+    /// ```
     fn run_to_end(&mut self) -> Result<(), ParserError>;
 
-    /// Moves to target tick.
+    /// Processes the replay up to a specific tick.
+    ///
+    /// Stops parsing when the specified tick is reached. All observers are
+    /// called for events up to and including the target tick.
+    ///
+    /// # Arguments
+    ///
+    /// * `target_tick` - The tick to parse up to (inclusive)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ParserError`] if parsing fails.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use source2_demo::prelude::*;
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// let replay = std::fs::File::open("replay.dem")?;
+    /// let mut parser = Parser::from_reader(&replay)?;
+    /// 
+    /// // Process first 5 minutes (30 ticks per second * 60 seconds * 5 minutes)
+    /// parser.run_to_tick(9000)?;
+    /// # Ok(())
+    /// # }
+    /// ```
     fn run_to_tick(&mut self, target_tick: u32) -> Result<(), ParserError>;
 
-    /// Moves to target tick without calling observers and processing delta
-    /// packets.
+    /// Jumps to a specific tick without full processing.
+    ///
+    /// This is an optimized method that seeks to the target tick without
+    /// calling observers for intermediate events. Useful for jumping to
+    /// a specific point in a replay quickly.
+    ///
+    /// After jumping, you can continue parsing normally with observers active.
+    ///
+    /// # Arguments
+    ///
+    /// * `target_tick` - The tick to jump to
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ParserError`] if seeking fails.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use source2_demo::prelude::*;
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// let replay = std::fs::File::open("replay.dem")?;
+    /// let mut parser = Parser::from_reader(&replay)?;
+    /// 
+    /// // Jump to 10 minutes in
+    /// parser.jump_to_tick(18000)?;
+    /// 
+    /// // Now register observers and continue
+    /// parser.register_observer::<MyObserver>();
+    /// parser.run_to_tick(20000)?;
+    /// # Ok(())
+    /// # }
+    /// # #[derive(Default)]
+    /// # struct MyObserver;
+    /// # impl Observer for MyObserver {}
+    /// ```
     fn jump_to_tick(&mut self, target_tick: u32) -> Result<(), ParserError>;
 }
 

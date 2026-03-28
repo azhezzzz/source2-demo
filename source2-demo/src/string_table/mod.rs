@@ -1,3 +1,59 @@
+//! String table system for managing game data.
+//!
+//! String tables are a key-value storage mechanism used by Source 2 games to
+//! store various game data like hero names, item names, modifiers, and more.
+//!
+//! # Overview
+//!
+//! Each string table has:
+//! - A name (e.g., "ActiveModifiers", "EntityNames")
+//! - Rows containing key-value pairs
+//! - Optional user data associated with each entry
+//!
+//! # Examples
+//!
+//! ## Accessing string tables
+//!
+//! ```no_run
+//! use source2_demo::prelude::*;
+//!
+//! #[derive(Default)]
+//! struct TableReader;
+//!
+//! impl Observer for TableReader {
+//!     fn interests(&self) -> Interests {
+//!         Interests::ENABLE_STRINGTAB | Interests::TRACK_STRINGTAB
+//!     }
+//!
+//!     fn on_string_table(&mut self, ctx: &Context, st: &StringTable, modified: &[i32]) -> ObserverResult {
+//!         println!("Table '{}' updated: {} rows modified", st.name(), modified.len());
+//!
+//!         // Iterate all rows
+//!         for row in st.iter() {
+//!             println!("Key: {}", row.key());
+//!         }
+//!
+//!         Ok(())
+//!     }
+//! }
+//! ```
+//!
+//! ## Finding specific string tables
+//!
+//! ```no_run
+//! use source2_demo::prelude::*;
+//!
+//! # fn example(ctx: &Context) -> anyhow::Result<()> {
+//! // Get string table by name
+//! let modifiers = ctx.string_tables().get_by_name("ActiveModifiers")?;
+//! println!("Active modifiers: {}", modifiers.iter().count());
+//!
+//! // Get by index
+//! let table = ctx.string_tables().get_by_index(0)?;
+//! # Ok(())
+//! # }
+//! ```
+
 mod container;
 mod row;
 
@@ -10,6 +66,46 @@ use crate::reader::{BitsReader, SliceReader};
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// A string table containing key-value pairs.
+///
+/// String tables store game data in a table format where each row has a key
+/// (string) and optional value (binary data). They're used for various purposes
+/// like tracking active modifiers, entity names, particle systems, etc.
+///
+/// # Usage Patterns
+///
+/// ## Accessing player data
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+/// use source2_demo::proto::CMsgPlayerInfo;
+///
+/// # fn example(ctx: &Context) -> anyhow::Result<()> {
+/// let userinfo = ctx.string_tables().get_by_name("userinfo")?;
+/// let row = userinfo.get_row_by_index(0)?;
+///
+/// if let Some(data) = row.value() {
+///     let player_info = CMsgPlayerInfo::decode(data)?;
+///     println!("Player: {}", player_info.name());
+/// }
+/// # Ok(())
+/// # }
+/// ```
+///
+/// ## Listing all entries
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+///
+/// # fn example(table: &StringTable) {
+/// for row in table.iter() {
+///     println!("Key: {}", row.key());
+///     if let Some(value) = row.value() {
+///         println!("  Value size: {} bytes", value.len());
+///     }
+/// }
+/// # }
+/// ```
 #[derive(Clone, Default)]
 pub struct StringTable {
     pub(crate) index: i32,
@@ -23,20 +119,68 @@ pub struct StringTable {
 }
 
 impl StringTable {
+    /// Returns the table's numeric index.
     pub fn index(&self) -> i32 {
         self.index
     }
 
+    /// Returns the table's name.
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    /// Iterator over string table rows.
+    /// Returns an iterator over all rows in the string table.
+    ///
+    /// This allows you to inspect all key-value pairs stored in the table.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use source2_demo::prelude::*;
+    ///
+    /// # fn example(ctx: &Context) -> anyhow::Result<()> {
+    /// let table = ctx.string_tables().get_by_name("ActiveModifiers")?;
+    ///
+    /// for row in table.iter() {
+    ///     println!("Key: {}", row.key());
+    ///     if let Some(value) = row.value() {
+    ///         println!("  Value size: {} bytes", value.len());
+    ///     }
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn iter(&self) -> impl Iterator<Item = &StringTableRow> {
         self.items.iter()
     }
 
-    /// Returns [`StringTableRow`] for given index.
+    /// Gets a specific row by its index in the string table.
+    ///
+    /// Each string table is essentially a list of key-value pairs.
+    /// This retrieves the row at the specified position.
+    ///
+    /// # Arguments
+    ///
+    /// * `idx` - The row index (0-based)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StringTableError::RowNotFoundByIndex`] if the index is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use source2_demo::prelude::*;
+    ///
+    /// # fn example(ctx: &Context) -> anyhow::Result<()> {
+    /// let userinfo = ctx.string_tables().get_by_name("userinfo")?;
+    ///
+    /// // Get player info at slot 0
+    /// let row = userinfo.get_row_by_index(0)?;
+    /// println!("Slot 0 key: {}", row.key());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn get_row_by_index(&self, idx: usize) -> Result<&StringTableRow, StringTableError> {
         self.items
             .get(idx)

@@ -1,4 +1,8 @@
 #![doc = include_str!("../README.md")]
+#![doc(html_root_url = "https://docs.rs/source2-demo/0.3.2")]
+#![warn(missing_docs)]
+#![allow(clippy::too_many_arguments)]
+
 
 mod display;
 mod entity;
@@ -6,19 +10,44 @@ pub mod error;
 mod event;
 mod macros;
 mod parser;
-pub mod reader;
+mod reader;
 mod string_table;
 
+/// Protocol buffer definitions for Source 2 games.
+///
+/// This module re-exports all protobuf message types used by the parser.
+/// The available messages depend on which game feature is enabled.
+///
+/// # Examples
+///
+/// ```no_run
+/// use source2_demo::proto::*;
+///
+/// // Decode a protobuf message
+/// let msg = CDemoFileInfo::decode(bytes)?;
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 pub mod proto {
     pub use source2_demo_protobufs::prost::Message;
     pub use source2_demo_protobufs::*;
 }
 
+/// Prelude module for convenient imports.
+///
+/// Import this module to get access to all commonly used types and traits:
+///
+/// ```
+/// use source2_demo::prelude::*;
+/// ```
+///
+/// This includes:
+/// - Core types: [`Parser`], [`Context`], [`Entity`], [`Observer`]
+/// - Traits and macros: [`observer`], [`on_message`], [`property!`]
+/// - Protobuf enums: Message type enumerations for each game
 pub mod prelude {
     pub use crate::entity::{Entity, EntityEvents};
     pub use crate::event::{EventValue, GameEvent, GameEventList};
     pub use crate::parser::*;
-    pub use crate::reader::{BitsReader};
     pub use crate::string_table::*;
     pub use crate::{property, try_property};
 
@@ -47,6 +76,7 @@ pub mod prelude {
     pub use crate::proto::ECsgoGameEvents;
 }
 
+// Re-export commonly used types at the crate root
 pub use crate::entity::field::FieldValue;
 pub use crate::entity::*;
 pub use crate::event::*;
@@ -54,8 +84,17 @@ pub use crate::parser::*;
 pub use crate::string_table::*;
 pub use source2_demo_macros::*;
 
+/// Fast hash map using FxHash algorithm.
+///
+/// This type alias is used throughout the crate for better performance
+/// compared to the standard library's `HashMap`.
 pub type HashMap<K, V> =
 hashbrown::HashMap<K, V, rustc_hash::FxBuildHasher>;
+
+/// Fast hash set using FxHash algorithm.
+///
+/// This type alias is used throughout the crate for better performance
+/// compared to the standard library's `HashSet`.
 pub type HashSet<T> =
 hashbrown::HashSet<T, rustc_hash::FxBuildHasher>;
 

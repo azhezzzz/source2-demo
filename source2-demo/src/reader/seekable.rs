@@ -1,4 +1,4 @@
-//! https://github.com/ValveSoftware/csgo-demoinfo/blob/master/demoinfogo/demofilebitbuf.cpp
+//! <https://github.com/ValveSoftware/csgo-demoinfo/blob/master/demoinfogo/demofilebitbuf.cpp>
 
 use std::io::{Read, Seek, SeekFrom};
 use super::BitsReader;

@@ -1,25 +1,82 @@
+//! Field value types and conversions.
+//!
+//! This module defines the [`FieldValue`] enum which represents all possible
+//! types that entity properties can have.
+
 use crate::error::FieldValueError;
 
-/// Special type for [`Entity`](crate::Entity) field value that can be converted
-/// into Rust type using `try_into`.
+/// Value type for entity properties.
+///
+/// This enum represents all possible types that can be stored in entity properties.
+/// Use [`TryInto`] to convert to Rust types, or use the `property!` macro for
+/// convenient access.
+///
+/// # Variants
+///
+/// - Numeric types: `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`
+/// - Floating point: `f32`
+/// - Text: `String`
+/// - Vectors: 2D, 3D, and 4D float arrays
+/// - Boolean: `bool`
+///
+/// # Examples
+///
+/// ## Manual conversion
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+///
+/// # fn example(entity: &Entity) -> anyhow::Result<()> {
+/// let field_value = entity.get_property_by_name("m_iHealth")?;
+/// let health: i32 = field_value.try_into()?;
+/// println!("Health: {}", health);
+/// # Ok(())
+/// # }
+/// ```
+///
+/// ## Using property! macro
+///
+/// ```no_run
+/// use source2_demo::prelude::*;
+///
+/// # fn example(entity: &Entity) -> anyhow::Result<()> {
+/// // Type is inferred
+/// let health: i32 = property!(entity, "m_iHealth");
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 pub enum FieldValue {
+    /// Boolean value
     Boolean(bool),
+    /// String value
     String(String),
+    /// 32-bit floating point value
     Float(f32),
 
+    /// 2D vector
     Vector2D([f32; 2]),
+    /// 3D vector
     Vector3D([f32; 3]),
+    /// 4D vector
     Vector4D([f32; 4]),
 
+    /// Signed 8-bit integer
     Signed8(i8),
+    /// Signed 16-bit integer
     Signed16(i16),
+    /// Signed 32-bit integer
     Signed32(i32),
+    /// Signed 64-bit integer
     Signed64(i64),
 
+    /// Unsigned 8-bit integer
     Unsigned8(u8),
+    /// Unsigned 16-bit integer
     Unsigned16(u16),
+    /// Unsigned 32-bit integer
     Unsigned32(u32),
+    /// Unsigned 64-bit integer
     Unsigned64(u64),
 }
 

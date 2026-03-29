@@ -27,16 +27,6 @@ impl Chat {
 
         Ok(())
     }
-
-    #[on_message]
-    fn handle_chat_msg1(
-        &mut self,
-        ctx: &Context,
-        chat_msg: CDotaUserMsgSpectatorPlayerUnitOrders,
-    ) -> ObserverResult {
-        println!("{:?}", chat_msg);
-        Ok(())
-    }
 }
 
 fn main() -> anyhow::Result<()> {

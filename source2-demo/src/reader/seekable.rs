@@ -323,9 +323,7 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
             byte = self.read_bits_unchecked(8) as u8;
 
             if byte == 0 {
-                unsafe {
-                    return String::from_utf8_unchecked(self.string_buffer[..i].to_vec());
-                }
+                return String::from_utf8_lossy(&self.string_buffer[..i]).into_owned();
             }
 
             if i >= self.string_buffer.len() {
@@ -336,9 +334,7 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
             i += 1;
         }
 
-        unsafe {
-            String::from_utf8_unchecked(self.string_buffer[..i].to_vec())
-        }
+        String::from_utf8_lossy(&self.string_buffer[..i]).into_owned()
     }
 
     #[inline]

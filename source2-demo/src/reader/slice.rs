@@ -196,9 +196,7 @@ impl<'a> BitsReader for SliceReader<'a> {
             byte = self.read_bits_unchecked(8) as u8;
 
             if byte == 0 {
-                unsafe {
-                    return String::from_utf8_unchecked(self.string_buffer[..i].to_vec());
-                }
+                return String::from_utf8_lossy(&self.string_buffer[..i]).into_owned();
             }
 
             self.string_buffer[i] = byte;

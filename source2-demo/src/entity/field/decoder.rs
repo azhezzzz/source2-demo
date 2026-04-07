@@ -64,7 +64,7 @@ impl FieldDecoder {
 
             "uint8" | "BloodType" => FieldDecoder::Unsigned8,
             "uint16" => FieldDecoder::Unsigned16,
-            "uint64" | "CStrongHandle" | "HeroFacetKey_t" => {
+            "uint64" | "CStrongHandle" | "HeroFacetKey_t" | "ResourceId_t" => {
                 FieldDecoder::Unsigned64(Unsigned64Decoder { properties })
             }
 

@@ -8,6 +8,7 @@ pub(crate) trait Decode {
 pub(crate) enum FieldDecoder {
     Boolean,
     String,
+    BinaryBlock,
     Signed8,
     Signed16,
     Signed32,
@@ -33,7 +34,9 @@ impl FieldDecoder {
                 FieldDecoder::Boolean
             }
 
-            "char" | "CUtlString" | "CUtlSymbolLarge" => FieldDecoder::String,
+            "char" | "CUtlString" | "CUtlSymbolLarge" | "CGlobalSymbol" => FieldDecoder::String,
+
+            "CUtlBinaryBlock" => FieldDecoder::BinaryBlock,
 
             "Vector" | "VectorWS" => FieldDecoder::Vector(VectorDecoder {
                 properties,
@@ -80,6 +83,11 @@ impl FieldDecoder {
                 reader.read_bool()
             }),
             FieldDecoder::String => FieldValue::String(reader.read_cstring()),
+            FieldDecoder::BinaryBlock => FieldValue::String({
+                let n = reader.read_var_u32();
+                let bytes = reader.read_bytes(n);
+                String::from_utf8_lossy(&bytes).into_owned()
+            }),
 
             FieldDecoder::Signed8 => FieldValue::Signed8(reader.read_var_i32() as i8),
             FieldDecoder::Signed16 => FieldValue::Signed16(reader.read_var_i32() as i16),

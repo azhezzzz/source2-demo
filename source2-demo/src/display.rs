@@ -204,6 +204,7 @@ impl Display for FieldDecoder {
         let output = match &self {
             FieldDecoder::Boolean => "bool",
             FieldDecoder::String => "String",
+            FieldDecoder::BinaryBlock => "String",
             FieldDecoder::Signed8 => "i32",
             FieldDecoder::Signed16 => "i16",
             FieldDecoder::Signed32 => "i32",

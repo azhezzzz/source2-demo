@@ -2357,6 +2357,8 @@ pub struct CMsgDotaCombatLogEntry {
     pub tracked_stat_id: ::core::option::Option<u32>,
     #[prost(float, optional, tag = "81")]
     pub modifier_purged_duration: ::core::option::Option<f32>,
+    #[prost(bool, optional, tag = "82")]
+    pub heal_from_regen: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]

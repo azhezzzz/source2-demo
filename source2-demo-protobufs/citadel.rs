@@ -2111,6 +2111,8 @@ pub mod c_msg_match_meta_data_contents {
         pub flags: ::core::option::Option<u32>,
         #[prost(uint32, optional, tag = "6")]
         pub imbued_ability_id: ::core::option::Option<u32>,
+        #[prost(uint32, optional, tag = "7")]
+        pub upgrade_info: ::core::option::Option<u32>,
     }
     #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct Ping {

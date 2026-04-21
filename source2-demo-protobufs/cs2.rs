@@ -670,6 +670,16 @@ pub struct CCsUsrMsgVoteStart {
     pub player_slot_target: ::core::option::Option<i32>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CCsUsrMsgWeaponMagDrop {
+    #[prost(int32, optional, tag = "1", default = "-1")]
+    pub entidx: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "2")]
+    pub secondary_data: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "3")]
+    pub server_event: ::core::option::Option<bool>,
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CCsUsrMsgWeaponSound {
     #[prost(int32, optional, tag = "1", default = "-1")]
@@ -1249,50 +1259,6 @@ pub struct CMsgGccStrike15V2ClientReportServer {
     pub rpt_inventoryabuse: ::core::option::Option<u32>,
     #[prost(uint64, optional, tag = "8")]
     pub match_id: ::core::option::Option<u64>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
-pub struct CMsgGccStrike15V2ClientReportValidation {
-    #[prost(string, optional, tag = "1")]
-    pub file_report: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "2")]
-    pub command_line: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(uint32, optional, tag = "3")]
-    pub total_files: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "4")]
-    pub internal_error: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "5")]
-    pub trust_time: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "6")]
-    pub count_pending: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "7")]
-    pub count_completed: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "8")]
-    pub process_id: ::core::option::Option<u32>,
-    #[prost(int32, optional, tag = "9")]
-    pub osversion: ::core::option::Option<i32>,
-    #[prost(uint32, optional, tag = "10")]
-    pub clientreportversion: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "11")]
-    pub status_id: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "12")]
-    pub diagnostic1: ::core::option::Option<u32>,
-    #[prost(uint64, optional, tag = "13")]
-    pub diagnostic2: ::core::option::Option<u64>,
-    #[prost(uint64, optional, tag = "14")]
-    pub diagnostic3: ::core::option::Option<u64>,
-    #[prost(string, optional, tag = "15")]
-    pub last_launch_data: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(uint32, optional, tag = "16")]
-    pub report_count: ::core::option::Option<u32>,
-    #[prost(uint64, optional, tag = "17")]
-    pub client_time: ::core::option::Option<u64>,
-    #[prost(uint64, optional, tag = "18")]
-    pub diagnostic4: ::core::option::Option<u64>,
-    #[prost(uint64, optional, tag = "19")]
-    pub diagnostic5: ::core::option::Option<u64>,
-    #[prost(message, repeated, tag = "20")]
-    pub diagnostics: ::prost::alloc::vec::Vec<CvDiagnostic>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
@@ -2705,7 +2671,6 @@ pub enum ECsgoGcMsg {
     KEMsgGccStrike15V2ClientPerfReport = 9202,
     KEMsgGccStrike15V2GetEventFavoritesResponse = 9203,
     KEMsgGccStrike15V2ClientRequestSouvenir = 9204,
-    KEMsgGccStrike15V2ClientReportValidation = 9205,
     KEMsgGccStrike15V2Gc2ClientRefuseSecureMode = 9206,
     KEMsgGccStrike15V2Gc2ClientRequestValidation = 9207,
     KEMsgGccStrike15V2ClientRedeemMissionReward = 9209,
@@ -2816,6 +2781,7 @@ pub enum ECstrike15UserMessages {
     CsUmDamagePrediction = 386,
     CsUmRecurringMissionSchema = 387,
     CsUmSendPlayerLoadout = 388,
+    CsUmWeaponMagDrop = 389,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]

@@ -230,6 +230,48 @@ If upstream parser changes are frequent:
    - `cargo check`
    - `cargo test --lib`
 
+### Helper Script
+
+This branch now includes a small helper script:
+
+```bash
+scripts/sync-upstream.sh [remote] [base-branch] [feature-branch]
+```
+
+Defaults:
+
+- `remote = upstream`
+- `base-branch = master`
+- `feature-branch = on_entity_property_changed`
+
+What it does:
+
+1. verifies you are on the expected feature branch
+2. verifies the working tree is clean
+3. fetches the upstream remote
+4. rebases the feature branch onto the selected upstream base branch
+5. runs:
+   - `cargo check`
+   - `cargo test --lib`
+
+Example:
+
+```bash
+scripts/sync-upstream.sh upstream master on_entity_property_changed
+```
+
+If you have not configured an `upstream` remote yet:
+
+```bash
+git remote add upstream <UPSTREAM_URL>
+```
+
+Then verify:
+
+```bash
+git remote -v
+```
+
 ## About Rust Equivalents To `patch-package`
 
 There is no exact standard Rust equivalent to JavaScript's `patch-package` for an application repo like this one.

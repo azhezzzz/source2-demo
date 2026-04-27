@@ -42,6 +42,7 @@
 //! - `#[on_tick_start]` - Called at tick start
 //! - `#[on_tick_end]` - Called at tick end
 //! - `#[on_entity]` - Called for entity changes
+//! - `#[on_entity_property_changed]` - Called for changed entity properties
 //! - `#[on_game_event]` - Called for game events
 //! - `#[on_string_table]` - Called for string table updates
 //! - `#[on_stop]` - Called when replay ends
@@ -121,7 +122,119 @@ mod protobuf_map;
 use crate::protobuf_map::get_enum_from_struct;
 use proc_macro::{TokenStream};
 use quote::{quote, ToTokens};
-use syn::{parse_macro_input, parse::Parser, punctuated::Punctuated, Ident, ItemImpl, Token, Type, FnArg};
+use syn::{
+    parse::{Parse, ParseStream},
+    parse_macro_input,
+    parse::Parser,
+    punctuated::Punctuated,
+    FnArg,
+    Ident,
+    ItemImpl,
+    LitStr,
+    Result as SynResult,
+    Token,
+    Type,
+};
+
+struct EntityPropertyChangedAttr {
+    class_pattern: Option<(LitStr, bool)>,
+    property_pattern: Option<(LitStr, bool)>,
+}
+
+impl Parse for EntityPropertyChangedAttr {
+    fn parse(input: ParseStream<'_>) -> SynResult<Self> {
+        if input.peek(LitStr) {
+            let class_pattern = Some((input.parse::<LitStr>()?, false));
+            if !input.is_empty() {
+                return Err(input.error("unexpected extra tokens after class name"));
+            }
+            return Ok(Self {
+                class_pattern,
+                property_pattern: None,
+            });
+        }
+
+        let mut class_pattern = None;
+        let mut property_pattern = None;
+
+        while !input.is_empty() {
+            let ident = input.parse::<Ident>()?;
+            input.parse::<Token![=]>()?;
+            let pattern = input.parse::<LitStr>()?;
+
+            match ident.to_string().as_str() {
+                "class_pattern" | "classPattern" => class_pattern = Some((pattern, true)),
+                "property_pattern" | "propertyPattern" => property_pattern = Some((pattern, true)),
+                _ => {
+                    return Err(syn::Error::new(
+                        ident.span(),
+                        "expected `class_pattern`/`classPattern` or `property_pattern`/`propertyPattern`",
+                    ))
+                }
+            }
+
+            if input.is_empty() {
+                break;
+            }
+
+            input.parse::<Token![,]>()?;
+        }
+
+        Ok(Self {
+            class_pattern,
+            property_pattern,
+        })
+    }
+}
+
+fn build_entity_property_filter(
+    attr: &syn::Attribute,
+    method_name: &Ident,
+    args: &[proc_macro2::TokenStream],
+) -> proc_macro2::TokenStream {
+    let parsed = attr
+        .parse_args::<EntityPropertyChangedAttr>()
+        .expect("invalid #[on_entity_property_changed(...)] arguments");
+    if parsed.class_pattern.is_none() && parsed.property_pattern.is_none() {
+        panic!(
+            "invalid #[on_entity_property_changed(...)] arguments: expected \
+             #[on_entity_property_changed(\"ClassName\")] or \
+             #[on_entity_property_changed(class_pattern = \"...\", property_pattern = \"...\")]"
+        );
+    }
+
+    let class_pattern = if let Some((pattern, is_regex)) = parsed.class_pattern {
+        if is_regex {
+            quote! { Some((#pattern, ::source2_demo::__private::PatternKind::Regex)) }
+        } else {
+            quote! { Some((#pattern, ::source2_demo::__private::PatternKind::Exact)) }
+        }
+    } else {
+        quote! { None }
+    };
+
+    let property_pattern = if let Some((pattern, _)) = parsed.property_pattern {
+        quote! { Some((#pattern, ::source2_demo::__private::PatternKind::Regex)) }
+    } else {
+        quote! { None }
+    };
+
+    quote! {
+        {
+            static FILTER: ::std::sync::OnceLock<::source2_demo::__private::EntityPropertyPatternFilter> =
+                ::std::sync::OnceLock::new();
+            let filter = FILTER.get_or_init(|| {
+                ::source2_demo::__private::EntityPropertyPatternFilter::new(
+                    #class_pattern,
+                    #property_pattern,
+                )
+            });
+            if filter.matches(entity, field_path) {
+                self.#method_name(#(#args),*)?;
+            }
+        }
+    }
+}
 
 #[allow(unused_mut)]
 #[proc_macro_attribute]
@@ -146,6 +259,8 @@ use syn::{parse_macro_input, parse::Parser, punctuated::Punctuated, Ident, ItemI
 /// - `#[on_tick_end]` - Called at the end of each tick
 /// - `#[on_entity]` - Called when entities change
 /// - `#[on_entity("ClassName")]` - Only for specific entity classes
+/// - `#[on_entity_property_changed("ClassName")]` - Only for specific entity classes
+/// - `#[on_entity_property_changed(class_pattern = \"CDOTA_Unit_Hero_.*\", property_pattern = \"m_iHealth\")]`
 /// - `#[on_message]` - Called for protobuf messages (type inferred from param)
 /// - `#[on_game_event]` - Called for all game events
 /// - `#[on_game_event("event_name")]` - Only for specific events
@@ -170,6 +285,7 @@ use syn::{parse_macro_input, parse::Parser, punctuated::Punctuated, Ident, ItemI
 /// - Specific parameters depending on the handler:
 ///   - `event: EntityEvents` (on_entity)
 ///   - `entity: &Entity` (on_entity)
+///   - `entity: &Entity` and `field_path: &FieldPath` (on_entity_property_changed)
 ///   - `ge: &GameEvent` (on_game_event)
 ///   - `table: &StringTable` (on_string_table)
 ///   - `modified: &[i32]` (on_string_table)
@@ -320,6 +436,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut has_tick_end = false;
     let mut has_entity = false;
     let mut has_entity_track = false;
+    let mut has_entity_property_track = false;
     let mut has_string_table = false;
     let mut has_string_table_track = false;
     let mut has_stop = false;
@@ -362,6 +479,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut on_tick_start_body = quote!();
     let mut on_tick_end_body = quote!();
     let mut on_entity_body = quote!();
+    let mut on_entity_property_changed_body = quote!();
     let mut on_game_event_body = quote!();
     let mut on_string_table_body = quote!();
     let mut on_stop_body = quote!();
@@ -414,6 +532,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                             })
                         }
                         "on_entity" => {
+                            has_entity = true;
                             has_entity_track = true;
                             let (arg_type, is_ref) = get_arg_type(method, args.len() + 1);
 
@@ -438,6 +557,16 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                                     self.#method_name(#(#args),*)?;
                                 }
                             });
+                        }
+                        "on_entity_property_changed" => {
+                            has_entity = true;
+                            has_entity_property_track = true;
+                            args.push(quote! { entity });
+                            args.push(quote! { field_path });
+
+                            on_entity_property_changed_body.extend(
+                                build_entity_property_filter(attr, &method_name, &args)
+                            );
                         }
                         "on_game_event" => {
                             args.push(quote! { ge });
@@ -618,6 +747,16 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
             Ok(())
         }
 
+        fn on_entity_property_changed(
+            &mut self,
+            ctx: &Context,
+            entity: &Entity,
+            field_path: &::source2_demo::FieldPath,
+        ) -> ObserverResult {
+            #on_entity_property_changed_body
+            Ok(())
+        }
+
         fn on_game_event(
             &mut self,
             ctx: &Context,
@@ -731,6 +870,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     add_if!(has_tick_end,   TICK_END);
     add_if!(has_entity,     ENABLE_ENTITY);
     add_if!(has_entity_track,     TRACK_ENTITY);
+    add_if!(has_entity_property_track, TRACK_ENTITY_PROPERTY);
     add_if!(has_string_table,  ENABLE_STRINGTAB);
     add_if!(has_string_table_track,  TRACK_STRINGTAB);
     add_if!(has_stop,       STOP);
@@ -995,6 +1135,43 @@ pub fn on_tick_end(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn on_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a method as a per-property entity change handler.
+///
+/// This handler is called once for every property present on entity creation,
+/// and once for every property changed by an entity update.
+///
+/// Supported forms:
+/// - `#[on_entity_property_changed("CDOTA_PlayerResource")]`
+/// - `#[on_entity_property_changed(class_pattern = "...", property_pattern = "...")]`
+///
+/// For regex filtering, use `class_pattern` / `property_pattern` (or the
+/// camelCase `classPattern` / `propertyPattern`) arguments.
+///
+/// # Parameters
+///
+/// The handler can receive:
+/// - `ctx: &Context` (optional) - Current replay state
+/// - `entity: &Entity` - The entity that changed
+/// - `field_path: &FieldPath` - The changed property path
+///
+/// # Filtering
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_entity_property_changed(class_pattern = "CDOTA_Unit_Hero_.*", property_pattern = "m_iHealth|m_iMaxHealth")]
+/// fn on_hero_health(&mut self, entity: &Entity, field_path: &FieldPath) -> ObserverResult {
+///     let _name = entity.class().field_name_for_path(field_path);
+///     Ok(())
+/// }
+/// # }
+/// ```
+#[proc_macro_attribute]
+pub fn on_entity_property_changed(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 

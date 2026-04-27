@@ -11,7 +11,7 @@ mod value;
 pub(crate) use decoder::*;
 pub(crate) use encoder::*;
 pub(crate) use model::*;
-pub(crate) use path::*;
+pub use path::FieldPath;
 pub(crate) use properties::*;
 pub(crate) use r#type::*;
 pub(crate) use serializer::*;

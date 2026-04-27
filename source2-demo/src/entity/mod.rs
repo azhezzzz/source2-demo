@@ -53,11 +53,12 @@ mod container;
 
 pub(crate) use baseline::*;
 pub(crate) mod field;
+pub use field::FieldPath;
 pub use class::*;
 pub use container::*;
 
 use crate::error::EntityError;
-use crate::field::{FieldPath, FieldState};
+use crate::field::FieldState;
 use crate::FieldValue;
 use std::rc::Rc;
 
@@ -375,10 +376,11 @@ impl Entity {
         self.get_property_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)
     }
 
-    pub(crate) fn get_property_by_field_path(
-        &self,
-        fp: &FieldPath,
-    ) -> Result<&FieldValue, EntityError> {
+    /// Gets the value of an entity property by its decoded field path.
+    ///
+    /// This is primarily useful inside `on_entity_property_changed` callbacks,
+    /// where the parser already provides the updated [`FieldPath`].
+    pub fn get_property_by_field_path(&self, fp: &FieldPath) -> Result<&FieldValue, EntityError> {
         self.state.get_value(fp).ok_or_else(|| {
             EntityError::PropertyNameNotFound(
                 self.class.serializer.get_name_for_field_path(fp),

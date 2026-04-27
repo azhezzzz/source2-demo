@@ -45,7 +45,7 @@ pub mod proto {
 /// - Traits and macros: [`observer`], [`on_message`], [`property!`]
 /// - Protobuf enums: Message type enumerations for each game
 pub mod prelude {
-    pub use crate::entity::{Entity, EntityEvents};
+    pub use crate::entity::{Entity, EntityEvents, FieldPath};
     pub use crate::event::{EventValue, GameEvent, GameEventList};
     pub use crate::parser::*;
     pub use crate::string_table::*;
@@ -74,6 +74,11 @@ pub mod prelude {
     pub use crate::proto::ECstrike15UserMessages;
     #[cfg(feature = "cs2")]
     pub use crate::proto::ECsgoGameEvents;
+}
+
+#[doc(hidden)]
+pub mod __private {
+    pub use crate::parser::{EntityPropertyPatternFilter, PatternKind};
 }
 
 // Re-export commonly used types at the crate root

@@ -227,4 +227,12 @@ impl Class {
     pub fn id(&self) -> i32 {
         self.id
     }
+
+    /// Resolves a decoded field path into the property's dot-separated name.
+    ///
+    /// This is useful in property-change callbacks where the parser provides a
+    /// [`FieldPath`] rather than the preformatted string name.
+    pub fn field_name_for_path(&self, field_path: &crate::FieldPath) -> String {
+        self.serializer.get_name_for_field_path(field_path)
+    }
 }

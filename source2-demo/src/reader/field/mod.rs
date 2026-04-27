@@ -28,7 +28,7 @@ impl FieldReader {
         reader: &mut SliceReader,
         serializer: &Serializer,
         state: &mut FieldState,
-    ) {
+    ) -> usize {
         let mut node = &self.tree;
         let mut i = 0;
         let mut fp = FieldPath::default();
@@ -53,6 +53,13 @@ impl FieldReader {
 
         self.paths_buf[..i]
             .iter_mut()
-            .for_each(|fp| state.set(fp, serializer.get_decoder_for_field_path(fp).decode(reader)))
+            .for_each(|fp| state.set(fp, serializer.get_decoder_for_field_path(fp).decode(reader)));
+
+        i
+    }
+
+    #[inline]
+    pub(crate) fn field_paths(&self, count: usize) -> &[FieldPath] {
+        &self.paths_buf[..count]
     }
 }

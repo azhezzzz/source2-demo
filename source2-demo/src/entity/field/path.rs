@@ -1,5 +1,10 @@
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct FieldPath {
+/// Internal path representation for a networked entity property.
+///
+/// A `FieldPath` identifies a concrete property within an entity serializer tree.
+/// It is passed to property-change observers and can be converted back into a
+/// human-readable property name via [`Class::field_name_for_path`](crate::Class::field_name_for_path).
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct FieldPath {
     pub(crate) path: [u16; 7],
     pub(crate) last: usize,
 }

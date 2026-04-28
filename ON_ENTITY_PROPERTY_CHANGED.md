@@ -56,6 +56,7 @@ Additional public helpers:
 
 - `FieldPath` is now public
 - `Entity::get_property_by_field_path(&FieldPath)`
+- `Entity::field_paths() -> Vec<FieldPath>`
 - `Class::field_name_for_path(&FieldPath) -> String`
 
 ## Implementation Map
@@ -217,6 +218,58 @@ Verified on this branch:
 - `cargo test --lib`
 
 Full `cargo test` still has unrelated pre-existing doctest failures in the repository.
+
+## Entity Snapshotting Notes
+
+The current `source2-demo` side now exposes:
+
+```rust
+Entity::field_paths() -> Vec<FieldPath>
+```
+
+This is intentionally narrow. It gives downstream consumers access to the
+entity's currently populated field paths without forcing a particular snapshot
+format into the parser itself.
+
+Primary intended uses:
+
+- full entity snapshot export
+- whitelist/blacklist-based snapshot export
+- debugging which populated fields exist on a live entity
+
+Recommended usage pattern in downstream code:
+
+1. call `entity.field_paths()`
+2. optionally filter the returned paths
+3. resolve display names with `entity.class().field_name_for_path(...)`
+4. read values with `entity.get_property_by_field_path(...)`
+
+## Performance Notes From Downstream Payload Experiments
+
+The downstream `onNetWorthChanged` payload experiment showed a clear boundary:
+
+- enumerating all populated fields is feasible
+- materializing large object payloads for every event is not
+- the dominant cost is total exported field count, not individual scalar conversion
+
+Measured downstream outcomes:
+
+- no-op baseline around `553ms` for the sampled run
+- full entity snapshot logic around `99954ms` before field-name caching
+- around `76703ms` after caching `FieldPath -> field name`
+- full-field export and broad blacklist variants remained far too slow for practical use
+
+What this means for `source2-demo`:
+
+- keeping `Entity::field_paths()` is still useful
+- caching field-name lookup is worthwhile
+- but parser-side support for full-path enumeration should be treated as a building block, not as a recommendation to emit huge JSON objects per event
+
+Recommended downstream strategy:
+
+- prefer a small whitelist over a broad blacklist
+- attach entity snapshots only to a narrow set of events
+- if many fields must be exported, prefer a compact array/binary representation over large JS objects
 
 ## Recommended Workflow For Future Upstream Updates
 

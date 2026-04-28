@@ -389,4 +389,14 @@ impl Entity {
             )
         })
     }
+
+    /// Returns all populated field paths currently present on this entity.
+    ///
+    /// This is useful for callers that need to materialize the entity into an
+    /// external format while preserving the parser's current state.
+    pub fn field_paths(&self) -> Vec<FieldPath> {
+        self.class
+            .serializer
+            .get_field_paths(&mut FieldPath::default(), &self.state)
+    }
 }

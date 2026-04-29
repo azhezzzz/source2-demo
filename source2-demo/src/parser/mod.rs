@@ -219,7 +219,6 @@ where
         let mut reader = SeekableReader::new(reader)
             .map_err(|e| ParserError::IoError(e.to_string()))?;
 
-        // Validate magic header
         let magic = reader.read_bytes(8);
         if magic != b"PBDEMS2\0" {
             return Err(ParserError::WrongMagic);
@@ -227,11 +226,9 @@ where
 
         reader.read_bytes(8);
 
-        // Read file info
         let replay_info = Self::read_file_info_from_reader(&mut reader)?;
         let last_tick = replay_info.playback_ticks() as u32;
 
-        // Reset to position after header
         reader.seek(16);
 
         Ok(Parser {

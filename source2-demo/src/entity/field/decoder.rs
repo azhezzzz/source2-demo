@@ -265,8 +265,6 @@ impl Decode for QAngleDecoder {
 }
 
 
-// Quantized float decoder
-
 enum QuantizedFloatFlags {
     RoundDown = 1 << 0,
     RoundUp = 1 << 1,

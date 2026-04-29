@@ -66,7 +66,6 @@ impl<R: Read + Seek> ReplayInfoReader for SeekableReader<R> {
 
         self.seek(offset);
 
-        // Read the message
         if let Some(msg) = self.read_next_message()? {
             Ok(CDemoFileInfo::decode(msg.buf.as_slice())?)
         } else {

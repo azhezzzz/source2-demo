@@ -1,5 +1,4 @@
 #![doc = include_str!("../README.md")]
-#![doc(html_root_url = "https://docs.rs/source2-demo/0.3.2")]
 #![warn(missing_docs)]
 #![allow(clippy::too_many_arguments)]
 

@@ -387,4 +387,59 @@ impl Entity {
             )
         })
     }
+
+    /// Returns an iterator over the values inside a vector-like entity property.
+    ///
+    /// This is useful for properties that contain multiple field states, such as
+    /// handle arrays like `"m_hItems"`. Each element is returned as an
+    /// `Option<&FieldValue>` because some entries may not have a value.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The property name in dot notation.
+    ///
+    /// # Returns
+    ///
+    /// Returns an iterator over the property's values if the property exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EntityError::PropertyNameNotFound`] if the property name is invalid
+    /// or the entity does not contain this field.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use source2_demo::prelude::*;
+    ///
+    /// # fn example(entity: &Entity) -> anyhow::Result<()> {
+    /// for value in entity.get_iter("m_hItems")?.flatten() {
+    ///     let handle: usize = value.try_into()?;
+    ///     println!("Item handle: {}", handle);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_iter(&self, name: &str) -> Result<impl Iterator<Item = Option<&FieldValue>>, EntityError> {
+        Ok(self
+            .get_state_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)?
+            .vec
+            .iter()
+            .map(|fs| fs.value.as_ref())
+        )
+    }
+
+
+    pub(crate) fn get_state_by_field_path(
+        &self,
+        fp: &FieldPath,
+    ) -> Result<&FieldState, EntityError> {
+        self.state.get_field_state(fp).ok_or_else(|| {
+            EntityError::PropertyNameNotFound(
+                self.class.serializer.get_name_for_field_path(fp),
+                self.class.name().to_string(),
+                format!("{}", fp),
+            )
+        })
+    }
 }

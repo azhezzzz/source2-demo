@@ -126,7 +126,7 @@ impl Wards {
         if event == EntityEvents::Created
             && WardClass::from_class_name(entity.class().name()).is_some()
         {
-            if let Ok(life_state) = entity.get_property_by_name("m_lifeState") {
+            if let Ok(life_state) = entity.get_property("m_lifeState") {
                 self.current_life_state.remove(&entity.index());
                 self.pending_events.push_back(PendingEvent {
                     entity_idx: entity.index(),
@@ -135,7 +135,7 @@ impl Wards {
             }
         }
         if event == EntityEvents::Updated && self.current_life_state.contains_key(&entity.index()) {
-            if let Ok(life_state) = entity.get_property_by_name("m_lifeState") {
+            if let Ok(life_state) = entity.get_property("m_lifeState") {
                 self.pending_events.push_back(PendingEvent {
                     entity_idx: entity.index(),
                     life_state: life_state.try_into()?,

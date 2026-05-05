@@ -383,3 +383,46 @@ For this parser, the cleanest long-term approach is:
 - if another project depends on this crate, point that project to this branch or fork via Cargo
 
 If you later want a patch-series workflow, generate `git format-patch` files from this branch rather than trying to mimic npm-style patch injection.
+
+## 2026-05-05 Native Crash Workaround
+
+Observed issue:
+
+- native `cargo run --release` on the consumer repo could occasionally terminate with
+  `zsh: segmentation fault cargo run --release`
+- the failure was not tied to a stable gameplay event; the last printed line was often just a
+  normal game-time progress log
+- the Node / wasm path did not reproduce the same crash during current verification
+
+Crash evidence captured from `lldb`:
+
+- stop reason: `EXC_BAD_ACCESS (code=1, address=0x151800000)`
+- crashing frame: `source2_demo::reader::field::FieldReader::read_fields`
+- call chain summary:
+  - `FieldReader::read_fields`
+  - `DemoCommands::dem_packet`
+  - `Parser::on_demo_command`
+  - `DemoRunner::run_to_end`
+
+Working hypothesis:
+
+- the crash is most likely tied to a low-level unchecked reader fast path rather than the
+  higher-level observer / entity-property hook logic added on this branch
+
+Temporary mitigation added on this branch:
+
+- in `source2-demo/src/reader/slice.rs`, `SliceReader::refill()` now always calls checked
+  `refill_lookahead()` instead of using release-mode
+  `refill_lookahead_unchecked()`
+
+Intent of this change:
+
+- this is a stability-first diagnostic workaround
+- it is meant to test whether the native crash is triggered by the unchecked lookahead refill path
+- it may reduce native performance somewhat, but should not change parsing semantics
+
+Current status:
+
+- after this change, repeated native `cargo run --release` runs in the consumer repo did not
+  reproduce the previous intermittent segmentation fault during current verification
+- treat this as "temporarily resolved" rather than a formal proof of root cause

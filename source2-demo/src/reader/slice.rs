@@ -26,11 +26,6 @@ impl<'a> SliceReader<'a> {
 impl<'a> BitsReader for SliceReader<'a> {
     #[inline]
     fn refill(&mut self) {
-        #[cfg(not(debug_assertions))]
-        unsafe {
-            self.bit_reader.refill_lookahead_unchecked();
-        }
-        #[cfg(debug_assertions)]
         self.bit_reader.refill_lookahead();
     }
 

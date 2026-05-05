@@ -26,6 +26,9 @@ source2-demo-macros = { path = "../source2-demo-macros", version = "0.4.2" }
 
 [features]
 default = ["mimalloc"]
+
+unsafe = []
+
 dota = ["source2-demo-protobufs/dota", "source2-demo-macros/dota"]
 deadlock = ["source2-demo-protobufs/citadel", "source2-demo-macros/citadel"]
 cs2 = ["source2-demo-protobufs/cs2", "source2-demo-macros/cs2"]

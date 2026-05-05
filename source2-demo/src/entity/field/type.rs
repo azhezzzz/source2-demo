@@ -49,7 +49,6 @@ impl FieldType {
 
         let mut base = name[..base_end].trim().to_string().into_boxed_str();
 
-        // :)
         if base.as_ref() == "char" && count == 0 {
             base = "uint8".into();
         }

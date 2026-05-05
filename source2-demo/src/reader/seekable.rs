@@ -403,7 +403,6 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
             self.lookahead_buffer = 0;
             self.lookahead_bit_count = 0;
 
-            // Refill buffer
             if let Ok(bytes_read) = self.underlying_stream.read(&mut self.read_buffer) {
                 self.bytes_in_buffer = bytes_read;
             }

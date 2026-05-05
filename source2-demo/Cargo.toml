@@ -12,7 +12,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-hashbrown = "0.16"
+hashbrown = "0.17"
 rustc-hash = "2.1"
 snap = "1.1"
 bitter = "0.9"

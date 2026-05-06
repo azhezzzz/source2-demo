@@ -559,8 +559,9 @@ impl_try_into_for_integers!(isize);
 
 #[allow(dead_code)]
 impl FieldValue {
+    /// Return the inner string. Panics if this is not a `FieldValue::String`.
     #[inline]
-    pub(crate) fn as_string(&self) -> String {
+    pub fn string(&self) -> String {
         if let FieldValue::String(s) = self {
             s.to_string()
         } else {
@@ -568,8 +569,9 @@ impl FieldValue {
         }
     }
 
+    /// Return the inner boolean. Panics if this is not a `FieldValue::Boolean`.
     #[inline]
-    pub(crate) fn as_bool(&self) -> bool {
+    pub fn bool(&self) -> bool {
         if let FieldValue::Boolean(b) = self {
             *b
         } else {
@@ -577,8 +579,9 @@ impl FieldValue {
         }
     }
 
+    /// Return the inner f32. Panics if this is not a `FieldValue::Float`.
     #[inline]
-    pub(crate) fn as_float(&self) -> f32 {
+    pub fn f32(&self) -> f32 {
         if let FieldValue::Float(f) = self {
             *f
         } else {
@@ -586,8 +589,9 @@ impl FieldValue {
         }
     }
 
+    /// Return a reference to a 2D vector ([f32; 2]). Panics if the value is not `Vector2D`.
     #[inline]
-    pub(crate) fn as_vector2d(&self) -> &[f32; 2] {
+    pub fn vec2(&self) -> &[f32; 2] {
         if let FieldValue::Vector2D(v) = self {
             v
         } else {
@@ -595,8 +599,9 @@ impl FieldValue {
         }
     }
 
+    /// Return a reference to a 3D vector ([f32; 3]). Panics if the value is not `Vector3D`.
     #[inline]
-    pub(crate) fn as_vector(&self) -> &[f32; 3] {
+    pub fn vec3(&self) -> &[f32; 3] {
         if let FieldValue::Vector3D(v) = self {
             v
         } else {
@@ -604,12 +609,97 @@ impl FieldValue {
         }
     }
 
+    /// Return a reference to a 4D vector ([f32; 4]). Panics if the value is not `Vector4D`.
     #[inline]
-    pub(crate) fn as_vector4d(&self) -> &[f32; 4] {
+    pub fn vec4(&self) -> &[f32; 4] {
         if let FieldValue::Vector4D(v) = self {
             v
         } else {
             panic!("Tried to read as Vector4D, Found {:?}", self);
         }
     }
+
+    /// Read as signed 8-bit integer. Panics if value is not `Signed8`.
+    #[inline]
+    pub fn i8(&self) -> i8 {
+        match self {
+            FieldValue::Signed8(x) => *x,
+            _ => panic!("Tried to read as i8, Found {:?}", self),
+        }
+    }
+
+    /// Read as signed 16-bit integer. Panics if value is not `Signed16`.
+    #[inline]
+    pub fn i16(&self) -> i16 {
+        match self {
+            FieldValue::Signed16(x) => *x,
+            _ => panic!("Tried to read as i16, Found {:?}", self),
+        }
+    }
+
+    /// Read as signed 32-bit integer. Panics if value is not `Signed32`.
+    #[inline]
+    pub fn i32(&self) -> i32 {
+        match self {
+            FieldValue::Signed32(x) => *x,
+            _ => panic!("Tried to read as i32, Found {:?}", self),
+        }
+    }
+
+    /// Read as signed 64-bit integer. Panics if value is not `Signed64`.
+    #[inline]
+    pub fn i64(&self) -> i64 {
+        match self {
+            FieldValue::Signed64(x) => *x,
+            _ => panic!("Tried to read as i64, Found {:?}", self),
+        }
+    }
+
+    /// Read as unsigned 8-bit integer. Panics if value is not `Unsigned8`.
+    #[inline]
+    pub fn u8(&self) -> u8 {
+        match self {
+            FieldValue::Unsigned8(x) => *x,
+            _ => panic!("Tried to read as u8, Found {:?}", self),
+        }
+    }
+
+    /// Read as unsigned 16-bit integer. Panics if value is not `Unsigned16`.
+    #[inline]
+    pub fn u16(&self) -> u16 {
+        match self {
+            FieldValue::Unsigned16(x) => *x,
+            _ => panic!("Tried to read as u16, Found {:?}", self),
+        }
+    }
+
+    /// Read as unsigned 32-bit integer. Panics if value is not `Unsigned32`.
+    #[inline]
+    pub fn u32(&self) -> u32 {
+        match self {
+            FieldValue::Unsigned32(x) => *x,
+            _ => panic!("Tried to read as u32, Found {:?}", self),
+        }
+    }
+
+    /// Read as unsigned 64-bit integer. Panics if value is not `Unsigned64`.
+    #[inline]
+    pub fn u64(&self) -> u64 {
+        match self {
+            FieldValue::Unsigned64(x) => *x,
+            _ => panic!("Tried to read as u64, Found {:?}", self),
+        }
+    }
+
+    /// Read as `usize`. Accepts `Unsigned32` or `Unsigned64` and casts to `usize`.
+    /// Panics for other variants.
+    #[inline]
+    pub fn usize(&self) -> usize {
+        match self {
+            FieldValue::Unsigned32(x) => *x as usize,
+            FieldValue::Unsigned64(x) => *x as usize,
+            _ => panic!("Tried to read as usize, Found {:?}", self),
+        }
+    }
 }
+

@@ -129,25 +129,25 @@ impl Decode for VectorDecoder {
     fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         match self.dimensions {
             2 => FieldValue::Vector2D([
-                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
-                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                Float32Decoder { properties: self.properties }.decode(reader).f32(),
+                Float32Decoder { properties: self.properties }.decode(reader).f32(),
             ]),
             3 => {
                 if self.properties.encoder == Some(FieldEncoder::Normal) {
                     FieldValue::Vector3D(reader.read_normal_vec3())
                 } else {
                     FieldValue::Vector3D([
-                        Float32Decoder { properties: self.properties }.decode(reader).as_float(),
-                        Float32Decoder { properties: self.properties }.decode(reader).as_float(),
-                        Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                        Float32Decoder { properties: self.properties }.decode(reader).f32(),
+                        Float32Decoder { properties: self.properties }.decode(reader).f32(),
+                        Float32Decoder { properties: self.properties }.decode(reader).f32(),
                     ])
                 }
             }
             4 => FieldValue::Vector4D([
-                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
-                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
-                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
-                Float32Decoder { properties: self.properties }.decode(reader).as_float(),
+                Float32Decoder { properties: self.properties }.decode(reader).f32(),
+                Float32Decoder { properties: self.properties }.decode(reader).f32(),
+                Float32Decoder { properties: self.properties }.decode(reader).f32(),
+                Float32Decoder { properties: self.properties }.decode(reader).f32(),
             ]),
             _ => unreachable!("Invalid vector dimension: {}", self.dimensions),
         }

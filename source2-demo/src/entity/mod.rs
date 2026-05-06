@@ -14,7 +14,7 @@
 //!
 //! # fn example(entity: &Entity) -> anyhow::Result<()> {
 //! // Using try_into
-//! let health: i32 = entity.get_property_by_name("m_iHealth")?.try_into()?;
+//! let health: i32 = entity.get_property("m_iHealth")?.try_into()?;
 //!
 //! // Using property! macro
 //! let mana: i32 = property!(entity, "m_flMana");
@@ -127,7 +127,7 @@ impl EntityEvents {
 ///
 /// Entity properties can be accessed in multiple ways:
 ///
-/// 1. Using [`get_property_by_name`](Entity::get_property_by_name) and converting manually
+/// 1. Using [`get_property`](Entity::get_property) and converting manually
 /// 2. Using the `property!` macro
 /// 3. Using the `try_property!` macro for optional properties
 ///
@@ -140,7 +140,7 @@ impl EntityEvents {
 ///
 /// # fn example(entity: &Entity) -> anyhow::Result<()> {
 /// // Get a property and convert it
-/// let health: i32 = entity.get_property_by_name("m_iHealth")?.try_into()?;
+/// let health: i32 = entity.get_property("m_iHealth")?.try_into()?;
 ///
 /// // Using the property! macro (simpler)
 /// let max_health: i32 = property!(entity, "m_iHealth");
@@ -250,6 +250,12 @@ impl Entity {
         &self.class
     }
 
+    /// See [`get_property`](Entity::get_property) - this method is deprecated in favor of the more clearly named `get_property`.
+    #[deprecated]
+    pub fn get_property_by_name(&self, name: &str) -> Result<&FieldValue, EntityError> {
+        self.get_property_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)
+    }
+
     /// Gets the value of an entity property by its name.
     ///
     /// This method looks up a property by its string name (e.g., "m_iHealth")
@@ -270,7 +276,7 @@ impl Entity {
     ///
     /// ```ignore
     /// // Instead of:
-    /// let health: i32 = entity.get_property_by_name("m_iHealth")?.try_into()?;
+    /// let health: i32 = entity.get_property("m_iHealth")?.try_into()?;
     ///
     /// // Use:
     /// let health: i32 = property!(entity, "m_iHealth");
@@ -300,16 +306,16 @@ impl Entity {
     ///
     /// # fn example(entity: &Entity) -> anyhow::Result<()> {
     /// // Get property and convert to i32
-    /// let health: i32 = entity.get_property_by_name("m_iHealth")?.try_into()?;
+    /// let health: i32 = entity.get_property("m_iHealth")?.try_into()?;
     ///
     /// // Get nested property
     /// let cell_x: u8 = entity
-    ///     .get_property_by_name("CBodyComponent.m_cellX")?
+    ///     .get_property("CBodyComponent.m_cellX")?
     ///     .try_into()?;
     ///
     /// // Get vector property
     /// let position: i32 = entity
-    ///     .get_property_by_name("m_iHealth")?
+    ///     .get_property("m_iHealth")?
     ///     .try_into()?;
     /// # Ok(())
     /// # }
@@ -332,9 +338,9 @@ impl Entity {
     ///         event: EntityEvents,
     ///         entity: &Entity,
     ///     ) -> ObserverResult {
-    ///         // Manual conversion with get_property_by_name
+    ///         // Manual conversion with get_property
     ///         let health: i32 = entity
-    ///             .get_property_by_name("m_iHealth")?
+    ///             .get_property("m_iHealth")?
     ///             .try_into()?;
     ///
     ///         // Recommended: using property! macro instead
@@ -352,8 +358,8 @@ impl Entity {
     /// use source2_demo::prelude::*;
     ///
     /// # fn example(entity: &Entity) -> anyhow::Result<()> {
-    /// // Method 1: get_property_by_name (verbose)
-    /// let health: i32 = entity.get_property_by_name("m_iHealth")?.try_into()?;
+    /// // Method 1: get_property (verbose)
+    /// let health: i32 = entity.get_property("m_iHealth")?.try_into()?;
     ///
     /// // Method 2: property! macro (recommended)
     /// let health: i32 = property!(entity, "m_iHealth");
@@ -372,7 +378,7 @@ impl Entity {
     ///
     /// [`property!`]: crate::property
     /// [`try_property!`]: crate::try_property
-    pub fn get_property_by_name(&self, name: &str) -> Result<&FieldValue, EntityError> {
+    pub fn get_property(&self, name: &str) -> Result<&FieldValue, EntityError> {
         self.get_property_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)
     }
 
@@ -398,5 +404,59 @@ impl Entity {
         self.class
             .serializer
             .get_field_paths(&mut FieldPath::default(), &self.state)
+    }
+
+    /// Returns an iterator over the values inside a vector-like entity property.
+    ///
+    /// This is useful for properties that contain multiple field states, such as
+    /// handle arrays like `"m_hItems"`. Each element is returned as an
+    /// `Option<&FieldValue>` because some entries may not have a value.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The property name in dot notation.
+    ///
+    /// # Returns
+    ///
+    /// Returns an iterator over the property's values if the property exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EntityError::PropertyNameNotFound`] if the property name is invalid
+    /// or the entity does not contain this field.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use source2_demo::prelude::*;
+    ///
+    /// # fn example(entity: &Entity) -> anyhow::Result<()> {
+    /// for value in entity.get_iter("m_hItems")?.flatten() {
+    ///     let handle: usize = value.try_into()?;
+    ///     println!("Item handle: {}", handle);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_iter(&self, name: &str) -> Result<impl Iterator<Item = Option<&FieldValue>>, EntityError> {
+        Ok(self
+            .get_state_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)?
+            .vec
+            .iter()
+            .map(|fs| fs.value.as_ref())
+        )
+    }
+
+    pub(crate) fn get_state_by_field_path(
+        &self,
+        fp: &FieldPath,
+    ) -> Result<&FieldState, EntityError> {
+        self.state.get_field_state(fp).ok_or_else(|| {
+            EntityError::PropertyNameNotFound(
+                self.class.serializer.get_name_for_field_path(fp),
+                self.class.name().to_string(),
+                format!("{}", fp),
+            )
+        })
     }
 }

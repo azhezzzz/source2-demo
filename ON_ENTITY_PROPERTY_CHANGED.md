@@ -43,7 +43,7 @@
 
 - `Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
 
-截至 2026-05-06，本页对应的 GitHub compare 元数据为：
+截至 2026-05-06、且在本次合并 `upstream/master` 之前，本页对应的 GitHub compare 元数据为：
 
 - 状态：`diverged`
 - `ahead_by = 5`
@@ -144,7 +144,7 @@
 
 其余提交多为上游同步、依赖调整、辅助脚本和小规模清理。
 
-## 基于 GitHub 分支页口径的分叉情况
+## 基于 GitHub 分支页口径的分叉情况（本次合并前）
 
 按 `Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed` 计算：
 
@@ -164,7 +164,7 @@
 4. `027c165` Update examples
 5. `1ff4309` Add public accessors for FieldValue
 
-## 当前落后上游 5 个提交的影响
+## 本次合并前落后上游 5 个提交的影响
 
 ### 1. `bd8af28` Add get_iter method for Entity (#3)
 
@@ -305,6 +305,77 @@
 - 先指出必须尽快处理的高冲突提交
 - 再指出建议吸收、可减少维护成本的上游实现
 - 最后说明哪些提交可延后处理
+
+## 下游仓库迁移说明
+
+这个分支已经被其他仓库消费时，后续同步上游后，默认也要给下游仓库一份迁移说明。
+
+### 迁移目标
+
+- 尽量减少下游对本分支私有实现细节的依赖
+- 优先切换到上游已经提供的 API 和 feature
+- 让下游后续升级到新版本时更平滑
+
+### 这次合并上游后，下游应优先关注的迁移动作
+
+#### 1. `SliceReader` 的稳定性策略改为基于上游 `unsafe` feature
+
+如果下游仓库之前依赖的是本分支“强制 checked refill”的行为，应改为：
+
+- 默认不启用 `unsafe` feature
+- 只有在确认需要极限性能且可接受风险时，才显式开启 `unsafe`
+
+也就是说，下游以后不应再假设这里是一个永久性的本地分叉行为，而应按上游 feature 语义理解。
+
+#### 2. 优先使用上游 `Entity::get_property(...)`
+
+如果下游代码还在使用：
+
+- `get_property_by_name(...)`
+- 自己封装的字符串属性访问 helper
+
+建议逐步迁移到：
+
+- `Entity::get_property(...)`
+
+而 `get_property_by_field_path(...)` 则继续保留给 `on_entity_property_changed` 回调这种已知 `FieldPath` 的场景。
+
+#### 3. 优先使用上游 `FieldValue` 公共访问器
+
+如果下游之前依赖：
+
+- `try_into()`
+- 自己封装的值读取 helper
+
+后续可逐步改用上游提供的访问器，例如：
+
+- `f32()`
+- `i32()`
+- `u32()`
+- `string()`
+- `vec2()`
+- `vec3()`
+
+这能减少下游为 `FieldValue` 再包一层适配逻辑。
+
+#### 4. 只把本分支特有 API 留给真正上游未覆盖的需求
+
+当前本分支仍然需要重点保留的自定义能力主要是：
+
+- `on_entity_property_changed`
+- `FieldPath` 对外暴露后的按属性粒度通知链路
+- `Entity::field_paths()`
+- `Entity::get_property_by_field_path(...)`
+
+如果上游未来补了这些能力或提供了等价接口，应优先继续回退本地实现并迁移下游调用。
+
+### 每次同步上游后，默认要给下游仓库输出的内容
+
+1. 当前从哪个提交升级到了哪个提交
+2. 是否有 feature 语义变化
+3. 是否有 API 可从本地实现切换为上游实现
+4. 下游需要改哪些调用点
+5. 是否需要重新跑解析验证或回归测试
 
 ## 改动归类
 

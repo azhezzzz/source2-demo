@@ -32,21 +32,21 @@ macro_rules! try_observers {
 macro_rules! property {
     ($ent:expr, $ty:ty, $fmt:literal, $($arg:tt)*) => {
         {
-            let x: $ty = $ent.get_property_by_name(&format!($fmt, $($arg)*))?.try_into()?;
+            let x: $ty = $ent.get_property(&format!($fmt, $($arg)*))?.try_into()?;
             x
         }
     };
     ($ent:expr, $ty:ty, $fmt:literal) => {
         {
-            let x: $ty = $ent.get_property_by_name(&format!($fmt))?.try_into()?;
+            let x: $ty = $ent.get_property(&format!($fmt))?.try_into()?;
             x
         }
     };
     ($ent:expr, $fmt:expr, $($arg:tt)*) => {
-        $ent.get_property_by_name(&format!($fmt, $($arg)*))?.try_into()?
+        $ent.get_property(&format!($fmt, $($arg)*))?.try_into()?
     };
     ($ent:expr, $fmt:expr) => {{
-        $ent.get_property_by_name(&format!($fmt))?.try_into()?
+        $ent.get_property(&format!($fmt))?.try_into()?
     }};
 }
 
@@ -63,7 +63,7 @@ macro_rules! try_property {
     ($ent:expr, $ty:ty, $fmt:expr, $($arg:tt)*) => {
         {
             let x: Option<$ty> = $ent
-                .get_property_by_name(&format!($fmt, $($arg)*))
+                .get_property(&format!($fmt, $($arg)*))
                 .ok()
                 .and_then(|x| {
                     x.try_into().ok()
@@ -75,7 +75,7 @@ macro_rules! try_property {
     ($ent:expr, $ty:ty, $fmt:expr) => {
         {
             let x: Option<$ty> = $ent
-                .get_property_by_name(&format!($fmt))
+                .get_property(&format!($fmt))
                 .ok()
                 .and_then(|x| {
                     x.try_into().ok()
@@ -86,7 +86,7 @@ macro_rules! try_property {
 
     ($ent:expr, $fmt:expr, $($arg:tt)*) => {
         $ent
-            .get_property_by_name(&format!($fmt, $($arg)*))
+            .get_property(&format!($fmt, $($arg)*))
             .ok()
             .and_then(|x| {
                 x.try_into().ok()
@@ -95,7 +95,7 @@ macro_rules! try_property {
 
     ($ent:expr, $fmt:expr) => {{
         $ent
-            .get_property_by_name(&format!($fmt))
+            .get_property(&format!($fmt))
             .ok()
             .and_then(|x| {
                 x.try_into().ok()

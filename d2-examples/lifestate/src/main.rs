@@ -21,7 +21,7 @@ impl Default for LifeState {
 impl LifeState {
     #[on_entity]
     fn handle_entities(&mut self, ctx: &Context, entity: &Entity) -> ObserverResult {
-        if let Ok(life_state) = entity.get_property_by_name("m_lifeState") {
+        if let Ok(life_state) = entity.get_property("m_lifeState") {
             let new_state: i32 = life_state.try_into()?;
             let old_state: i32 = *self.current_life_state.get(&entity.index()).unwrap_or(&2);
             if old_state != new_state {

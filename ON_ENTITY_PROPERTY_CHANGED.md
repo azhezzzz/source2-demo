@@ -1,26 +1,30 @@
-# `on_entity_property_changed` Branch Notes
+# `on_entity_property_changed` 分支改动整理
 
-This branch carries a Rust-side implementation of a Clarity-like entity property change hook.
+## Fork 来源
 
-It is intended to be easy to rebase onto upstream parser updates, so this document focuses on:
-- what changed
-- where conflicts are most likely during upstream sync
-- what can be safely adjusted later
+- 当前仓库：`https://github.com/azhezzzz/source2-demo`
+- 上游来源：`https://github.com/Rupas1k/source2-demo`
+- 本文整理的对比分支：`master...on_entity_property_changed`
 
-Important semantic note:
-- the branch keeps Clarity-style `class_pattern` / `property_pattern` syntax
-- named patterns use real regex matching again
-- exact-class single-string form still uses exact string comparison
+这条分支是在上游项目 `Rupas1k/source2-demo` 的基础上维护的功能分支，用于给解析器补充“实体属性级别变更通知”能力，并保留后续同步上游时可继续 rebase / merge 的空间。
 
-## Goal
+从提交历史看，这条分支中包含一次上游同步：
 
-Add an observer callback that fires once per relevant property change:
+- `0400de7 Merge branch 'Rupas1k:master' into on_entity_property_changed`
 
-- on entity creation: once for each populated property currently present on the entity
-- on entity update: once for each changed property in that packet
-- on entity deletion: no property-change callback
+说明该分支不是完全脱离上游单独演化，而是在持续吸收上游变更的基础上叠加本地功能。
 
-Supported observer macro forms:
+## 这条分支的主要目标
+
+为观察者系统增加 `on_entity_property_changed` 回调，使调用方可以按“单个属性”而不是“整个实体”接收变化通知。
+
+触发语义如下：
+
+- 实体创建时：对当前实体上已经填充的每个属性，各触发一次回调
+- 实体更新时：对本次 packet 中实际发生变化的每个属性，各触发一次回调
+- 实体删除时：不触发属性变更回调
+
+支持的宏写法：
 
 ```rust
 #[on_entity_property_changed("CDOTA_PlayerResource")]
@@ -33,9 +37,39 @@ Supported observer macro forms:
 )]
 ```
 
-## Public API Added
+## 提交概览
 
-Observer trait:
+`master...on_entity_property_changed` 范围内的提交：
+
+1. `c273b4e` Use checked slice reader refill
+2. `0400de7` Merge branch 'Rupas1k:master' into on_entity_property_changed
+3. `11c6684` Remove unnecessary comments
+4. `d6d5482` Remove rustdoc html_root_url
+5. `a00a78c` add Entity::field_paths and document entity snapshot tradeoffs
+6. `174704a` Add upstream sync helper script
+7. `e3da6f7` Add on_entity_property_changed observer support
+8. `16c7fa3` Update hashbrown version
+
+其中真正围绕 `on_entity_property_changed` 的核心功能主要集中在：
+
+- `e3da6f7`
+- `a00a78c`
+
+其余提交多为上游同步、依赖调整、辅助脚本和小规模清理。
+
+## 改动归类
+
+### 1. 观察者接口层新增了属性级事件
+
+涉及文件：
+
+- `source2-demo/src/parser/observer.rs`
+- `source2-demo/src/lib.rs`
+- `source2-demo-macros/src/lib.rs`
+
+主要改动：
+
+- 在 `Observer` trait 中新增：
 
 ```rust
 fn on_entity_property_changed(
@@ -46,383 +80,201 @@ fn on_entity_property_changed(
 ) -> ObserverResult
 ```
 
-New interest flag:
+- 在 `Interests` 中新增 `TRACK_ENTITY_PROPERTY`
+- 在宏系统中新增 `#[on_entity_property_changed(...)]`
+- 为宏生成代码补充内部过滤器导出：
+  - `source2_demo::__private::PatternKind`
+  - `source2_demo::__private::EntityPropertyPatternFilter`
 
-```rust
-Interests::TRACK_ENTITY_PROPERTY
-```
+这意味着调用方可以像注册 `on_entity` 一样，直接在 observer impl 上声明属性级回调，并通过 `Interests` 打开对应追踪能力。
 
-Additional public helpers:
+### 2. 宏层支持类名 / 属性名过滤
 
-- `FieldPath` is now public
-- `Entity::get_property_by_field_path(&FieldPath)`
-- `Entity::field_paths() -> Vec<FieldPath>`
-- `Class::field_name_for_path(&FieldPath) -> String`
+涉及文件：
 
-## Implementation Map
-
-### 1. Observer surface
-
-Files:
+- `source2-demo-macros/src/lib.rs`
 - `source2-demo/src/parser/observer.rs`
+
+新增能力：
+
+- `#[on_entity_property_changed("ExactClassName")]`
+  - 单字符串形式只做“类名精确匹配”
+- `#[on_entity_property_changed(class_pattern = "...", property_pattern = "...")]`
+  - 命名参数形式支持 regex
+- 同时兼容 camelCase：
+  - `classPattern`
+  - `propertyPattern`
+
+运行时实现上：
+
+- 类名匹配结果缓存为 `class -> bool`
+- 属性匹配结果缓存为 `class -> (FieldPath -> bool)`
+- regex 由 `regex` crate 编译并复用
+
+这样做的目的，是避免在每次属性通知时都把类名和属性名重新做完整字符串匹配。
+
+### 3. `FieldPath` 从内部类型变成了可公开使用的 API
+
+涉及文件：
+
+- `source2-demo/src/entity/field/path.rs`
+- `source2-demo/src/entity/field/mod.rs`
+- `source2-demo/src/entity/mod.rs`
 - `source2-demo/src/lib.rs`
 
-Changes:
-- added `TRACK_ENTITY_PROPERTY`
-- added `Observer::on_entity_property_changed(...)`
-- added hidden helper exports under `source2_demo::__private` for macro-generated filtering
+主要改动：
 
-### 2. Macro support
+- `FieldPath` 由 `pub(crate)` 改为 `pub`
+- 为 `FieldPath` 增加 `Eq + Hash + PartialEq`
+- 在 `prelude` 中重新导出 `FieldPath`
 
-File:
-- `source2-demo-macros/src/lib.rs`
+这是属性变更回调可以对外工作的前提，因为回调参数本身就需要把“发生变化的字段路径”暴露给调用方。
 
-Changes:
-- added `#[on_entity_property_changed(...)]`
-- parser only accepts:
-  - `("ExactClassName")`
-  - `(class_pattern = "...", property_pattern = "...")`
-- macro generates a per-handler `OnceLock<EntityPropertyPatternFilter>`
-- exact class-name form uses exact matching
-- named-argument form keeps clarity-style `class_pattern` / `property_pattern` syntax
-- named-argument form uses regex matching and caching
+### 4. 实体和类对象补充了围绕 `FieldPath` 的访问能力
 
-### 3. Runtime filter and caches
+涉及文件：
 
-File:
-- `source2-demo/src/parser/observer.rs`
+- `source2-demo/src/entity/class.rs`
+- `source2-demo/src/entity/mod.rs`
 
-Added:
-- `PatternKind`
-- `EntityPropertyPatternFilter`
-- class match cache: `class -> bool`
-- property match cache: `class -> (FieldPath -> bool)`
+新增 API：
 
-Notes:
-- cache key is class name string plus decoded `FieldPath`
-- `FieldPath` was made `Eq + Hash + PartialEq` for this
-- property pattern checks use `Class::field_name_for_path(...)`
-- pattern matching uses compiled regexes with caching
+- `Class::field_name_for_path(&FieldPath) -> String`
+- `Entity::get_property_by_field_path(&FieldPath) -> Result<&FieldValue, EntityError>`
+- `Entity::field_paths() -> Vec<FieldPath>`
 
-### 4. Field-path propagation from decoder
+作用分别是：
 
-File:
+- 把解码后的 `FieldPath` 转回点分隔属性名
+- 在已知 `FieldPath` 的情况下直接取属性值
+- 枚举当前实体状态里已经存在的全部字段路径
+
+其中 `Entity::field_paths()` 是实体创建时“逐属性触发回调”的关键辅助接口。
+
+### 5. 底层字段解码器开始保留“本次变更了哪些字段”
+
+涉及文件：
+
 - `source2-demo/src/reader/field/mod.rs`
 
-Changes:
-- `FieldReader::read_fields(...)` now returns the number of changed field paths
-- added `FieldReader::field_paths(count)` to read back the decoded path buffer
+主要改动：
 
-This is the key low-level change that makes property-level callbacks possible.
+- `FieldReader::read_fields(...)` 不再只是写入状态，改为返回本次解码出的字段数量 `usize`
+- 新增 `FieldReader::field_paths(count) -> &[FieldPath]`
 
-### 5. Entity event dispatch
+这一步是整个功能的核心基础。没有这层改动，解析器只能知道“实体状态被更新了”，但不知道“具体是哪些属性在这次 packet 中发生了变化”。
 
-File:
+### 6. 实体创建 / 更新路径增加逐属性派发
+
+涉及文件：
+
 - `source2-demo/src/parser/demo/svc.rs`
 
-Changes:
-- `entity_created(...)`
-  - still performs normal entity setup
-  - still fires `on_entity(Created, ...)`
-  - then enumerates all populated field paths from entity state
-  - fires `on_entity_property_changed(...)` once per field
-- `entity_updated(...)`
-  - collects changed field paths from `FieldReader`
-  - still fires `on_entity(Updated, ...)`
-  - then fires `on_entity_property_changed(...)` once per changed field
-- `entity_deleted(...)`
-  - unchanged for property callback purposes
+行为变化：
 
-## Files Changed in This Branch
+- `entity_created(...)`
+  - 先照常完成实体构建
+  - 先触发原有的 `on_entity(Created, ...)`
+  - 然后枚举当前实体中所有已填充字段
+  - 对每个字段依次触发 `on_entity_property_changed(...)`
+
+- `entity_updated(...)`
+  - 先用 `FieldReader` 解码本次更新
+  - 保留本次变更的字段路径列表
+  - 先触发原有的 `on_entity(Updated, ...)`
+  - 然后仅对本次发生变化的字段触发 `on_entity_property_changed(...)`
+
+- `entity_deleted(...)`
+  - 没有额外加入属性级回调
+
+这里保留了一个很重要的语义：属性回调看到的始终是“更新后的实体状态”，而不是更新前状态。
+
+### 7. 依赖和辅助维护能力有同步调整
+
+涉及文件：
 
 - `source2-demo/Cargo.toml`
+- `scripts/sync-upstream.sh`
+
+改动内容：
+
+- `hashbrown` 从 `0.16` 升级到 `0.17`
+- 新增 `regex = "1.12"` 依赖，用于属性过滤
+- 新增 `scripts/sync-upstream.sh`
+  - 用于从上游抓取更新、rebase 当前功能分支，并执行 `cargo check` / `cargo test --lib`
+
+这个脚本本身也说明了该分支的维护方式：本地功能分支需要周期性与 upstream 对齐，而不是长期脱离上游。
+
+### 8. 其他非功能性调整
+
+涉及文件：
+
+- `source2-demo/src/reader/slice.rs`
+- `source2-demo/src/parser/mod.rs`
+- `source2-demo/src/reader/msg.rs`
+- `source2-demo/src/reader/seekable.rs`
+- `source2-demo/src/entity/field/decoder.rs`
+- `source2-demo/src/entity/field/type.rs`
 - `source2-demo/src/lib.rs`
+
+主要内容：
+
+- `SliceReader::refill()` 改为统一走 checked `refill_lookahead()`
+- 删除若干注释
+- 删除 `#![doc(html_root_url = "...")]`
+
+这些改动和 `on_entity_property_changed` 不是同一层面的功能，但属于该分支相对于 `master` 的实际差异，需要在同步上游时一起关注。
+
+## 文件清单
+
+`master...on_entity_property_changed` 范围内涉及：
+
+- `ON_ENTITY_PROPERTY_CHANGED.md`
+- `scripts/sync-upstream.sh`
+- `source2-demo-macros/src/lib.rs`
+- `source2-demo/Cargo.toml`
 - `source2-demo/src/entity/class.rs`
+- `source2-demo/src/entity/field/decoder.rs`
 - `source2-demo/src/entity/field/mod.rs`
 - `source2-demo/src/entity/field/path.rs`
+- `source2-demo/src/entity/field/type.rs`
 - `source2-demo/src/entity/mod.rs`
+- `source2-demo/src/lib.rs`
 - `source2-demo/src/parser/demo/svc.rs`
+- `source2-demo/src/parser/mod.rs`
 - `source2-demo/src/parser/observer.rs`
 - `source2-demo/src/reader/field/mod.rs`
-- `source2-demo-macros/src/lib.rs`
+- `source2-demo/src/reader/msg.rs`
+- `source2-demo/src/reader/seekable.rs`
+- `source2-demo/src/reader/slice.rs`
 
-## Upstream Sync Risk Areas
+## 同步上游时需要优先关注的冲突点
 
-When rebasing or merging upstream parser changes, check these areas first:
-
-### High-risk
+高风险文件：
 
 - `source2-demo/src/parser/demo/svc.rs`
-  - entity create/update flow is commonly touched by parser changes
-  - if upstream changes entity decode order, preserve this invariant:
-    - decode entity state first
-    - fire `on_entity(...)`
-    - then fire `on_entity_property_changed(...)`
-
+  - 实体创建 / 更新流程最容易被上游改动影响
 - `source2-demo/src/reader/field/mod.rs`
-  - upstream changes to field decoding may alter how changed paths are buffered
-  - preserve `read_fields(...) -> usize` or re-expose equivalent changed-path info
-
+  - 如果上游改了字段解码流程，必须保住“返回本次变更字段路径”的能力
 - `source2-demo-macros/src/lib.rs`
-  - macro parser is large and central
-  - conflicts are likely if upstream adds more event macros or refactors argument parsing
+  - observer 宏入口大、逻辑集中，和上游演化最容易冲突
 
-### Medium-risk
+中风险文件：
 
 - `source2-demo/src/parser/observer.rs`
-  - conflicts if new interests or observer methods are added upstream
+- `source2-demo/src/entity/mod.rs`
+- `source2-demo/src/entity/class.rs`
+- `source2-demo/src/entity/field/path.rs`
 
-- `source2-demo/src/entity/*`
-  - conflicts if public entity API is reorganized
+## 需要保持的行为约束
 
-## Invariants To Preserve
+- `on_entity_property_changed(...)` 必须看到更新后的实体状态
+- 实体创建时应按“当前已有属性”逐个通知，而不是按 serializer schema 全量通知
+- 实体删除时不触发属性变更回调
+- `#[on_entity_property_changed("ClassName")]` 必须保持精确匹配语义
+- `class_pattern` / `property_pattern` 必须保持 regex 语义
+- 过滤结果需要缓存，避免每次回调重复做属性名匹配
 
-- `on_entity_property_changed(...)` must only see post-update entity state
-- created entities must emit populated properties, not raw serializer schema
-- deleted entities must not emit property-change callbacks
-- exact-class form and regex form must remain distinct
-- named-argument filtering must stay cached, not recompute property-name matches every callback
-- named-argument matching semantics must remain full regex semantics
+## 一句话总结
 
-## Pattern Semantics
-
-The named-argument form:
-
-```rust
-#[on_entity_property_changed(
-    class_pattern = "...",
-    property_pattern = "..."
-)]
-```
-
-currently supports:
-
-- full regex syntax supported by the Rust `regex` crate
-
-Examples that are supported:
-
-- `CDOTA_Unit_Hero_.*`
-- `CDOTA_NPC_Observer_Ward.*`
-- `m_hItems.*`
-- `m_hAbilities.*`
-- `CBodyComponent.m_vec.*`
-- `m_vecDataTeam.*.m_iNetWorth`
-
-Because matching is regex-based again, alternation like `foo|bar` and other standard regex constructs are available.
-
-## Validation Performed
-
-Verified on this branch:
-
-- `cargo check`
-- `cargo test --lib`
-
-Full `cargo test` still has unrelated pre-existing doctest failures in the repository.
-
-## Entity Snapshotting Notes
-
-The current `source2-demo` side now exposes:
-
-```rust
-Entity::field_paths() -> Vec<FieldPath>
-```
-
-This is intentionally narrow. It gives downstream consumers access to the
-entity's currently populated field paths without forcing a particular snapshot
-format into the parser itself.
-
-Primary intended uses:
-
-- full entity snapshot export
-- whitelist/blacklist-based snapshot export
-- debugging which populated fields exist on a live entity
-
-Recommended usage pattern in downstream code:
-
-1. call `entity.field_paths()`
-2. optionally filter the returned paths
-3. resolve display names with `entity.class().field_name_for_path(...)`
-4. read values with `entity.get_property_by_field_path(...)`
-
-## Performance Notes From Downstream Payload Experiments
-
-The downstream `onNetWorthChanged` payload experiment showed a clear boundary:
-
-- enumerating all populated fields is feasible
-- materializing large object payloads for every event is not
-- the dominant cost is total exported field count, not individual scalar conversion
-
-Measured downstream outcomes:
-
-- no-op baseline around `553ms` for the sampled run
-- full entity snapshot logic around `99954ms` before field-name caching
-- around `76703ms` after caching `FieldPath -> field name`
-- full-field export and broad blacklist variants remained far too slow for practical use
-
-What this means for `source2-demo`:
-
-- keeping `Entity::field_paths()` is still useful
-- caching field-name lookup is worthwhile
-- but parser-side support for full-path enumeration should be treated as a building block, not as a recommendation to emit huge JSON objects per event
-
-Recommended downstream strategy:
-
-- prefer a small whitelist over a broad blacklist
-- attach entity snapshots only to a narrow set of events
-- if many fields must be exported, prefer a compact array/binary representation over large JS objects
-
-## Recommended Workflow For Future Upstream Updates
-
-If upstream parser changes are frequent:
-
-1. Keep this work on its own branch: `on_entity_property_changed`
-2. Commit property-change work as 1-3 small commits instead of one large mixed commit
-3. Rebase this branch onto upstream `master`
-4. Resolve conflicts in the high-risk files above first
-5. Re-run:
-   - `cargo check`
-   - `cargo test --lib`
-
-### Helper Script
-
-This branch now includes a small helper script:
-
-```bash
-scripts/sync-upstream.sh [remote] [base-branch] [feature-branch]
-```
-
-Defaults:
-
-- `remote = upstream`
-- `base-branch = master`
-- `feature-branch = on_entity_property_changed`
-
-What it does:
-
-1. verifies you are on the expected feature branch
-2. verifies the working tree is clean
-3. fetches the upstream remote
-4. rebases the feature branch onto the selected upstream base branch
-5. runs:
-   - `cargo check`
-   - `cargo test --lib`
-
-Example:
-
-```bash
-scripts/sync-upstream.sh upstream master on_entity_property_changed
-```
-
-If you have not configured an `upstream` remote yet:
-
-```bash
-git remote add upstream <UPSTREAM_URL>
-```
-
-Then verify:
-
-```bash
-git remote -v
-```
-
-## About Rust Equivalents To `patch-package`
-
-There is no exact standard Rust equivalent to JavaScript's `patch-package` for an application repo like this one.
-
-Practical options are:
-
-### Option 1. Maintain this as a branch or fork
-
-Best when you directly own the parser repo.
-
-- track upstream with `git remote`
-- keep your feature as a rebaseable branch
-- merge or rebase when parser updates land
-
-### Option 2. Use git patches
-
-Best when you want a replayable patch series.
-
-- generate with `git format-patch`
-- re-apply with `git am` or `git apply`
-
-This is the closest workflow to `patch-package`.
-
-## Performance Note
-
-Current implementation preference:
-
-- exact-class handlers use exact string comparison
-- named-pattern handlers use cached compiled regex matching
-
-Why:
-
-- closer compatibility with Clarity semantics
-- supports the full pattern space exposed by `class_pattern` / `property_pattern`
-
-Because class and property results are cached, repeated matches on the same class and field path are already cheap. The main extra cost versus wildcard-only matching is the first regex evaluation for a new class or `(class, FieldPath)` pair.
-
-### Option 3. Use Cargo dependency overrides
-
-Best when this parser is consumed from another Rust project.
-
-In the consumer project:
-
-- use a git dependency pointing at your branch/fork, or
-- use `[patch.crates-io]` / `[patch."..."]` to override the source
-
-This does not patch the repo in place; it swaps which crate source Cargo resolves.
-
-## Recommendation
-
-For this parser, the cleanest long-term approach is:
-
-- keep upstream remote intact
-- keep `on_entity_property_changed` as an isolated branch
-- periodically rebase it
-- if another project depends on this crate, point that project to this branch or fork via Cargo
-
-If you later want a patch-series workflow, generate `git format-patch` files from this branch rather than trying to mimic npm-style patch injection.
-
-## 2026-05-05 Native Crash Workaround
-
-Observed issue:
-
-- native `cargo run --release` on the consumer repo could occasionally terminate with
-  `zsh: segmentation fault cargo run --release`
-- the failure was not tied to a stable gameplay event; the last printed line was often just a
-  normal game-time progress log
-- the Node / wasm path did not reproduce the same crash during current verification
-
-Crash evidence captured from `lldb`:
-
-- stop reason: `EXC_BAD_ACCESS (code=1, address=0x151800000)`
-- crashing frame: `source2_demo::reader::field::FieldReader::read_fields`
-- call chain summary:
-  - `FieldReader::read_fields`
-  - `DemoCommands::dem_packet`
-  - `Parser::on_demo_command`
-  - `DemoRunner::run_to_end`
-
-Working hypothesis:
-
-- the crash is most likely tied to a low-level unchecked reader fast path rather than the
-  higher-level observer / entity-property hook logic added on this branch
-
-Temporary mitigation added on this branch:
-
-- in `source2-demo/src/reader/slice.rs`, `SliceReader::refill()` now always calls checked
-  `refill_lookahead()` instead of using release-mode
-  `refill_lookahead_unchecked()`
-
-Intent of this change:
-
-- this is a stability-first diagnostic workaround
-- it is meant to test whether the native crash is triggered by the unchecked lookahead refill path
-- it may reduce native performance somewhat, but should not change parsing semantics
-
-Current status:
-
-- after this change, repeated native `cargo run --release` runs in the consumer repo did not
-  reproduce the previous intermittent segmentation fault during current verification
-- treat this as "temporarily resolved" rather than a formal proof of root cause
+这条分支本质上是在 `source2-demo` 现有实体观察机制之上，补了一层“按属性粒度派发”的能力；为此不仅新增了 observer 宏和 trait 方法，还把 `FieldPath`、字段路径解码结果、实体属性访问接口、运行时过滤缓存和上游同步脚本一起补齐了。

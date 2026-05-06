@@ -6,8 +6,9 @@
 - 上游来源：`https://github.com/Rupas1k/source2-demo`
 - fork 内部分支对比：`azhezzzz/source2-demo:master...azhezzzz/source2-demo:on_entity_property_changed`
 - GitHub 分支页的上游对比口径：`Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
-- fork 内部 compare 的 `master` 基线提交：`de4ab4263984cc9326d29bfcb17a001db366a78b`
-- 本地当前 `on_entity_property_changed` 分支头提交：`1683e16`
+- 当前上游 `master` 提交：`1ff430918006463520c2e80fa33a185bfe73dd4b`
+- 当前 fork `master` 提交：`de4ab4263984cc9326d29bfcb17a001db366a78b`
+- 本地当前 `on_entity_property_changed` 分支头提交：`813a0da59f53341ecc848e7549c9e2333be481b1`
 
 这条分支是在上游项目 `Rupas1k/source2-demo` 的基础上维护的功能分支，用于给解析器补充“实体属性级别变更通知”能力，并保留后续同步上游时可继续 rebase / merge 的空间。
 

@@ -5,6 +5,8 @@
 - 当前仓库：`https://github.com/azhezzzz/source2-demo`
 - 上游来源：`https://github.com/Rupas1k/source2-demo`
 - 本文整理的对比分支：`master...on_entity_property_changed`
+- 本次 compare 的 `master` 基线提交：`de4ab4263984cc9326d29bfcb17a001db366a78b`
+- 当前 `on_entity_property_changed` 分支头提交：`03160232d699cfcde9800e4cdfb2532ff997cf99`
 
 这条分支是在上游项目 `Rupas1k/source2-demo` 的基础上维护的功能分支，用于给解析器补充“实体属性级别变更通知”能力，并保留后续同步上游时可继续 rebase / merge 的空间。
 

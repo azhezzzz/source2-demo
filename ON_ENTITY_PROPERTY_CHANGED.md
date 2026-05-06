@@ -4,9 +4,10 @@
 
 - 当前仓库：`https://github.com/azhezzzz/source2-demo`
 - 上游来源：`https://github.com/Rupas1k/source2-demo`
-- 本文整理的对比分支：`master...on_entity_property_changed`
-- 本次 compare 的 `master` 基线提交：`de4ab4263984cc9326d29bfcb17a001db366a78b`
-- 当前 `on_entity_property_changed` 分支头提交：`03160232d699cfcde9800e4cdfb2532ff997cf99`
+- fork 内部分支对比：`azhezzzz/source2-demo:master...azhezzzz/source2-demo:on_entity_property_changed`
+- GitHub 分支页的上游对比口径：`Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
+- fork 内部 compare 的 `master` 基线提交：`de4ab4263984cc9326d29bfcb17a001db366a78b`
+- 本地当前 `on_entity_property_changed` 分支头提交：`1683e16`
 
 这条分支是在上游项目 `Rupas1k/source2-demo` 的基础上维护的功能分支，用于给解析器补充“实体属性级别变更通知”能力，并保留后续同步上游时可继续 rebase / merge 的空间。
 
@@ -15,6 +16,90 @@
 - `0400de7 Merge branch 'Rupas1k:master' into on_entity_property_changed`
 
 说明该分支不是完全脱离上游单独演化，而是在持续吸收上游变更的基础上叠加本地功能。
+
+## 对比口径说明
+
+这个项目后续应优先按 GitHub 分支页的上游关系来理解，而不是只按你自己 fork 里的 `master` 来理解。
+
+### 1. fork 内部 compare
+
+对应链接：
+
+- `https://github.com/azhezzzz/source2-demo/compare/master...on_entity_property_changed`
+
+这个 compare 的 base 是你 fork 自己的 `master`，不是上游 `Rupas1k/source2-demo:master`。
+
+它适合回答的问题是：
+
+- 你的 fork 中，`on_entity_property_changed` 相对你 fork 的 `master` 改了什么
+
+### 2. GitHub 分支页 / upstream parent compare
+
+对应链接：
+
+- `https://github.com/azhezzzz/source2-demo/tree/on_entity_property_changed`
+
+这个分支页背后的对比关系，应理解为：
+
+- `Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
+
+截至 2026-05-06，本页对应的 GitHub compare 元数据为：
+
+- 状态：`diverged`
+- `ahead_by = 5`
+- `behind_by = 5`
+- 上游当前 `master` 头提交：`1ff430918006463520c2e80fa33a185bfe73dd4b`
+- 共同祖先：`11c6684ae5a325f6ef97301ecfa59dd160495498`
+
+这也是后续判断“当前分支落后上游哪些提交、同步上游会不会冲突”时应该使用的基线。
+
+### 3. 下次让 Codex 对比时的固定说法
+
+建议直接使用下面这句：
+
+```text
+按 GitHub 分支页 https://github.com/azhezzzz/source2-demo/tree/on_entity_property_changed 的上游关系，对比 Rupas1k/source2-demo:master 和 azhezzzz:on_entity_property_changed。
+```
+
+如果要我进一步分析冲突和影响，可以扩展成：
+
+```text
+按 GitHub 分支页 https://github.com/azhezzzz/source2-demo/tree/on_entity_property_changed 的上游关系，对比 Rupas1k/source2-demo:master 和 azhezzzz:on_entity_property_changed，列出上游新增提交、冲突文件、对 on_entity_property_changed 功能的影响，并给出 merge/rebase 建议。
+```
+
+也可以进一步简化成：
+
+```text
+对比上游最新 master。
+```
+
+在这个仓库里，如果你这样说，默认应理解为：
+
+- 按 GitHub 分支页 `https://github.com/azhezzzz/source2-demo/tree/on_entity_property_changed` 的上游关系进行对比
+- 实际比较口径是 `Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
+- 自动列出：
+  - 当前 `ahead / behind`
+  - 上游新增提交
+  - 冲突文件
+  - 对 `on_entity_property_changed` 分支的影响
+  - 推荐同步策略
+
+### 4. 默认同步策略
+
+这个分支后续应采用“尽量回归上游、减少本地长期维护”的策略。
+
+具体原则：
+
+- 如果上游已经提供了等价实现，优先删除本地自定义实现，改用上游方案
+- 如果上游提供了相似但不完全相同的实现，优先把本地改动收敛到上游接口或上游设计上
+- 只有在上游没有覆盖当前需求时，才继续保留本地补丁
+- 做影响分析时，不只是判断“会不会冲突”，还要判断“能不能把本地改动回退掉，改成上游方法”
+
+因此，后续做 compare 分析时，默认目标不是“保住所有本地实现”，而是：
+
+- 保住 `on_entity_property_changed` 这个需求本身
+- 尽可能减少自维护代码
+- 尽可能把实现方式对齐到上游
 
 ## 这条分支的主要目标
 
@@ -58,6 +143,168 @@
 - `a00a78c`
 
 其余提交多为上游同步、依赖调整、辅助脚本和小规模清理。
+
+## 基于 GitHub 分支页口径的分叉情况
+
+按 `Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed` 计算：
+
+### 当前分支领先上游的 5 个提交
+
+1. `e3da6f7` Add on_entity_property_changed observer support
+2. `174704a` Add upstream sync helper script
+3. `a00a78c` add Entity::field_paths and document entity snapshot tradeoffs
+4. `0400de7` Merge branch 'Rupas1k:master' into on_entity_property_changed
+5. `c273b4e` Use checked slice reader refill
+
+### 当前分支落后上游的 5 个提交
+
+1. `bd8af28` Add get_iter method for Entity (#3)
+2. `651a7a0` Add get_property method for Entity
+3. `a00e54b` Add unsafe feature
+4. `027c165` Update examples
+5. `1ff4309` Add public accessors for FieldValue
+
+## 当前落后上游 5 个提交的影响
+
+### 1. `bd8af28` Add get_iter method for Entity (#3)
+
+影响级别：低到中
+
+判断：
+
+- 这是 `Entity` API 的补充增强
+- 和 `on_entity_property_changed` 的核心实现没有直接冲突
+- 主要价值在于让外部调用方更方便遍历实体字段
+
+对当前分支的意义：
+
+- 与 `Entity::field_paths()` 的方向是互补的
+- 即使不立即同步，也不会阻塞当前属性变更回调功能
+
+### 2. `651a7a0` Add get_property method for Entity
+
+影响级别：中
+
+判断：
+
+- 上游增加了更简洁的 `Entity::get_property(...)` 访问方式
+- 这和你当前新增的 `Entity::get_property_by_field_path(...)` 不冲突
+- 但会影响 examples、外部调用代码以及 API 习惯
+
+对当前分支的意义：
+
+- 建议同步
+- 它能让“通过属性名访问”和“通过 FieldPath 访问”两条路径都更完整
+
+### 3. `a00e54b` Add unsafe feature
+
+影响级别：高
+
+判断：
+
+- 这是当前最需要关注的上游提交
+- 它修改了：
+  - `source2-demo/Cargo.toml`
+  - `source2-demo/src/reader/slice.rs`
+- 这两处恰好也是你当前分支已经改过的热点文件
+
+对当前分支的意义：
+
+- 你的分支当前是直接把 `SliceReader::refill()` 固定到 checked 路径
+- 上游则把 unchecked 路径收敛成一个可选的 `unsafe` feature
+- 如果后续同步上游，这里极可能发生冲突
+
+建议：
+
+- 优先回退本地 `slice.rs` 的自定义改法，改成上游的 `unsafe feature` 方案
+- 如果仍需保留稳定性优先策略，应建立在上游 feature 设计之上，而不是继续长期分叉维护独立实现
+- 目标是把这块维护成本降到最低
+
+### 4. `027c165` Update examples
+
+影响级别：低
+
+判断：
+
+- 只影响 examples 和依赖示例
+- 不改变 parser 主体行为
+- 对 `on_entity_property_changed` 主功能没有直接影响
+
+对当前分支的意义：
+
+- 可晚一点再同步
+- 它更多是跟随上游 API 调整的示例修正
+
+### 5. `1ff4309` Add public accessors for FieldValue
+
+影响级别：中
+
+判断：
+
+- 这是对外 API 的增强
+- 主要新增 `FieldValue` 的公开访问器，例如：
+  - `string()`
+  - `bool()`
+  - `f32()`
+  - `vec2()`
+  - `vec3()`
+  - `i32()` / `u32()` 等
+- 同时会改动少量解码器内部调用
+
+对当前分支的意义：
+
+- 和你当前分支公开 `FieldPath`、新增 `get_property_by_field_path(...)` 是明显互补的
+- 未来如果调用方在 `on_entity_property_changed` 回调里直接拿 `FieldValue` 读值，这组 accessor 会更顺手
+
+建议：
+
+- 建议同步
+- 但优先级低于 `a00e54b`
+
+## 以后分析“对比上游最新 master”时的默认流程
+
+如果后续你只说“对比上游最新 master”，默认按下面流程执行：
+
+1. 先确认比较口径
+
+- 使用 `Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
+- 不使用你 fork 内部的 `azhezzzz/source2-demo:master` 作为默认基线
+
+2. 读取 GitHub compare 元数据
+
+- 当前 `ahead_by`
+- 当前 `behind_by`
+- 上游 `master` 头提交
+- 共同祖先提交
+
+3. 列出上游新增提交
+
+- 优先看当前分支落后于上游的提交
+- 逐个记录提交标题、涉及文件和大致改动方向
+
+4. 判断对当前分支的影响
+
+- 是否直接冲突到以下热点文件：
+  - `source2-demo/src/parser/demo/svc.rs`
+  - `source2-demo/src/parser/observer.rs`
+  - `source2-demo/src/reader/field/mod.rs`
+  - `source2-demo/src/reader/slice.rs`
+  - `source2-demo-macros/src/lib.rs`
+  - `source2-demo/Cargo.toml`
+- 是否会影响 `FieldPath`、`FieldValue`、`Entity` 公共 API
+- 是否会影响 `on_entity_property_changed` 需求本身
+
+5. 默认优先判断“能否回归上游”
+
+- 上游已有等价实现：建议回退本地实现，改用上游
+- 上游有相似实现：建议把本地实现改造成上游风格
+- 上游没有覆盖：继续保留本地补丁
+
+6. 输出建议时的默认优先级
+
+- 先指出必须尽快处理的高冲突提交
+- 再指出建议吸收、可减少维护成本的上游实现
+- 最后说明哪些提交可延后处理
 
 ## 改动归类
 

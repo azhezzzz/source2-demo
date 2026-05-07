@@ -16,7 +16,7 @@ impl DeathEvents {
         Ok(ctx
             .string_tables()
             .get_by_name("EntityNames")?
-            .get_row_by_index(property!(
+            .get_row(property!(
                 ctx.entities().get_by_handle(handle)?,
                 "m_pEntity.m_nameStringableIndex"
             ))?

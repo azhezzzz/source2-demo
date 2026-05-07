@@ -185,7 +185,7 @@ impl App {
 
         let item_entity = ctx.entities().get_by_handle(item_handle)?;
         let item_name = entity_names
-            .get_row_by_index(property!(item_entity, "m_pEntity.m_nameStringableIndex"))?
+            .get_row(property!(item_entity, "m_pEntity.m_nameStringableIndex"))?
             .key();
 
         Ok(Item {
@@ -226,7 +226,7 @@ impl App {
 
         let ability_entity = ctx.entities().get_by_handle(ability_handle)?;
         let ability_name = entity_names
-            .get_row_by_index(property!(ability_entity, "m_pEntity.m_nameStringableIndex"))?
+            .get_row(property!(ability_entity, "m_pEntity.m_nameStringableIndex"))?
             .key();
 
         Ok(Ability {

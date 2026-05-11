@@ -238,7 +238,12 @@ pub struct CCitadelUserMsgAbilityPing {
     pub ability_id: ::core::option::Option<u32>,
     #[prost(float, optional, tag = "3")]
     pub ability_cooldown: ::core::option::Option<f32>,
-    #[prost(enumeration = "ChatMsgPingMarkerInfo", optional, tag = "4", default = "KEPingMarkerInfoShowMarkerAndSound")]
+    #[prost(
+        enumeration = "ChatMsgPingMarkerInfo",
+        optional,
+        tag = "4",
+        default = "KEPingMarkerInfoShowMarkerAndSound"
+    )]
     pub ping_marker_and_sound_info: ::core::option::Option<i32>,
 }
 
@@ -481,7 +486,12 @@ pub struct CCitadelUserMsgMapPing {
     pub ping_data: ::core::option::Option<PingCommonData>,
     #[prost(uint32, optional, tag = "2")]
     pub event_type: ::core::option::Option<u32>,
-    #[prost(enumeration = "ChatMsgPingMarkerInfo", optional, tag = "3", default = "KEPingMarkerInfoShowMarkerAndSound")]
+    #[prost(
+        enumeration = "ChatMsgPingMarkerInfo",
+        optional,
+        tag = "3",
+        default = "KEPingMarkerInfoShowMarkerAndSound"
+    )]
     pub ping_marker_and_sound_info: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "4")]
     pub pinged_enemy_entity: ::core::option::Option<bool>,
@@ -1132,7 +1142,12 @@ pub struct CMsgMatchPlayerPathsData {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CMsgParticleSystemManager {
-    #[prost(enumeration = "ParticleSystemManagerMessage", optional, tag = "1", default = "ParticleSystemManagerEventCreate")]
+    #[prost(
+        enumeration = "ParticleSystemManagerMessage",
+        optional,
+        tag = "1",
+        default = "ParticleSystemManagerEventCreate"
+    )]
     pub r#type: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "2")]
     pub index: ::core::option::Option<u32>,
@@ -2470,7 +2485,12 @@ pub mod c_msg_match_meta_data_contents {
         pub match_tracked_stats: ::prost::alloc::vec::Vec<super::CMsgTrackedStat>,
         #[prost(message, repeated, tag = "30")]
         pub teams: ::prost::alloc::vec::Vec<Teams>,
-        #[prost(enumeration = "super::ECitadelBotDifficulty", optional, tag = "32", default = "KECitadelBotDifficultyNone")]
+        #[prost(
+            enumeration = "super::ECitadelBotDifficulty",
+            optional,
+            tag = "32",
+            default = "KECitadelBotDifficultyNone"
+        )]
         pub bot_difficulty: ::core::option::Option<i32>,
         #[prost(message, repeated, tag = "33")]
         pub street_brawl_rounds: ::prost::alloc::vec::Vec<StreetBrawlRound>,

@@ -119,9 +119,9 @@
 mod protobuf_map;
 
 use crate::protobuf_map::get_enum_from_struct;
-use proc_macro::{TokenStream};
+use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{parse_macro_input, parse::Parser, punctuated::Punctuated, Ident, ItemImpl, Token, Type, FnArg};
+use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, FnArg, Ident, ItemImpl, Token, Type};
 
 #[allow(unused_mut)]
 #[proc_macro_attribute]
@@ -284,8 +284,12 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
         let parser = Punctuated::<Ident, Token![,]>::parse_terminated;
         if let Ok(idents) = parser.parse(attr.clone()) {
             for id in idents {
-                if id == "manual" { mode_all = false; }
-                if id == "all" { mode_all = true; }
+                if id == "manual" {
+                    mode_all = false;
+                }
+                if id == "all" {
+                    mode_all = true;
+                }
             }
         }
     }
@@ -301,9 +305,15 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     for a in &input.attrs {
-        if a.path().is_ident("uses_entities") { add_flag!(ENABLE_ENTITY); }
-        if a.path().is_ident("uses_string_tables") { add_flag!(ENABLE_STRINGTAB); }
-        if a.path().is_ident("uses_game_events") { add_flag!(BASE_GE); }
+        if a.path().is_ident("uses_entities") {
+            add_flag!(ENABLE_ENTITY);
+        }
+        if a.path().is_ident("uses_string_tables") {
+            add_flag!(ENABLE_STRINGTAB);
+        }
+        if a.path().is_ident("uses_game_events") {
+            add_flag!(BASE_GE);
+        }
         #[cfg(feature = "dota")]
         if a.path().is_ident("uses_combat_log") {
             add_flag!(ENABLE_STRINGTAB);
@@ -370,11 +380,19 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
         if let syn::ImplItem::Fn(method) = item {
             for attr in &method.attrs {
                 for a in &method.attrs {
-                    if a.path().is_ident("uses_entities") { add_flag!(ENABLE_ENTITY); }
-                    if a.path().is_ident("uses_string_tables") { add_flag!(ENABLE_STRINGTAB); }
-                    if a.path().is_ident("uses_game_events") { add_flag!(BASE_GE); }
+                    if a.path().is_ident("uses_entities") {
+                        add_flag!(ENABLE_ENTITY);
+                    }
+                    if a.path().is_ident("uses_string_tables") {
+                        add_flag!(ENABLE_STRINGTAB);
+                    }
+                    if a.path().is_ident("uses_game_events") {
+                        add_flag!(BASE_GE);
+                    }
                     #[cfg(feature = "dota")]
-                    if a.path().is_ident("uses_combat_log") { add_flag!(DOTA_UM); }
+                    if a.path().is_ident("uses_combat_log") {
+                        add_flag!(DOTA_UM);
+                    }
                 }
 
                 let method_name = method.sig.ident.clone();
@@ -390,14 +408,14 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                         "on_tick_start" => {
                             has_tick_start = true;
                             on_tick_start_body.extend(quote! {
-                            self.#method_name(#(#args),*)?;
-                        })
+                                self.#method_name(#(#args),*)?;
+                            })
                         }
                         "on_tick_end" => {
                             has_tick_end = true;
                             on_tick_end_body.extend(quote! {
-                            self.#method_name(#(#args),*)?;
-                        })
+                                self.#method_name(#(#args),*)?;
+                            })
                         }
                         "on_stop" => {
                             has_stop = true;
@@ -511,7 +529,6 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                                 "ECsgoGameEvents" => has_cs2_ge = true,
                                 _ => {}
                             }
-
 
                             match root {
                                 "EDemoCommands" => extend!(on_demo_command_body),
@@ -722,33 +739,33 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
         interests = quote!(::source2_demo::Interests::all());
     }
 
-    add_if!(has_demo,       DEMO);
-    add_if!(has_net,        NET);
-    add_if!(has_svc,        SVC);
-    add_if!(has_base_um,    BASE_UM);
-    add_if!(has_base_ge,    BASE_GE);
+    add_if!(has_demo, DEMO);
+    add_if!(has_net, NET);
+    add_if!(has_svc, SVC);
+    add_if!(has_base_um, BASE_UM);
+    add_if!(has_base_ge, BASE_GE);
     add_if!(has_tick_start, TICK_START);
-    add_if!(has_tick_end,   TICK_END);
-    add_if!(has_entity,     ENABLE_ENTITY);
-    add_if!(has_entity_track,     TRACK_ENTITY);
-    add_if!(has_string_table,  ENABLE_STRINGTAB);
-    add_if!(has_string_table_track,  TRACK_STRINGTAB);
-    add_if!(has_stop,       STOP);
+    add_if!(has_tick_end, TICK_END);
+    add_if!(has_entity, ENABLE_ENTITY);
+    add_if!(has_entity_track, TRACK_ENTITY);
+    add_if!(has_string_table, ENABLE_STRINGTAB);
+    add_if!(has_string_table_track, TRACK_STRINGTAB);
+    add_if!(has_stop, STOP);
 
     #[cfg(feature = "dota")]
-    add_if!(has_dota_um,    DOTA_UM);
+    add_if!(has_dota_um, DOTA_UM);
     #[cfg(feature = "dota")]
     add_if!(has_combat_log, COMBAT_LOG);
 
     #[cfg(feature = "citadel")]
-    add_if!(has_cita_um,    CITA_UM);
+    add_if!(has_cita_um, CITA_UM);
     #[cfg(feature = "citadel")]
-    add_if!(has_cita_ge,    CITA_GE);
+    add_if!(has_cita_ge, CITA_GE);
 
     #[cfg(feature = "cs2")]
-    add_if!(has_cs2_um,     CS2_UM);
+    add_if!(has_cs2_um, CS2_UM);
     #[cfg(feature = "cs2")]
-    add_if!(has_cs2_ge,     CS2_GE);
+    add_if!(has_cs2_ge, CS2_GE);
 
     let ret = quote! {
         impl Observer for #struct_name {
@@ -761,7 +778,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(ret)
 }
 
-fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
+fn get_arg_type(method: &syn::ImplIte1mFn, n: usize) -> (Type, bool) {
     if let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(n) {
         if let Type::Reference(x) = pat_type.ty.as_ref() {
             (*x.elem.clone(), true)
@@ -1248,7 +1265,9 @@ pub fn on_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
 
 /// Marks the impl block to enable string table tracking.
 ///
@@ -1267,7 +1286,9 @@ pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream { ite
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
 
 /// Marks the impl block to enable game event tracking.
 ///
@@ -1286,7 +1307,9 @@ pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream 
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
 
 /// Marks the impl block to enable combat log tracking (Dota 2 only).
 ///
@@ -1310,4 +1333,6 @@ pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream { 
 /// ```
 #[cfg(feature = "dota")]
 #[proc_macro_attribute]
-pub fn uses_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+pub fn uses_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}

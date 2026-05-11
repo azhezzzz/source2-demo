@@ -901,7 +901,12 @@ pub struct CDotaUserMsgGuildChallengeProgress {
     pub challenge_instance_id: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "4")]
     pub challenge_parameter: ::core::option::Option<u32>,
-    #[prost(enumeration = "cdota_user_msg_guild_challenge_progress::EChallengeType", optional, tag = "5", default = "KEChallengeTypeInvalid")]
+    #[prost(
+        enumeration = "cdota_user_msg_guild_challenge_progress::EChallengeType",
+        optional,
+        tag = "5",
+        default = "KEChallengeTypeInvalid"
+    )]
     pub challenge_type: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "7")]
     pub challenge_progress_at_start: ::core::option::Option<u32>,
@@ -1077,7 +1082,12 @@ pub struct CDotaUserMsgMadstoneAlert {
     pub target_entindex: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "3")]
     pub tier: ::core::option::Option<i32>,
-    #[prost(enumeration = "cdota_user_msg_madstone_alert::EMadstoneAlertType", optional, tag = "4", default = "CraftAvailable")]
+    #[prost(
+        enumeration = "cdota_user_msg_madstone_alert::EMadstoneAlertType",
+        optional,
+        tag = "4",
+        default = "CraftAvailable"
+    )]
     pub madstone_alert_type: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "5")]
     pub value: ::core::option::Option<i32>,
@@ -1165,9 +1175,19 @@ pub struct CDotaUserMsgMonsterHunterHuntAlert {
     pub player_id: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "2")]
     pub hero_id: ::core::option::Option<i32>,
-    #[prost(enumeration = "cdota_user_msg_monster_hunter_hunt_alert::EHuntAlertType", optional, tag = "3", default = "MainObjective")]
+    #[prost(
+        enumeration = "cdota_user_msg_monster_hunter_hunt_alert::EHuntAlertType",
+        optional,
+        tag = "3",
+        default = "MainObjective"
+    )]
     pub hunt_alert_type: ::core::option::Option<i32>,
-    #[prost(enumeration = "cdota_user_msg_monster_hunter_hunt_alert::EHuntStatusType", optional, tag = "4", default = "Pending")]
+    #[prost(
+        enumeration = "cdota_user_msg_monster_hunter_hunt_alert::EHuntStatusType",
+        optional,
+        tag = "4",
+        default = "Pending"
+    )]
     pub hunt_status_type: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "5")]
     pub index: ::core::option::Option<i32>,
@@ -2067,7 +2087,12 @@ pub struct CDotaUserMsgUpdateSharedContent {
 pub struct CDotaUserMsgVersusScenePlayerBehavior {
     #[prost(int32, optional, tag = "1", default = "-1")]
     pub player_id: ::core::option::Option<i32>,
-    #[prost(enumeration = "EdotaVersusScenePlayerBehavior", optional, tag = "2", default = "VsPlayerBehaviorPlayActivity")]
+    #[prost(
+        enumeration = "EdotaVersusScenePlayerBehavior",
+        optional,
+        tag = "2",
+        default = "VsPlayerBehaviorPlayActivity"
+    )]
     pub behavior: ::core::option::Option<i32>,
     #[prost(message, optional, tag = "3")]
     pub play_activity: ::core::option::Option<VersusScenePlayActivity>,
@@ -2518,6 +2543,7 @@ pub enum DotaBotMode {
     Watcher = 28,
     WisdomShrine = 29,
     LotusPool = 30,
+    Deward = 31,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]

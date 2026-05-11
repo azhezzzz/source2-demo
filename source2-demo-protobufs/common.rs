@@ -236,7 +236,12 @@ pub struct CMsgSteamLearnRegisterDataSourceRequest {
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSteamLearnRegisterDataSourceResponse {
-    #[prost(enumeration = "ESteammLearnRegisterDataSourceResult", optional, tag = "1", default = "SteamlearnRegisterDataSourceResultError")]
+    #[prost(
+        enumeration = "ESteammLearnRegisterDataSourceResult",
+        optional,
+        tag = "1",
+        default = "SteamlearnRegisterDataSourceResultError"
+    )]
     pub result: ::core::option::Option<i32>,
     #[prost(message, optional, tag = "2")]
     pub data_source: ::core::option::Option<CMsgSteamLearnDataSource>,
@@ -270,7 +275,12 @@ pub struct CMsgSteamLearnSnapshotProjectRequest {
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgSteamLearnSnapshotProjectResponse {
-    #[prost(enumeration = "ESteamLearnSnapshotProjectResult", optional, tag = "1", default = "SteamlearnSnapshotProjectError")]
+    #[prost(
+        enumeration = "ESteamLearnSnapshotProjectResult",
+        optional,
+        tag = "1",
+        default = "SteamlearnSnapshotProjectError"
+    )]
     pub snapshot_result: ::core::option::Option<i32>,
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
@@ -332,7 +342,12 @@ pub struct CMsgSteamLearnGetAccessTokensRequest {
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSteamLearnGetAccessTokensResponse {
-    #[prost(enumeration = "ESteamLearnGetAccessTokensResult", optional, tag = "1", default = "SteamlearnGetAccessTokensError")]
+    #[prost(
+        enumeration = "ESteamLearnGetAccessTokensResult",
+        optional,
+        tag = "1",
+        default = "SteamlearnGetAccessTokensError"
+    )]
     pub result: ::core::option::Option<i32>,
     #[prost(message, optional, tag = "2")]
     pub access_tokens: ::core::option::Option<CMsgSteamLearnAccessTokens>,
@@ -408,7 +423,12 @@ pub struct CMsgSteamLearnInferenceMetadataBackendRequest {
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct CMsgSteamLearnInferenceMetadataResponse {
-    #[prost(enumeration = "ESteamLearnInferenceMetadataResult", optional, tag = "1", default = "SteamlearnInferenceMetadataError")]
+    #[prost(
+        enumeration = "ESteamLearnInferenceMetadataResult",
+        optional,
+        tag = "1",
+        default = "SteamlearnInferenceMetadataError"
+    )]
     pub inference_metadata_result: ::core::option::Option<i32>,
     #[prost(message, optional, tag = "2")]
     pub row_range: ::core::option::Option<c_msg_steam_learn_inference_metadata_response::RowRange>,
@@ -1618,7 +1638,12 @@ pub struct CMsgKickFromParty {
 pub struct CMsgLeaveParty {}
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgCustomGameInstallStatus {
-    #[prost(enumeration = "ECustomGameInstallStatus", optional, tag = "1", default = "KECustomGameInstallStatusUnknown")]
+    #[prost(
+        enumeration = "ECustomGameInstallStatus",
+        optional,
+        tag = "1",
+        default = "KECustomGameInstallStatusUnknown"
+    )]
     pub status: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
@@ -1822,7 +1847,12 @@ pub struct CMsgExtractGems {
 pub struct CMsgExtractGemsResponse {
     #[prost(uint64, optional, tag = "1")]
     pub item_id: ::core::option::Option<u64>,
-    #[prost(enumeration = "c_msg_extract_gems_response::EExtractGems", optional, tag = "2", default = "KExtractGemsSucceeded")]
+    #[prost(
+        enumeration = "c_msg_extract_gems_response::EExtractGems",
+        optional,
+        tag = "2",
+        default = "KExtractGemsSucceeded"
+    )]
     pub response: ::core::option::Option<i32>,
 }
 pub mod c_msg_extract_gems_response {
@@ -1851,7 +1881,12 @@ pub struct CMsgAddSocketResponse {
     pub item_id: ::core::option::Option<u64>,
     #[prost(uint32, repeated, packed = "false", tag = "2")]
     pub updated_socket_index: ::prost::alloc::vec::Vec<u32>,
-    #[prost(enumeration = "c_msg_add_socket_response::EAddSocket", optional, tag = "3", default = "KAddSocketSucceeded")]
+    #[prost(
+        enumeration = "c_msg_add_socket_response::EAddSocket",
+        optional,
+        tag = "3",
+        default = "KAddSocketSucceeded"
+    )]
     pub response: ::core::option::Option<i32>,
 }
 pub mod c_msg_add_socket_response {
@@ -1884,7 +1919,12 @@ pub struct CMsgAddItemToSocketResponse {
     pub item_item_id: ::core::option::Option<u64>,
     #[prost(uint32, repeated, packed = "false", tag = "2")]
     pub updated_socket_index: ::prost::alloc::vec::Vec<u32>,
-    #[prost(enumeration = "c_msg_add_item_to_socket_response::EAddGem", optional, tag = "3", default = "KAddGemSucceeded")]
+    #[prost(
+        enumeration = "c_msg_add_item_to_socket_response::EAddGem",
+        optional,
+        tag = "3",
+        default = "KAddGemSucceeded"
+    )]
     pub response: ::core::option::Option<i32>,
 }
 pub mod c_msg_add_item_to_socket_response {
@@ -1910,7 +1950,12 @@ pub struct CMsgResetStrangeGemCount {
 }
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgResetStrangeGemCountResponse {
-    #[prost(enumeration = "c_msg_reset_strange_gem_count_response::EResetGem", optional, tag = "1", default = "KResetGemSucceeded")]
+    #[prost(
+        enumeration = "c_msg_reset_strange_gem_count_response::EResetGem",
+        optional,
+        tag = "1",
+        default = "KResetGemSucceeded"
+    )]
     pub response: ::core::option::Option<i32>,
 }
 pub mod c_msg_reset_strange_gem_count_response {
@@ -3343,7 +3388,12 @@ pub mod c_msg_source2_play_stats_packed_record_list {
     pub struct FieldDef {
         #[prost(string, optional, tag = "1")]
         pub field_name: ::core::option::Option<::prost::alloc::string::String>,
-        #[prost(enumeration = "super::ESource2PlayStatsFieldType", optional, tag = "2", default = "Source2PlayStatsInvalid")]
+        #[prost(
+            enumeration = "super::ESource2PlayStatsFieldType",
+            optional,
+            tag = "2",
+            default = "Source2PlayStatsInvalid"
+        )]
         pub field_type: ::core::option::Option<i32>,
     }
     #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Eq, Hash, ::prost::Message)]

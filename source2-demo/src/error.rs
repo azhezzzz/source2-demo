@@ -190,3 +190,10 @@ pub enum CombatLogError {
     #[error("No {0} for {1}")]
     EmptyName(String, String),
 }
+
+impl From<std::io::Error> for ParserError {
+    fn from(value: std::io::Error) -> Self {
+        ParserError::IoError(value.to_string())
+    }
+}
+

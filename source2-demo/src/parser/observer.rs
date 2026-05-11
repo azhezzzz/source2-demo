@@ -8,7 +8,6 @@ use crate::event::CombatLogEntry;
 /// Result type for observers ([`anyhow::Result`])
 pub type ObserverResult = anyhow::Result<()>;
 
-
 bitflags::bitflags! {
     /// Bitflags for declaring observer interests.
     ///
@@ -99,18 +98,17 @@ bitflags::bitflags! {
     }
 }
 
-
 /// Observer trait for handling demo file events.
 ///
-/// Implement this trait to receive callbacks as the parser processes the demo file.
-/// You can either implement it manually or use the `#[observer]` attribute macro
-/// for a more convenient approach.
+/// Implement this trait to receive callbacks as the parser processes the demo
+/// file. You can either implement it manually or use the `#[observer]`
+/// attribute macro for a more convenient approach.
 ///
 /// # Interest-based Filtering
 ///
-/// The [`interests`](Observer::interests) method allows you to declare which events
-/// your observer wants to receive. This is crucial for performance as it allows the
-/// parser to skip processing events that no observer cares about.
+/// The [`interests`](Observer::interests) method allows you to declare which
+/// events your observer wants to receive. This is crucial for performance as it
+/// allows the parser to skip processing events that no observer cares about.
 ///
 /// # Examples
 ///
@@ -157,7 +155,12 @@ bitflags::bitflags! {
 ///         Interests::ENABLE_ENTITY | Interests::TRACK_ENTITY
 ///     }
 ///
-///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///     fn on_entity(
+///         &mut self,
+///         ctx: &Context,
+///         event: EntityEvents,
+///         entity: &Entity,
+///     ) -> ObserverResult {
 ///         if event == EntityEvents::Created {
 ///             self.count += 1;
 ///         }
@@ -187,7 +190,12 @@ bitflags::bitflags! {
 ///         Ok(())
 ///     }
 ///
-///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///     fn on_entity(
+///         &mut self,
+///         ctx: &Context,
+///         event: EntityEvents,
+///         entity: &Entity,
+///     ) -> ObserverResult {
 ///         // Process entities
 ///         Ok(())
 ///     }
@@ -298,7 +306,8 @@ pub trait Observer {
 
     /// Called when an entity is created, updated, or deleted.
     ///
-    /// Requires [`Interests::TRACK_ENTITY`] and [`Interests::ENABLE_ENTITY`] to be set.
+    /// Requires [`Interests::TRACK_ENTITY`] and [`Interests::ENABLE_ENTITY`] to
+    /// be set.
     #[cold]
     #[inline(never)]
     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
@@ -316,7 +325,8 @@ pub trait Observer {
 
     /// Called when a string table is updated.
     ///
-    /// Requires [`Interests::TRACK_STRINGTAB`] and [`Interests::ENABLE_STRINGTAB`] to be set.
+    /// Requires [`Interests::TRACK_STRINGTAB`] and
+    /// [`Interests::ENABLE_STRINGTAB`] to be set.
     #[cold]
     #[inline(never)]
     fn on_string_table(
@@ -344,8 +354,8 @@ pub trait Observer {
 
     /// Called when a combat log entry is received (Dota 2 only).
     ///
-    /// Combat log entries describe in-game events like damage, healing, kills, etc.
-    /// Only available with the `dota` feature enabled.
+    /// Combat log entries describe in-game events like damage, healing, kills,
+    /// etc. Only available with the `dota` feature enabled.
     ///
     /// Requires [`Interests::COMBAT_LOG`] to be set.
     #[cold]
@@ -357,7 +367,8 @@ pub trait Observer {
 
     /// Called when a Dota 2 user message is received.
     ///
-    /// Dota 2 specific user messages. Only available with the `dota` feature enabled.
+    /// Dota 2 specific user messages. Only available with the `dota` feature
+    /// enabled.
     ///
     /// Requires [`Interests::DOTA_UM`] to be set.
     #[cold]
@@ -374,7 +385,8 @@ pub trait Observer {
 
     /// Called when a Citadel/Deadlock game event is received.
     ///
-    /// Deadlock specific game events. Only available with the `deadlock` feature enabled.
+    /// Deadlock specific game events. Only available with the `deadlock`
+    /// feature enabled.
     ///
     /// Requires [`Interests::CITA_GE`] to be set.
     #[cold]
@@ -391,7 +403,8 @@ pub trait Observer {
 
     /// Called when a Citadel/Deadlock user message is received.
     ///
-    /// Deadlock specific user messages. Only available with the `deadlock` feature enabled.
+    /// Deadlock specific user messages. Only available with the `deadlock`
+    /// feature enabled.
     ///
     /// Requires [`Interests::CITA_UM`] to be set.
     #[cold]
@@ -408,7 +421,8 @@ pub trait Observer {
 
     /// Called when a Counter-Strike 2 user message is received.
     ///
-    /// CS2 specific user messages. Only available with the `cs2` feature enabled.
+    /// CS2 specific user messages. Only available with the `cs2` feature
+    /// enabled.
     ///
     /// Requires [`Interests::CS2_UM`] to be set.
     #[cold]

@@ -13,5 +13,3 @@ pub use seekable::SeekableReader;
 pub use slice::SliceReader;
 
 pub(crate) use field::*;
-
-

@@ -18,8 +18,8 @@
 //! ## Handling errors
 //!
 //! ```no_run
-//! use source2_demo::prelude::*;
 //! use source2_demo::error::*;
+//! use source2_demo::prelude::*;
 //!
 //! # fn example(ctx: &Context) {
 //! match ctx.entities().get_by_index(0) {
@@ -196,4 +196,3 @@ impl From<std::io::Error> for ParserError {
         ParserError::IoError(value.to_string())
     }
 }
-

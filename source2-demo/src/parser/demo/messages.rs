@@ -2,8 +2,8 @@ use crate::error::ParserError;
 use crate::parser::demo::svc::SvcMsg;
 use crate::proto::*;
 use crate::reader::{BitsReader, MessageReader};
-use crate::{Interests, Parser};
 use crate::{try_observers, GameEvent, GameEventList};
+use crate::{Interests, Parser};
 
 #[cfg(feature = "dota")]
 use crate::event::CombatLogEntry;
@@ -75,7 +75,11 @@ where
         msg_type: EBaseUserMessages,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, BASE_UM, on_base_user_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            BASE_UM,
+            on_base_user_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -94,7 +98,11 @@ where
                 try_observers!(self, BASE_GE, on_game_event(&self.context, &ge))?;
             }
 
-            try_observers!(self, BASE_GE, on_base_game_event(&self.context, msg_type, msg))?;
+            try_observers!(
+                self,
+                BASE_GE,
+                on_base_game_event(&self.context, msg_type, msg)
+            )?;
         }
         Ok(())
     }
@@ -189,7 +197,11 @@ where
             self.combat_log.push_back(entry);
         }
 
-        try_observers!(self, DOTA_UM, on_dota_user_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            DOTA_UM,
+            on_dota_user_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -199,7 +211,11 @@ where
         msg_type: ECitadelGameEvents,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, CITA_GE, on_citadel_game_event(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            CITA_GE,
+            on_citadel_game_event(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -209,7 +225,11 @@ where
         msg_type: CitadelUserMessageIds,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, CITA_UM, on_citadel_user_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            CITA_UM,
+            on_citadel_user_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -219,7 +239,11 @@ where
         msg_type: ECstrike15UserMessages,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, CS2_UM, on_cs2_user_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            CS2_UM,
+            on_cs2_user_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -229,7 +253,11 @@ where
         msg_type: ECsgoGameEvents,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, CS2_GE, on_cs2_game_event(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            CS2_GE,
+            on_cs2_game_event(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 }

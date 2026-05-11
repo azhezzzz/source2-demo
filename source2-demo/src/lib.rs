@@ -2,7 +2,6 @@
 #![warn(missing_docs)]
 #![allow(clippy::too_many_arguments)]
 
-
 mod display;
 mod entity;
 pub mod error;
@@ -70,9 +69,9 @@ pub mod prelude {
     pub use crate::proto::ECitadelGameEvents;
 
     #[cfg(feature = "cs2")]
-    pub use crate::proto::ECstrike15UserMessages;
-    #[cfg(feature = "cs2")]
     pub use crate::proto::ECsgoGameEvents;
+    #[cfg(feature = "cs2")]
+    pub use crate::proto::ECstrike15UserMessages;
 }
 
 // Re-export commonly used types at the crate root
@@ -87,16 +86,13 @@ pub use source2_demo_macros::*;
 ///
 /// This type alias is used throughout the crate for better performance
 /// compared to the standard library's `HashMap`.
-pub type HashMap<K, V> =
-hashbrown::HashMap<K, V, rustc_hash::FxBuildHasher>;
+pub type HashMap<K, V> = hashbrown::HashMap<K, V, rustc_hash::FxBuildHasher>;
 
 /// Fast hash set using FxHash algorithm.
 ///
 /// This type alias is used throughout the crate for better performance
 /// compared to the standard library's `HashSet`.
-pub type HashSet<T> =
-hashbrown::HashSet<T, rustc_hash::FxBuildHasher>;
-
+pub type HashSet<T> = hashbrown::HashSet<T, rustc_hash::FxBuildHasher>;
 
 #[cfg(feature = "dota")]
 pub use crate::event::CombatLogEntry;

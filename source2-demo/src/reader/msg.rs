@@ -62,7 +62,12 @@ impl<R: Read + Seek> ReplayInfoReader for SeekableReader<R> {
     fn read_replay_info(&mut self) -> Result<CDemoFileInfo, ParserError> {
         self.seek(8);
         let offset_bytes = self.read_bytes(4);
-        let offset = u32::from_le_bytes([offset_bytes[0], offset_bytes[1], offset_bytes[2], offset_bytes[3]]) as usize;
+        let offset = u32::from_le_bytes([
+            offset_bytes[0],
+            offset_bytes[1],
+            offset_bytes[2],
+            offset_bytes[3],
+        ]) as usize;
 
         self.seek(offset);
 
@@ -181,4 +186,3 @@ impl<R: Read + Seek> MessageReader for SeekableReader<R> {
         }))
     }
 }
-

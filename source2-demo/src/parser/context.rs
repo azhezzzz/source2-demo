@@ -188,7 +188,8 @@ impl Context {
 
     /// Returns replay file metadata.
     ///
-    /// Contains information about the replay including duration, map, and game info.
+    /// Contains information about the replay including duration, map, and game
+    /// info.
     pub fn replay_info(&self) -> &CDemoFileInfo {
         &self.replay_info
     }

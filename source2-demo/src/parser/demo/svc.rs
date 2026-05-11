@@ -24,9 +24,11 @@ pub trait SvcMsg {
         packet_entities: CSvcMsgPacketEntities,
     ) -> Result<(), ParserError>;
 
-    fn entity_created(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError>;
+    fn entity_created(&mut self, reader: &mut SliceReader, index: usize)
+        -> Result<(), ParserError>;
 
-    fn entity_updated(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError>;
+    fn entity_updated(&mut self, reader: &mut SliceReader, index: usize)
+        -> Result<(), ParserError>;
 
     fn entity_deleted(&mut self, index: usize) -> Result<(), ParserError>;
 }
@@ -163,7 +165,11 @@ where
         Ok(())
     }
 
-    fn entity_created(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError> {
+    fn entity_created(
+        &mut self,
+        reader: &mut SliceReader,
+        index: usize,
+    ) -> Result<(), ParserError> {
         let class_id = reader.read_bits_unchecked(self.context.classes.class_id_size) as i32;
         let serial = reader.read_bits_unchecked(17);
         let _ = reader.read_var_u32();
@@ -215,7 +221,11 @@ where
         Ok(())
     }
 
-    fn entity_updated(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError> {
+    fn entity_updated(
+        &mut self,
+        reader: &mut SliceReader,
+        index: usize,
+    ) -> Result<(), ParserError> {
         let entity = &mut self.context.entities.entities_vec[index];
 
         self.field_reader

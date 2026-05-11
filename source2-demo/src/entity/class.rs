@@ -67,7 +67,8 @@ impl Classes {
     ///
     /// # Errors
     ///
-    /// Returns [`ClassError::ClassNotFoundById`] if no class with the given ID exists.
+    /// Returns [`ClassError::ClassNotFoundById`] if no class with the given ID
+    /// exists.
     ///
     /// # Examples
     ///
@@ -166,7 +167,8 @@ impl Classes {
 ///
 /// # fn example(ctx: &Context) -> anyhow::Result<()> {
 /// // Find all heroes
-/// let heroes: Vec<&Entity> = ctx.entities()
+/// let heroes: Vec<&Entity> = ctx
+///     .entities()
 ///     .iter()
 ///     .filter(|e| e.class().name().starts_with("CDOTA_Unit_Hero_"))
 ///     .collect();

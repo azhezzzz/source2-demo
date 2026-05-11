@@ -22,9 +22,8 @@ pub(crate) enum FieldDecoder {
     QuantizedFloat(QuantizedFloatDecoder),
     QAngle(QAngleDecoder),
 
-    CCSGameModeRules
+    CCSGameModeRules,
 }
-
 
 impl FieldDecoder {
     #[inline]
@@ -40,22 +39,22 @@ impl FieldDecoder {
 
             "Vector" | "VectorWS" => FieldDecoder::Vector(VectorDecoder {
                 properties,
-                dimensions: 3
+                dimensions: 3,
             }),
             "Vector2D" => FieldDecoder::Vector(VectorDecoder {
                 properties,
-                dimensions: 2
+                dimensions: 2,
             }),
             "Vector4D" | "Quaternion" => FieldDecoder::Vector(VectorDecoder {
                 properties,
-                dimensions: 4
+                dimensions: 4,
             }),
 
             "QAngle" => FieldDecoder::QAngle(QAngleDecoder { properties }),
 
-            "CNetworkedQuantizedFloat" => FieldDecoder::QuantizedFloat(
-                QuantizedFloatDecoder::new(&properties)
-            ),
+            "CNetworkedQuantizedFloat" => {
+                FieldDecoder::QuantizedFloat(QuantizedFloatDecoder::new(&properties))
+            }
             "float32" | "GameTime_t" => FieldDecoder::Float32(Float32Decoder { properties }),
 
             "int8" => FieldDecoder::Signed8,
@@ -127,27 +126,28 @@ impl VectorDecoder {
 
 impl Decode for VectorDecoder {
     fn decode(&self, reader: &mut SliceReader) -> FieldValue {
+        let decoder = Float32Decoder {
+            properties: self.properties,
+        };
+
         match self.dimensions {
-            2 => FieldValue::Vector2D([
-                Float32Decoder { properties: self.properties }.decode(reader).f32(),
-                Float32Decoder { properties: self.properties }.decode(reader).f32(),
-            ]),
+            2 => FieldValue::Vector2D([decoder.decode(reader).f32(), decoder.decode(reader).f32()]),
             3 => {
                 if self.properties.encoder == Some(FieldEncoder::Normal) {
                     FieldValue::Vector3D(reader.read_normal_vec3())
                 } else {
                     FieldValue::Vector3D([
-                        Float32Decoder { properties: self.properties }.decode(reader).f32(),
-                        Float32Decoder { properties: self.properties }.decode(reader).f32(),
-                        Float32Decoder { properties: self.properties }.decode(reader).f32(),
+                        decoder.decode(reader).f32(),
+                        decoder.decode(reader).f32(),
+                        decoder.decode(reader).f32(),
                     ])
                 }
             }
             4 => FieldValue::Vector4D([
-                Float32Decoder { properties: self.properties }.decode(reader).f32(),
-                Float32Decoder { properties: self.properties }.decode(reader).f32(),
-                Float32Decoder { properties: self.properties }.decode(reader).f32(),
-                Float32Decoder { properties: self.properties }.decode(reader).f32(),
+                decoder.decode(reader).f32(),
+                decoder.decode(reader).f32(),
+                decoder.decode(reader).f32(),
+                decoder.decode(reader).f32(),
             ]),
             _ => unreachable!("Invalid vector dimension: {}", self.dimensions),
         }
@@ -178,12 +178,10 @@ impl Decode for Float32Decoder {
     fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         match self.properties.encoder {
             Some(FieldEncoder::Coord) => FieldValue::Float(reader.read_coordinate()),
-            Some(FieldEncoder::SimTime) => {
-                FieldValue::Float(reader.read_var_u32() as f32 / 30.0)
-            }
-            Some(FieldEncoder::RuneTime) => {
-                FieldValue::Float(f32::from_bits(reader.read_bits(self.properties.bit_count as u32)))
-            }
+            Some(FieldEncoder::SimTime) => FieldValue::Float(reader.read_var_u32() as f32 / 30.0),
+            Some(FieldEncoder::RuneTime) => FieldValue::Float(f32::from_bits(
+                reader.read_bits(self.properties.bit_count as u32),
+            )),
             _ => {
                 if self.properties.bit_count == 32 {
                     FieldValue::Float(reader.read_f32())
@@ -239,11 +237,7 @@ impl Decode for QAngleDecoder {
         }
 
         if self.properties.bit_count == 32 {
-            return FieldValue::Vector3D([
-                reader.read_f32(),
-                reader.read_f32(),
-                reader.read_f32(),
-            ]);
+            return FieldValue::Vector3D([reader.read_f32(), reader.read_f32(), reader.read_f32()]);
         }
 
         let mut v = [0f32; 3];

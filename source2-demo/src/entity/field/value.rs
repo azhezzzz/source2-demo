@@ -7,9 +7,9 @@ use crate::error::FieldValueError;
 
 /// Value type for entity properties.
 ///
-/// This enum represents all possible types that can be stored in entity properties.
-/// Use [`TryInto`] to convert to Rust types, or use the `property!` macro for
-/// convenient access.
+/// This enum represents all possible types that can be stored in entity
+/// properties. Use [`TryInto`] to convert to Rust types, or use the `property!`
+/// macro for convenient access.
 ///
 /// # Variants
 ///
@@ -589,7 +589,8 @@ impl FieldValue {
         }
     }
 
-    /// Return a reference to a 2D vector ([f32; 2]). Panics if the value is not `Vector2D`.
+    /// Return a reference to a 2D vector ([f32; 2]). Panics if the value is not
+    /// `Vector2D`.
     #[inline]
     pub fn vec2(&self) -> &[f32; 2] {
         if let FieldValue::Vector2D(v) = self {
@@ -599,7 +600,8 @@ impl FieldValue {
         }
     }
 
-    /// Return a reference to a 3D vector ([f32; 3]). Panics if the value is not `Vector3D`.
+    /// Return a reference to a 3D vector ([f32; 3]). Panics if the value is not
+    /// `Vector3D`.
     #[inline]
     pub fn vec3(&self) -> &[f32; 3] {
         if let FieldValue::Vector3D(v) = self {
@@ -609,7 +611,8 @@ impl FieldValue {
         }
     }
 
-    /// Return a reference to a 4D vector ([f32; 4]). Panics if the value is not `Vector4D`.
+    /// Return a reference to a 4D vector ([f32; 4]). Panics if the value is not
+    /// `Vector4D`.
     #[inline]
     pub fn vec4(&self) -> &[f32; 4] {
         if let FieldValue::Vector4D(v) = self {
@@ -691,8 +694,8 @@ impl FieldValue {
         }
     }
 
-    /// Read as `usize`. Accepts `Unsigned32` or `Unsigned64` and casts to `usize`.
-    /// Panics for other variants.
+    /// Read as `usize`. Accepts `Unsigned32` or `Unsigned64` and casts to
+    /// `usize`. Panics for other variants.
     #[inline]
     pub fn usize(&self) -> usize {
         match self {
@@ -702,4 +705,3 @@ impl FieldValue {
         }
     }
 }
-

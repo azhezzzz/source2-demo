@@ -1,5 +1,5 @@
-use bitter::BitReader;
 use super::bits::BitsReader;
+use bitter::BitReader;
 
 const UBIT_VAR_BIT_COUNTS: [u8; 4] = [0, 4, 8, 28];
 const UBIT_VAR_FIELDPATH_BIT_COUNTS: [u8; 5] = [2, 4, 10, 17, 31];

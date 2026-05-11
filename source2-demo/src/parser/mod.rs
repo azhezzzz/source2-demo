@@ -19,8 +19,9 @@ use std::collections::VecDeque;
 
 /// Main parser for Source 2 demo files.
 ///
-/// The parser maintains the replay state and processes demo commands sequentially.
-/// It supports multiple observers that can react to different types of events.
+/// The parser maintains the replay state and processes demo commands
+/// sequentially. It supports multiple observers that can react to different
+/// types of events.
 ///
 /// # Examples
 ///
@@ -65,7 +66,12 @@ use std::collections::VecDeque;
 ///         Interests::ENABLE_ENTITY | Interests::TRACK_ENTITY
 ///     }
 ///
-///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///     fn on_entity(
+///         &mut self,
+///         ctx: &Context,
+///         event: EntityEvents,
+///         entity: &Entity,
+///     ) -> ObserverResult {
 ///         if entity.class().name().starts_with("CDOTA_Unit_Hero_") {
 ///             let health: i32 = property!(entity, "m_iHealth");
 ///             println!("Hero {} health: {}", entity.class().name(), health);
@@ -107,12 +113,14 @@ impl<'a> Parser<'a, SliceReader<'a>> {
     ///
     /// # Arguments
     ///
-    /// * `replay` - Byte slice containing the demo file data (typically memory-mapped)
+    /// * `replay` - Byte slice containing the demo file data (typically
+    ///   memory-mapped)
     ///
     /// # Errors
     ///
-    /// Returns [`ParserError::WrongMagic`] if the file is not a valid Source 2 demo file.
-    /// Returns [`ParserError::ReplayEncodingError`] if the file header is corrupted.
+    /// Returns [`ParserError::WrongMagic`] if the file is not a valid Source 2
+    /// demo file. Returns [`ParserError::ReplayEncodingError`] if the file
+    /// header is corrupted.
     ///
     /// # Examples
     ///
@@ -170,7 +178,8 @@ impl<'a> Parser<'a, SliceReader<'a>> {
 
     /// Creates a new parser from replay bytes (same as `new`).
     ///
-    /// This is an alias for [`Parser::new`] that makes it explicit if you're using a slice.
+    /// This is an alias for [`Parser::new`] that makes it explicit if you're
+    /// using a slice.
     ///
     /// # Arguments
     ///
@@ -178,7 +187,8 @@ impl<'a> Parser<'a, SliceReader<'a>> {
     ///
     /// # Errors
     ///
-    /// Returns [`ParserError::WrongMagic`] if the file is not a valid Source 2 demo file.
+    /// Returns [`ParserError::WrongMagic`] if the file is not a valid Source 2
+    /// demo file.
     #[inline]
     pub fn from_slice(replay: &'a [u8]) -> Result<Self, ParserError> {
         Self::new(replay)
@@ -191,12 +201,14 @@ where
 {
     /// Creates a new parser from a reader.
     ///
-    /// Uses SeekableReader for reading data from the reader, but internally uses
-    /// SliceReader for parsing message buffers for maximum performance.
+    /// Uses SeekableReader for reading data from the reader, but internally
+    /// uses SliceReader for parsing message buffers for maximum
+    /// performance.
     ///
     /// # Arguments
     ///
-    /// * `reader` - Any type implementing Read + Seek (e.g., File, Cursor, BufReader)
+    /// * `reader` - Any type implementing Read + Seek (e.g., File, Cursor,
+    ///   BufReader)
     ///
     /// # Errors
     ///
@@ -216,8 +228,8 @@ where
     /// # }
     /// ```
     pub fn from_reader(reader: S) -> Result<Self, ParserError> {
-        let mut reader = SeekableReader::new(reader)
-            .map_err(|e| ParserError::IoError(e.to_string()))?;
+        let mut reader =
+            SeekableReader::new(reader).map_err(|e| ParserError::IoError(e.to_string()))?;
 
         let magic = reader.read_bytes(8);
         if magic != b"PBDEMS2\0" {
@@ -245,17 +257,24 @@ where
             skip_deltas: false,
 
             context: Context::new(replay_info.clone()),
-            
+
             replay_info,
             last_tick,
             _phantom: std::marker::PhantomData,
         })
     }
 
-    fn read_file_info_from_reader(reader: &mut SeekableReader<S>) -> Result<CDemoFileInfo, ParserError> {
+    fn read_file_info_from_reader(
+        reader: &mut SeekableReader<S>,
+    ) -> Result<CDemoFileInfo, ParserError> {
         reader.seek(8);
         let offset_bytes = reader.read_bytes(4);
-        let offset = u32::from_le_bytes([offset_bytes[0], offset_bytes[1], offset_bytes[2], offset_bytes[3]]) as usize;
+        let offset = u32::from_le_bytes([
+            offset_bytes[0],
+            offset_bytes[1],
+            offset_bytes[2],
+            offset_bytes[3],
+        ]) as usize;
 
         reader.seek(offset);
 
@@ -323,7 +342,8 @@ where
     /// Registers an observer and returns a reference-counted handle to it.
     ///
     /// Observers must implement the [`Observer`] trait and [`Default`].
-    /// Use the `#[observer]` attribute macro to automatically implement the trait.
+    /// Use the `#[observer]` attribute macro to automatically implement the
+    /// trait.
     ///
     /// The returned `Rc<RefCell<T>>` allows you to access the observer's state
     /// after parsing completes.
@@ -440,9 +460,10 @@ where
 {
     /// Extracts match details from a Deadlock replay.
     ///
-    /// This method scans through the replay to find and extract post-match details
-    /// specific to Deadlock games. It searches for the `KEUserMsgPostMatchDetails`
-    /// message and returns the decoded match metadata.
+    /// This method scans through the replay to find and extract post-match
+    /// details specific to Deadlock games. It searches for the
+    /// `KEUserMsgPostMatchDetails` message and returns the decoded match
+    /// metadata.
     ///
     /// # Errors
     ///
@@ -472,9 +493,10 @@ where
 impl<'a> Parser<'a, SliceReader<'a>> {
     /// Extracts match details from a Deadlock replay.
     ///
-    /// This method scans through the replay to find and extract post-match details
-    /// specific to Deadlock games. It searches for the `KEUserMsgPostMatchDetails`
-    /// message and returns the decoded match metadata.
+    /// This method scans through the replay to find and extract post-match
+    /// details specific to Deadlock games. It searches for the
+    /// `KEUserMsgPostMatchDetails` message and returns the decoded match
+    /// metadata.
     ///
     /// # Errors
     ///

@@ -1,7 +1,7 @@
 //! <https://github.com/ValveSoftware/csgo-demoinfo/blob/master/demoinfogo/demofilebitbuf.cpp>
 
-use std::io::{Read, Seek, SeekFrom};
 use super::BitsReader;
+use std::io::{Read, Seek, SeekFrom};
 
 #[doc(hidden)]
 pub struct SeekableReader<R: Read + Seek> {
@@ -51,10 +51,13 @@ impl<R: Read + Seek> SeekableReader<R> {
 
         let remaining = self.bytes_in_buffer - self.read_position;
         if remaining > 0 {
-            self.read_buffer.copy_within(self.read_position..self.bytes_in_buffer, 0);
+            self.read_buffer
+                .copy_within(self.read_position..self.bytes_in_buffer, 0);
         }
 
-        let bytes_read = self.underlying_stream.read(&mut self.read_buffer[remaining..])?;
+        let bytes_read = self
+            .underlying_stream
+            .read(&mut self.read_buffer[remaining..])?;
         self.bytes_in_buffer = remaining + bytes_read;
         self.read_position = 0;
 
@@ -72,7 +75,8 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
 
                     if remaining >= 4 {
                         let ptr = self.read_buffer.as_ptr().add(self.read_position) as *const u32;
-                        self.lookahead_buffer |= (ptr.read_unaligned().to_le() as u64) << self.lookahead_bit_count;
+                        self.lookahead_buffer |=
+                            (ptr.read_unaligned().to_le() as u64) << self.lookahead_bit_count;
                         self.lookahead_bit_count += 32;
                         self.read_position += 4;
                         self.bytes_read_total += 4;
@@ -124,7 +128,8 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
 
         unsafe {
             while self.lookahead_bit_count >= 8 && bytes_read < amount {
-                *bytes.get_unchecked_mut(bytes_read as usize) = (self.lookahead_buffer & 0xFF) as u8;
+                *bytes.get_unchecked_mut(bytes_read as usize) =
+                    (self.lookahead_buffer & 0xFF) as u8;
                 self.lookahead_buffer >>= 8;
                 self.lookahead_bit_count -= 8;
                 bytes_read += 1;
@@ -303,8 +308,7 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
         let b7 = self.read_bits(8) as u64;
         let b8 = self.read_bits(8) as u64;
 
-        b1 | (b2 << 8) | (b3 << 16) | (b4 << 24) |
-        (b5 << 32) | (b6 << 40) | (b7 << 48) | (b8 << 56)
+        b1 | (b2 << 8) | (b3 << 16) | (b4 << 24) | (b5 << 32) | (b6 << 40) | (b7 << 48) | (b8 << 56)
     }
 
     #[inline]
@@ -396,7 +400,11 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
 
     #[inline]
     fn seek(&mut self, offset: usize) {
-        if self.underlying_stream.seek(SeekFrom::Start(offset as u64)).is_ok() {
+        if self
+            .underlying_stream
+            .seek(SeekFrom::Start(offset as u64))
+            .is_ok()
+        {
             self.read_position = 0;
             self.bytes_in_buffer = 0;
             self.bytes_read_total = offset;
@@ -411,5 +419,3 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
         }
     }
 }
-
-

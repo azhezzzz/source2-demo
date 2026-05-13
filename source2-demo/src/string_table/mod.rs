@@ -64,10 +64,17 @@
 //! ```
 
 mod container;
+mod rewrite;
 mod row;
 
 pub use container::*;
+pub use rewrite::StringTableEntry;
 pub use row::*;
+
+pub(crate) use rewrite::{
+    rewrite_create_string_table, rewrite_demo_string_table_items, rewrite_update_string_table,
+    PackedStringTableFormat, PackedStringTableState,
+};
 
 use crate::entity::BaselineContainer;
 use crate::error::StringTableError;

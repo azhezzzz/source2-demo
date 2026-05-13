@@ -1,8 +1,15 @@
 use crate::entity::field::{FieldEncoder, FieldProperties, FieldType, FieldValue};
 use crate::reader::{BitsReader, SliceReader};
+use crate::writer::{BitsWriter, BitstreamWriter};
+use std::convert::TryInto;
+use std::io;
 
 pub(crate) trait Decode {
     fn decode(&self, reader: &mut SliceReader) -> FieldValue;
+}
+
+pub(crate) trait Encode<T: ?Sized = FieldValue> {
+    fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &T) -> io::Result<()>;
 }
 
 pub(crate) enum FieldDecoder {
@@ -73,9 +80,11 @@ impl FieldDecoder {
             _ => FieldDecoder::Unsigned32,
         }
     }
+}
 
+impl Decode for FieldDecoder {
     #[inline]
-    pub(crate) fn decode(&self, reader: &mut SliceReader) -> FieldValue {
+    fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         match self {
             FieldDecoder::Boolean => FieldValue::Boolean({
                 reader.refill();
@@ -108,6 +117,37 @@ impl FieldDecoder {
                 reader.read_ubit_var();
                 x
             }),
+        }
+    }
+}
+
+impl Encode for FieldDecoder {
+    #[inline]
+    fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
+        match self {
+            FieldDecoder::Boolean => writer.write_bit(value.bool()),
+            FieldDecoder::String => writer.write_cstring(&value.string()),
+            FieldDecoder::BinaryBlock => {
+                let bytes = value.string();
+                writer.write_var_u32(bytes.len() as u32)?;
+                writer.write_bytes(bytes.as_bytes())
+            }
+            FieldDecoder::Signed8 => writer.write_var_i32(value.i8() as i32),
+            FieldDecoder::Signed16 => writer.write_var_i32(value.i16() as i32),
+            FieldDecoder::Signed32 => writer.write_var_i32(value.i32()),
+            FieldDecoder::Unsigned8 => writer.write_var_u32(value.u8() as u32),
+            FieldDecoder::Unsigned16 => writer.write_var_u32(value.u16() as u32),
+            FieldDecoder::Unsigned32 => writer.write_var_u32(value.u32()),
+            FieldDecoder::Unsigned64(decoder) => decoder.encode(writer, value),
+            FieldDecoder::Vector(decoder) => decoder.encode(writer, value),
+            FieldDecoder::Float32(decoder) => decoder.encode(writer, value),
+            FieldDecoder::QuantizedFloat(decoder) => decoder.encode(writer, &value.f32()),
+            FieldDecoder::QAngle(decoder) => decoder.encode(writer, value),
+            FieldDecoder::CCSGameModeRules => {
+                writer.write_bit(value.bool())?;
+                writer.write_var_u32(0)?;
+                Ok(())
+            }
         }
     }
 }
@@ -154,9 +194,48 @@ impl Decode for VectorDecoder {
     }
 }
 
+impl Encode for VectorDecoder {
+    fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
+        match self.dimensions {
+            2 => {
+                let v: [f32; 2] = value
+                    .try_into()
+                    .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "expected vec2"))?;
+                writer.write_f32(v[0])?;
+                writer.write_f32(v[1])
+            }
+            3 => {
+                if self.properties.encoder == Some(FieldEncoder::Normal) {
+                    let v: [f32; 3] = value.try_into().map_err(|_| {
+                        io::Error::new(io::ErrorKind::InvalidInput, "expected vec3")
+                    })?;
+                    writer.write_normal_vec3(v)
+                } else {
+                    let v: [f32; 3] = value.try_into().map_err(|_| {
+                        io::Error::new(io::ErrorKind::InvalidInput, "expected vec3")
+                    })?;
+                    writer.write_f32(v[0])?;
+                    writer.write_f32(v[1])?;
+                    writer.write_f32(v[2])
+                }
+            }
+            4 => {
+                let v: [f32; 4] = value
+                    .try_into()
+                    .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "expected vec4"))?;
+                writer.write_f32(v[0])?;
+                writer.write_f32(v[1])?;
+                writer.write_f32(v[2])?;
+                writer.write_f32(v[3])
+            }
+            _ => unreachable!("Invalid vector dimension: {}", self.dimensions),
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct Unsigned64Decoder {
-    properties: FieldProperties,
+    pub(crate) properties: FieldProperties,
 }
 
 impl Decode for Unsigned64Decoder {
@@ -165,6 +244,17 @@ impl Decode for Unsigned64Decoder {
             FieldValue::Unsigned64(reader.read_u64_le())
         } else {
             FieldValue::Unsigned64(reader.read_var_u64())
+        }
+    }
+}
+
+impl Encode for Unsigned64Decoder {
+    fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
+        let v = value.u64();
+        if self.properties.encoder == Some(FieldEncoder::Fixed64) {
+            writer.write_u64_le(v)
+        } else {
+            writer.write_var_u64(v)
         }
     }
 }
@@ -187,6 +277,26 @@ impl Decode for Float32Decoder {
                     FieldValue::Float(reader.read_f32())
                 } else {
                     QuantizedFloatDecoder::new(&self.properties).decode(reader)
+                }
+            }
+        }
+    }
+}
+
+impl Encode for Float32Decoder {
+    fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
+        let v = value.f32();
+        match self.properties.encoder {
+            Some(FieldEncoder::Coord) => writer.write_coordinate(v),
+            Some(FieldEncoder::SimTime) => writer.write_var_u32((v * 30.0).round() as u32),
+            Some(FieldEncoder::RuneTime) => {
+                writer.write_bits(self.properties.bit_count as u32, v.to_bits() as u64)
+            }
+            _ => {
+                if self.properties.bit_count == 32 {
+                    writer.write_f32(v)
+                } else {
+                    QuantizedFloatDecoder::new(&self.properties).encode(writer, &v)
                 }
             }
         }
@@ -258,6 +368,62 @@ impl Decode for QAngleDecoder {
     }
 }
 
+impl Encode for QAngleDecoder {
+    fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
+        let v: [f32; 3] = value
+            .try_into()
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "expected vec3"))?;
+        if self.properties.encoder == Some(FieldEncoder::QAnglePitchYaw) {
+            writer.write_angle(v[0], self.properties.bit_count as u32)?;
+            writer.write_angle(v[1], self.properties.bit_count as u32)?;
+            return Ok(());
+        }
+
+        if self.properties.encoder == Some(FieldEncoder::QAnglePrecise) {
+            writer.write_bit(v[0] != 0.0)?;
+            writer.write_bit(v[1] != 0.0)?;
+            writer.write_bit(v[2] != 0.0)?;
+            if v[0] != 0.0 {
+                writer.write_angle(v[0], 20)?;
+            }
+            if v[1] != 0.0 {
+                writer.write_angle(v[1], 20)?;
+            }
+            if v[2] != 0.0 {
+                writer.write_angle(v[2], 20)?;
+            }
+            return Ok(());
+        }
+
+        if self.properties.bit_count != 0 && self.properties.bit_count != 32 {
+            let n = self.properties.bit_count as u32;
+            writer.write_angle(v[0], n)?;
+            writer.write_angle(v[1], n)?;
+            writer.write_angle(v[2], n)?;
+            return Ok(());
+        }
+
+        if self.properties.bit_count == 32 {
+            writer.write_f32(v[0])?;
+            writer.write_f32(v[1])?;
+            return writer.write_f32(v[2]);
+        }
+
+        writer.write_bit(v[0] != 0.0)?;
+        writer.write_bit(v[1] != 0.0)?;
+        writer.write_bit(v[2] != 0.0)?;
+        if v[0] != 0.0 {
+            writer.write_coordinate(v[0])?;
+        }
+        if v[1] != 0.0 {
+            writer.write_coordinate(v[1])?;
+        }
+        if v[2] != 0.0 {
+            writer.write_coordinate(v[2])?;
+        }
+        Ok(())
+    }
+}
 
 enum QuantizedFloatFlags {
     RoundDown = 1 << 0,
@@ -463,9 +629,44 @@ impl QuantizedFloatDecoder {
     }
 }
 
+impl Encode<f32> for QuantizedFloatDecoder {
+    fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &f32) -> io::Result<()> {
+        let value = *value;
+        if self.bit_count == 32 {
+            return writer.write_f32(value);
+        }
+
+        if self.flags & (QuantizedFloatFlags::RoundDown as u32) != 0 && value == self.low {
+            writer.write_bit(true)?;
+            return Ok(());
+        }
+        if self.flags & (QuantizedFloatFlags::RoundUp as u32) != 0 && value == self.high {
+            writer.write_bit(true)?;
+            return Ok(());
+        }
+        if self.flags & (QuantizedFloatFlags::EncodeZero as u32) != 0 && value == 0.0 {
+            writer.write_bit(true)?;
+            return Ok(());
+        }
+
+        if self.flags & (QuantizedFloatFlags::RoundDown as u32) != 0 {
+            writer.write_bit(false)?;
+        }
+        if self.flags & (QuantizedFloatFlags::RoundUp as u32) != 0 {
+            writer.write_bit(false)?;
+        }
+        if self.flags & (QuantizedFloatFlags::EncodeZero as u32) != 0 {
+            writer.write_bit(false)?;
+        }
+
+        let q = self.quantize(value);
+        let i = ((q - self.low) * self.high_low_mul) as u32;
+        writer.write_bits(self.bit_count, i as u64)
+    }
+}
+
 impl Decode for QuantizedFloatDecoder {
     fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         FieldValue::Float(self.decode_float(reader))
     }
 }
-

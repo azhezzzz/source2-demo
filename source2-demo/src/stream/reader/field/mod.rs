@@ -1,21 +1,16 @@
-mod huff;
-mod op;
-
-use huff::*;
-use op::*;
-
-use crate::field::{FieldPath, FieldState, Serializer};
+use crate::entity::field::{Decode, FieldPath, FieldState, Serializer};
 use crate::reader::{BitsReader, SliceReader};
+use crate::stream::field_path::{FieldOp, FieldPathCodec};
 
 pub(crate) struct FieldReader {
-    tree: HTree,
+    codec: FieldPathCodec,
     paths_buf: [FieldPath; 8192],
 }
 
 impl Default for FieldReader {
     fn default() -> Self {
         FieldReader {
-            tree: HTree::default(),
+            codec: FieldPathCodec::default(),
             paths_buf: [FieldPath::default(); 8192],
         }
     }
@@ -29,26 +24,18 @@ impl FieldReader {
         serializer: &Serializer,
         state: &mut FieldState,
     ) {
-        let mut node = &self.tree;
         let mut i = 0;
         let mut fp = FieldPath::default();
         reader.refill();
         loop {
-            node = match reader.read_bool() {
-                true => node.right(),
-                false => node.left(),
-            };
-            if let &HTree::Leaf { value, .. } = node {
-                let op = OPERATIONS[value as usize].0;
-                if let FieldOp::FieldPathEncodeFinish = op {
-                    break;
-                }
-                op.execute(reader, &mut fp);
-                self.paths_buf[i] = fp;
-                i += 1;
-                node = &self.tree;
-                reader.refill();
+            let op = self.codec.read_op(reader);
+            if let FieldOp::FieldPathEncodeFinish = op {
+                break;
             }
+            op.execute(reader, &mut fp);
+            self.paths_buf[i] = fp;
+            i += 1;
+            reader.refill();
         }
 
         self.paths_buf[..i]

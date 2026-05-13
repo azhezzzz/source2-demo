@@ -8,8 +8,12 @@ pub mod error;
 mod event;
 mod macros;
 mod parser;
-mod reader;
+mod stream;
 mod string_table;
+
+pub(crate) use stream::reader;
+/// Bitstream encoding utilities used by demo rewriting.
+pub use stream::writer;
 
 /// Protocol buffer definitions for Source 2 games.
 ///

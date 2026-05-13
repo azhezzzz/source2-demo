@@ -1,4 +1,4 @@
-use super::bits::BitsReader;
+use crate::stream::bits::BitsReader;
 use bitter::BitReader;
 
 const UBIT_VAR_BIT_COUNTS: [u8; 4] = [0, 4, 8, 28];
@@ -11,6 +11,7 @@ pub struct SliceReader<'a> {
     pub(crate) source_buffer: &'a [u8],
     pub(crate) bit_reader: bitter::LittleEndianReader<'a>,
     pub(crate) string_buffer: [u8; 4096],
+    pub(crate) source_offset: usize,
 }
 
 impl<'a> SliceReader<'a> {
@@ -19,6 +20,7 @@ impl<'a> SliceReader<'a> {
             source_buffer: data,
             bit_reader: bitter::LittleEndianReader::new(data),
             string_buffer: [0; 4096],
+            source_offset: 0,
         }
     }
 }
@@ -268,6 +270,7 @@ impl<'a> BitsReader for SliceReader<'a> {
     #[inline]
     fn seek(&mut self, offset: usize) {
         assert!(offset <= self.source_buffer.len());
-        self.bit_reader = bitter::LittleEndianReader::new(&self.source_buffer[offset..])
+        self.bit_reader = bitter::LittleEndianReader::new(&self.source_buffer[offset..]);
+        self.source_offset = offset;
     }
 }

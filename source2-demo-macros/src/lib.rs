@@ -778,7 +778,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(ret)
 }
 
-fn get_arg_type(method: &syn::ImplIte1mFn, n: usize) -> (Type, bool) {
+fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
     if let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(n) {
         if let Type::Reference(x) = pat_type.ty.as_ref() {
             (*x.elem.clone(), true)

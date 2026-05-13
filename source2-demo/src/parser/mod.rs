@@ -4,6 +4,7 @@ mod observer;
 
 pub use context::*;
 pub use demo::runner::*;
+pub use demo::writer::*;
 pub use observer::*;
 
 use crate::error::*;

@@ -23,6 +23,35 @@ impl<'a> SliceReader<'a> {
             source_offset: 0,
         }
     }
+
+    #[inline]
+    pub(crate) fn skip_bits(&mut self, mut amount: u32) {
+        while amount > 0 {
+            self.refill();
+            let chunk = amount.min(32);
+            self.read_bits_unchecked(chunk);
+            amount -= chunk;
+        }
+    }
+
+    #[inline]
+    pub(crate) fn skip_bytes(&mut self, amount: u32) {
+        self.skip_bits(amount * 8);
+    }
+
+    #[inline]
+    pub(crate) fn skip_cstring(&mut self) {
+        self.refill();
+        loop {
+            let byte = self.read_bits_unchecked(8) as u8;
+            if byte == 0 {
+                return;
+            }
+            if self.bit_reader.lookahead_bits() < 8 {
+                self.refill();
+            }
+        }
+    }
 }
 
 impl<'a> BitsReader for SliceReader<'a> {

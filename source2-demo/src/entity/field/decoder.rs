@@ -8,6 +8,10 @@ pub(crate) trait Decode {
     fn decode(&self, reader: &mut SliceReader) -> FieldValue;
 }
 
+pub(crate) trait Skip {
+    fn skip(&self, reader: &mut SliceReader);
+}
+
 pub(crate) trait Encode<T: ?Sized = FieldValue> {
     fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &T) -> io::Result<()>;
 }
@@ -121,6 +125,42 @@ impl Decode for FieldDecoder {
     }
 }
 
+impl Skip for FieldDecoder {
+    #[inline]
+    fn skip(&self, reader: &mut SliceReader) {
+        match self {
+            FieldDecoder::Boolean => {
+                reader.refill();
+                reader.skip_bits(1);
+            }
+            FieldDecoder::String => reader.skip_cstring(),
+            FieldDecoder::BinaryBlock => {
+                let n = reader.read_var_u32();
+                reader.skip_bytes(n);
+            }
+
+            FieldDecoder::Signed8 | FieldDecoder::Signed16 | FieldDecoder::Signed32 => {
+                reader.read_var_i32();
+            }
+            FieldDecoder::Unsigned8 | FieldDecoder::Unsigned16 | FieldDecoder::Unsigned32 => {
+                reader.read_var_u32();
+            }
+
+            FieldDecoder::Unsigned64(decoder) => decoder.skip(reader),
+            FieldDecoder::Vector(decoder) => decoder.skip(reader),
+            FieldDecoder::Float32(decoder) => decoder.skip(reader),
+            FieldDecoder::QuantizedFloat(decoder) => decoder.skip(reader),
+            FieldDecoder::QAngle(decoder) => decoder.skip(reader),
+
+            FieldDecoder::CCSGameModeRules => {
+                reader.refill();
+                reader.skip_bits(1);
+                reader.read_ubit_var();
+            }
+        }
+    }
+}
+
 impl Encode for FieldDecoder {
     #[inline]
     fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
@@ -194,6 +234,37 @@ impl Decode for VectorDecoder {
     }
 }
 
+impl Skip for VectorDecoder {
+    fn skip(&self, reader: &mut SliceReader) {
+        let decoder = Float32Decoder {
+            properties: self.properties,
+        };
+
+        match self.dimensions {
+            2 => {
+                decoder.skip(reader);
+                decoder.skip(reader);
+            }
+            3 => {
+                if self.properties.encoder == Some(FieldEncoder::Normal) {
+                    reader.read_normal_vec3();
+                } else {
+                    decoder.skip(reader);
+                    decoder.skip(reader);
+                    decoder.skip(reader);
+                }
+            }
+            4 => {
+                decoder.skip(reader);
+                decoder.skip(reader);
+                decoder.skip(reader);
+                decoder.skip(reader);
+            }
+            _ => unreachable!("Invalid vector dimension: {}", self.dimensions),
+        }
+    }
+}
+
 impl Encode for VectorDecoder {
     fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
         match self.dimensions {
@@ -248,6 +319,16 @@ impl Decode for Unsigned64Decoder {
     }
 }
 
+impl Skip for Unsigned64Decoder {
+    fn skip(&self, reader: &mut SliceReader) {
+        if self.properties.encoder == Some(FieldEncoder::Fixed64) {
+            reader.skip_bits(64);
+        } else {
+            reader.read_var_u64();
+        }
+    }
+}
+
 impl Encode for Unsigned64Decoder {
     fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
         let v = value.u64();
@@ -277,6 +358,29 @@ impl Decode for Float32Decoder {
                     FieldValue::Float(reader.read_f32())
                 } else {
                     QuantizedFloatDecoder::new(&self.properties).decode(reader)
+                }
+            }
+        }
+    }
+}
+
+impl Skip for Float32Decoder {
+    fn skip(&self, reader: &mut SliceReader) {
+        match self.properties.encoder {
+            Some(FieldEncoder::Coord) => {
+                reader.read_coordinate();
+            }
+            Some(FieldEncoder::SimTime) => {
+                reader.read_var_u32();
+            }
+            Some(FieldEncoder::RuneTime) => {
+                reader.skip_bits(self.properties.bit_count as u32);
+            }
+            _ => {
+                if self.properties.bit_count == 32 {
+                    reader.skip_bits(32);
+                } else {
+                    QuantizedFloatDecoder::new(&self.properties).skip(reader);
                 }
             }
         }
@@ -365,6 +469,56 @@ impl Decode for QAngleDecoder {
         }
 
         FieldValue::Vector3D(v)
+    }
+}
+
+impl Skip for QAngleDecoder {
+    fn skip(&self, reader: &mut SliceReader) {
+        reader.refill();
+
+        if self.properties.encoder == Some(FieldEncoder::QAnglePitchYaw) {
+            reader.skip_bits((self.properties.bit_count * 2) as u32);
+            return;
+        }
+
+        if self.properties.encoder == Some(FieldEncoder::QAnglePrecise) {
+            let x = reader.read_bool();
+            let y = reader.read_bool();
+            let z = reader.read_bool();
+            if x {
+                reader.skip_bits(20);
+            }
+            if y {
+                reader.skip_bits(20);
+            }
+            if z {
+                reader.skip_bits(20);
+            }
+            return;
+        }
+
+        if self.properties.bit_count != 0 && self.properties.bit_count != 32 {
+            reader.skip_bits((self.properties.bit_count * 3) as u32);
+            return;
+        }
+
+        if self.properties.bit_count == 32 {
+            reader.skip_bits(96);
+            return;
+        }
+
+        let x = reader.read_bool();
+        let y = reader.read_bool();
+        let z = reader.read_bool();
+        if x {
+            reader.read_coordinate();
+        }
+        if y {
+            reader.read_coordinate();
+        }
+        if z {
+            reader.read_coordinate();
+        }
     }
 }
 
@@ -668,5 +822,30 @@ impl Encode<f32> for QuantizedFloatDecoder {
 impl Decode for QuantizedFloatDecoder {
     fn decode(&self, reader: &mut SliceReader) -> FieldValue {
         FieldValue::Float(self.decode_float(reader))
+    }
+}
+
+impl Skip for QuantizedFloatDecoder {
+    fn skip(&self, reader: &mut SliceReader) {
+        reader.refill();
+
+        if self.bit_count == 32 {
+            reader.skip_bits(32);
+            return;
+        }
+
+        if self.flags & (QuantizedFloatFlags::RoundDown as u32) != 0 && reader.read_bool() {
+            return;
+        }
+
+        if self.flags & (QuantizedFloatFlags::RoundUp as u32) != 0 && reader.read_bool() {
+            return;
+        }
+
+        if self.flags & (QuantizedFloatFlags::EncodeZero as u32) != 0 && reader.read_bool() {
+            return;
+        }
+
+        reader.skip_bits(self.bit_count);
     }
 }

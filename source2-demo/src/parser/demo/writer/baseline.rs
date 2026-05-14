@@ -69,6 +69,10 @@ where
         entity.class = class;
         entity.state = FieldState::default();
 
+        if !self.should_rewrite_entity(EntityEvents::Created, &entity) {
+            return Ok(None);
+        }
+
         let mut reader = SliceReader::new(data);
         let mut out = Vec::with_capacity(data.len());
         let mut writer = BitstreamWriter::new(&mut out);

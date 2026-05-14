@@ -75,6 +75,10 @@ pub type SvcUpdateStringTableRewriter<'a> =
 pub type EntityFieldReplacer<'a> =
     dyn FnMut(EntityEvents, &Entity, &str, &FieldValue) -> Option<FieldValue> + 'a;
 
+/// Predicate callback that decides whether an entity should enter the slower
+/// field replacement path.
+pub type EntityRewriteFilter<'a> = dyn FnMut(EntityEvents, &Entity) -> bool + 'a;
+
 /// Demo writer that processes a demo like `Parser` while emitting a rewritten
 /// stream.
 pub struct DemoWriter<'a, R, W>
@@ -92,6 +96,8 @@ where
     svc_create_string_table_rewriter: Option<Box<SvcCreateStringTableRewriter<'a>>>,
     svc_update_string_table_rewriter: Option<Box<SvcUpdateStringTableRewriter<'a>>>,
     entity_replacer: Option<Box<EntityFieldReplacer<'a>>>,
+    entity_rewrite_filter: Option<Box<EntityRewriteFilter<'a>>>,
+    track_entity_state: bool,
     bytes_written: u64,
     file_info_offset: Option<u64>,
 }
@@ -114,6 +120,8 @@ where
             svc_create_string_table_rewriter: None,
             svc_update_string_table_rewriter: None,
             entity_replacer: None,
+            entity_rewrite_filter: None,
+            track_entity_state: true,
             bytes_written: 0,
             file_info_offset: None,
         }
@@ -184,6 +192,40 @@ where
             + 'a,
     {
         self.entity_replacer = Some(Box::new(replacer));
+    }
+
+    /// Registers a predicate that limits which entities use the field
+    /// replacement path.
+    ///
+    /// Entities rejected by this filter keep their original field bits and do
+    /// not run replacement callbacks. The writer only decodes enough field
+    /// structure to continue reading the packet. Instance baselines rejected by
+    /// this filter are left untouched without decoding their fields.
+    pub fn set_entity_rewrite_filter<F>(&mut self, filter: F)
+    where
+        F: FnMut(EntityEvents, &crate::entity::Entity) -> bool + 'a,
+    {
+        self.entity_rewrite_filter = Some(Box::new(filter));
+    }
+
+    /// Controls whether entity rewrite processing maintains accumulated field
+    /// state.
+    ///
+    /// This is enabled by default. Disabling it is faster for rewrite jobs
+    /// whose callbacks only need the current entity class, field name, and
+    /// decoded field value.
+    pub fn set_track_entity_state(&mut self, track: bool) {
+        self.track_entity_state = track;
+    }
+
+    pub(crate) fn should_rewrite_entity(
+        &mut self,
+        event: EntityEvents,
+        entity: &crate::entity::Entity,
+    ) -> bool {
+        self.entity_rewrite_filter
+            .as_mut()
+            .map_or(true, |filter| filter(event, entity))
     }
 
     /// Returns the wrapped parser and output writer.

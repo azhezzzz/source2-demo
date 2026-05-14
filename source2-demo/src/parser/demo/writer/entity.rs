@@ -1,11 +1,11 @@
 use super::*;
-use crate::entity::field::{Decode, Encode, FieldPath, FieldState};
+use crate::entity::field::{Decode, Encode, FieldPath, FieldState, Skip};
 use crate::proto::CSvcMsgPacketEntities;
 use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{
     bit_position, copy_bits, copy_original_bits, copy_remaining_bits, copy_ubit_var, copy_var_u32,
 };
-use crate::stream::field_path::read_and_copy_field_path;
+use crate::stream::field_path::{read_and_copy_field_path, FieldOp};
 use crate::try_observers;
 use crate::writer::{BitsWriter, BitstreamWriter};
 
@@ -118,39 +118,47 @@ where
             .classes
             .get_by_id_rc(class_id as usize)
             .clone();
-        let entity_baseline = self
-            .parser
-            .context
-            .baselines
-            .states
-            .entry(class_id)
-            .or_insert_with(|| {
-                let mut state = FieldState::default();
-                if let Some(baseline) = self.parser.context.baselines.baselines.get(&class_id) {
-                    self.parser.field_reader.read_fields(
-                        &mut SliceReader::new(baseline.as_ref()),
-                        &class.serializer,
-                        &mut state,
-                    );
-                }
-                state
-            })
-            .clone();
 
         let mut entity = Entity::default();
         entity.index = index as u32;
         entity.serial = serial;
         entity.class = class;
-        entity.state = entity_baseline;
 
-        let changed = self.rewrite_fields(
-            reader,
-            writer,
-            path_reader,
-            EntityEvents::Created,
-            &mut entity,
-            replacer,
-        )?;
+        let changed = if self.should_rewrite_entity(EntityEvents::Created, &entity) {
+            if self.track_entity_state {
+                entity.state = self
+                    .parser
+                    .context
+                    .baselines
+                    .states
+                    .entry(class_id)
+                    .or_insert_with(|| {
+                        let mut state = FieldState::default();
+                        if let Some(baseline) =
+                            self.parser.context.baselines.baselines.get(&class_id)
+                        {
+                            self.parser.field_reader.read_fields(
+                                &mut SliceReader::new(baseline.as_ref()),
+                                &entity.class.serializer,
+                                &mut state,
+                            );
+                        }
+                        state
+                    })
+                    .clone();
+            }
+            self.rewrite_fields(
+                reader,
+                writer,
+                path_reader,
+                EntityEvents::Created,
+                &mut entity,
+                replacer,
+            )?
+        } else {
+            Self::skip_original_fields(reader, writer, path_reader, &entity)?;
+            false
+        };
         self.parser.context.entities.entities_vec[index] = entity;
 
         let parser = &mut self.parser;
@@ -176,14 +184,19 @@ where
         replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<bool, ParserError> {
         let mut entity = self.parser.context.entities.entities_vec[index].clone();
-        let changed = self.rewrite_fields(
-            reader,
-            writer,
-            path_reader,
-            EntityEvents::Updated,
-            &mut entity,
-            replacer,
-        )?;
+        let changed = if self.should_rewrite_entity(EntityEvents::Updated, &entity) {
+            self.rewrite_fields(
+                reader,
+                writer,
+                path_reader,
+                EntityEvents::Updated,
+                &mut entity,
+                replacer,
+            )?
+        } else {
+            Self::skip_original_fields(reader, writer, path_reader, &entity)?;
+            false
+        };
         self.parser.context.entities.entities_vec[index] = entity;
 
         let parser = &mut self.parser;
@@ -198,6 +211,44 @@ where
         )?;
 
         Ok(changed)
+    }
+
+    pub(crate) fn skip_original_fields(
+        reader: &mut SliceReader<'_>,
+        writer: &mut BitstreamWriter<'_>,
+        path_reader: &mut FieldPathCodec,
+        entity: &Entity,
+    ) -> Result<(), ParserError> {
+        let fields_start = bit_position(reader);
+        let mut paths = Vec::new();
+        let mut fp = FieldPath::default();
+
+        loop {
+            reader.refill();
+            let op = path_reader.read_op(reader);
+            if let FieldOp::FieldPathEncodeFinish = op {
+                break;
+            }
+            op.execute(reader, &mut fp);
+            paths.push(fp);
+        }
+
+        for fp in paths {
+            entity
+                .class
+                .serializer
+                .get_decoder_for_field_path(&fp)
+                .skip(reader);
+        }
+
+        let fields_end = bit_position(reader);
+        copy_original_bits(
+            reader.source_buffer,
+            fields_start,
+            fields_end - fields_start,
+            writer,
+        )?;
+        Ok(())
     }
 
     pub(crate) fn rewrite_fields(
@@ -231,7 +282,9 @@ where
 
             if let Some(next_value) = replacement {
                 decoder.encode(writer, &next_value)?;
-                entity.state.set(&fp, next_value);
+                if self.track_entity_state {
+                    entity.state.set(&fp, next_value);
+                }
                 changed = true;
             } else {
                 copy_original_bits(
@@ -240,7 +293,9 @@ where
                     value_end - value_start,
                     writer,
                 )?;
-                entity.state.set(&fp, value);
+                if self.track_entity_state {
+                    entity.state.set(&fp, value);
+                }
             }
         }
 

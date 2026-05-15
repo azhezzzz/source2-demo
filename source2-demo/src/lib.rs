@@ -12,8 +12,26 @@ mod stream;
 mod string_table;
 
 pub(crate) use stream::reader;
-/// Bitstream encoding utilities used by demo rewriting.
-pub use stream::writer;
+
+/// Demo rewriting APIs and lower-level bitstream writer utilities.
+///
+/// This module is the preferred import path for writing or rewriting demo
+/// files. It includes [`DemoWriter`], rewrite callback types, packet message
+/// helpers, and the bitstream writer utilities used by advanced rewrites.
+pub mod writer {
+    pub use crate::parser::{
+        rewrite_protobuf_message, DemoMessageRewriter, DemoWriter, EntityFieldReplacer,
+        EntityRewriteFilter, MessageRewrite, PacketMessage, PacketMessageRewriter,
+        PacketMessagesRewriter, StringTableEntryRewriter, StringTableRewriter,
+        SvcCreateStringTableRewriter, SvcUpdateStringTableRewriter,
+    };
+    pub use crate::stream::writer::{
+        write_demo_message, write_demo_message_with_compression, write_var_u32_to_buf,
+        write_var_u32_to_vec, write_var_u64_to_buf, write_var_u64_to_vec, BitsWriter,
+        BitstreamWriter, MessageWriter,
+    };
+    pub use crate::string_table::StringTableEntryUpdate;
+}
 
 /// Protocol buffer definitions for Source 2 games.
 ///
@@ -34,7 +52,7 @@ pub mod proto {
     pub use source2_demo_protobufs::*;
 }
 
-/// Prelude module for convenient imports.
+/// Prelude module for convenient reading/parsing imports.
 ///
 /// Import this module to get access to all commonly used types and traits:
 ///
@@ -46,12 +64,15 @@ pub mod proto {
 /// - Core types: [`Parser`], [`Context`], [`Entity`], [`Observer`]
 /// - Traits and macros: [`observer`], [`on_message`], [`property!`]
 /// - Protobuf enums: Message type enumerations for each game
+///
+/// Demo writing APIs are intentionally not included. Import them from
+/// [`crate::writer`] instead.
 pub mod prelude {
     pub use crate::entity::field::FieldValue;
     pub use crate::entity::{Entity, EntityEvents};
     pub use crate::event::{EventValue, GameEvent, GameEventList};
-    pub use crate::parser::*;
-    pub use crate::string_table::*;
+    pub use crate::parser::{Context, DemoRunner, Interests, Observer, ObserverResult, Parser};
+    pub use crate::string_table::{StringTable, StringTableRow, StringTables};
     pub use crate::{property, try_property};
 
     pub use source2_demo_macros::*;
@@ -83,8 +104,8 @@ pub mod prelude {
 pub use crate::entity::field::FieldValue;
 pub use crate::entity::*;
 pub use crate::event::*;
-pub use crate::parser::*;
-pub use crate::string_table::*;
+pub use crate::parser::{Context, DemoRunner, Interests, Observer, ObserverResult, Parser};
+pub use crate::string_table::{StringTable, StringTableRow, StringTables};
 pub use source2_demo_macros::*;
 
 /// Fast hash map using FxHash algorithm.

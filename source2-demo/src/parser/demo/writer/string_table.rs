@@ -1,4 +1,5 @@
 use super::*;
+use crate::proto::Message;
 use crate::string_table::{
     rewrite_create_string_table, rewrite_demo_string_table_items, rewrite_update_string_table,
     PackedStringTableFormat, PackedStringTableState,

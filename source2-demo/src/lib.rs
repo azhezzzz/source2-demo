@@ -47,8 +47,8 @@ pub mod proto {
 /// - Traits and macros: [`observer`], [`on_message`], [`property!`]
 /// - Protobuf enums: Message type enumerations for each game
 pub mod prelude {
-    pub use crate::entity::{Entity, EntityEvents};
     pub use crate::entity::field::FieldValue;
+    pub use crate::entity::{Entity, EntityEvents};
     pub use crate::event::{EventValue, GameEvent, GameEventList};
     pub use crate::parser::*;
     pub use crate::string_table::*;

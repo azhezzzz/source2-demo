@@ -7,7 +7,8 @@ use std::io::{self, Write};
 const UBIT_VAR_BIT_COUNTS: [u8; 4] = [0, 4, 8, 28];
 const UBIT_VAR_FIELDPATH_BIT_COUNTS: [u8; 5] = [2, 4, 10, 17, 31];
 const COORDINATE_RESOLUTION_FACTOR: f32 = 1.0 / (1 << 5) as f32;
-const NORMAL_RESOLUTION_FACTOR: f32 = 1.0 / (1 << 11) as f32;
+const NORMAL_DENOMINATOR: u32 = (1 << 11) - 1;
+const NORMAL_RESOLUTION_FACTOR: f32 = 1.0 / NORMAL_DENOMINATOR as f32;
 
 #[doc(hidden)]
 pub struct BitstreamWriter<'a> {
@@ -181,19 +182,18 @@ impl BitsWriter for BitstreamWriter<'_> {
 
     #[inline]
     fn write_coordinate(&mut self, value: f32) -> io::Result<()> {
-        if value == 0.0 {
-            self.write_bit(false)?;
-            self.write_bit(false)?;
-            return Ok(());
-        }
-
         let abs = value.abs();
         let int_val = abs.trunc() as u32;
-        let fract_val = ((abs.fract() / COORDINATE_RESOLUTION_FACTOR).round() as u32).min(31);
+        let fract_val = ((abs * (1 << 5) as f32) as u32) & ((1 << 5) - 1);
 
         self.write_bit(int_val != 0)?;
         self.write_bit(fract_val != 0)?;
-        self.write_bit(value.is_sign_negative())?;
+
+        if int_val == 0 && fract_val == 0 {
+            return Ok(());
+        }
+
+        self.write_bit(value <= -COORDINATE_RESOLUTION_FACTOR)?;
 
         if int_val != 0 {
             self.write_bits(14, (int_val - 1) as u64)?;
@@ -213,24 +213,25 @@ impl BitsWriter for BitstreamWriter<'_> {
             "angle bit counts are expected to fit into u32"
         );
         let modulus = 1u128 << n;
-        let normalized = value.rem_euclid(360.0) / 360.0;
-        let raw = ((normalized * modulus as f32).round() as u128) % modulus;
+        let raw = ((value / 360.0) * modulus as f32) as i128;
+        let raw = (raw as u128) & (modulus - 1);
         self.write_bits(n, raw as u64)
     }
 
     #[inline]
     fn write_normal(&mut self, value: f32) -> io::Result<()> {
-        let signbit = value.is_sign_negative();
-        let mut len = (value.abs() / NORMAL_RESOLUTION_FACTOR).round() as u32;
-        len = len.min((1 << 11) - 1);
+        let signbit = value <= -NORMAL_RESOLUTION_FACTOR;
+        let len = ((value * NORMAL_DENOMINATOR as f32) as i32)
+            .unsigned_abs()
+            .min(NORMAL_DENOMINATOR);
         self.write_bit(signbit)?;
         self.write_bits(11, len as u64)
     }
 
     #[inline]
     fn write_normal_vec3(&mut self, value: [f32; 3]) -> io::Result<()> {
-        let x = value[0] != 0.0;
-        let y = value[1] != 0.0;
+        let x = value[0] >= NORMAL_RESOLUTION_FACTOR || value[0] <= -NORMAL_RESOLUTION_FACTOR;
+        let y = value[1] >= NORMAL_RESOLUTION_FACTOR || value[1] <= -NORMAL_RESOLUTION_FACTOR;
 
         self.write_bit(x)?;
         self.write_bit(y)?;
@@ -242,7 +243,7 @@ impl BitsWriter for BitstreamWriter<'_> {
             self.write_normal(value[1])?;
         }
 
-        self.write_bit(value[2].is_sign_negative())?;
+        self.write_bit(value[2] <= -NORMAL_RESOLUTION_FACTOR)?;
         Ok(())
     }
 

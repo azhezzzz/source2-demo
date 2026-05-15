@@ -1,0 +1,192 @@
+use super::*;
+use crate::parser::demo::DemoCommands;
+use crate::proto::{CDemoFullPacket, CDemoPacket, CDemoStringTables, EDemoCommands, Message};
+use crate::reader::{BitsReader, MessageReader};
+use std::io::{Seek, Write};
+
+impl<'a, R, W> DemoWriter<'a, R, W>
+where
+    R: BitsReader + MessageReader,
+    W: Write + Seek,
+{
+    /// Parses the demo while emitting a rewritten stream.
+    pub fn run(&mut self) -> Result<(), ParserError> {
+        self.parser.reader.seek(0);
+        let header = self.parser.reader.read_bytes(16);
+        self.writer.write_all(&header)?;
+        self.bytes_written = header.len() as u64;
+
+        while let Some(message) = self.read_next_raw_message()? {
+            let mut payload = None;
+            if let Some(rewriter) = self.demo_rewriter.as_mut() {
+                let decoded = Self::decode_raw_payload(&message)?;
+                match rewriter(message.tick, message.msg_type, decoded.as_slice())? {
+                    MessageRewrite::Drop => continue,
+                    MessageRewrite::Replace(bytes) => payload = Some(bytes),
+                    MessageRewrite::Keep | MessageRewrite::Rewrite => payload = Some(decoded),
+                }
+            }
+
+            match message.msg_type {
+                EDemoCommands::DemPacket | EDemoCommands::DemSignonPacket => {
+                    if !self.needs_packet_scan() {
+                        self.write_message_or_raw(&message, payload.as_deref())?;
+                        continue;
+                    }
+
+                    let payload = payload
+                        .take()
+                        .map(Ok)
+                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
+                    let mut packet = CDemoPacket::decode(payload.as_slice())?;
+                    let rewritten = self.rewrite_packet_data(
+                        message.tick,
+                        packet.data(),
+                        self.needs_packet_state(),
+                    )?;
+                    packet.data = Some(rewritten);
+                    let packet_bytes = packet.encode_to_vec();
+                    self.write_demo_message_with_compression(
+                        message.msg_type,
+                        message.tick,
+                        &packet_bytes,
+                        message.compressed,
+                    )?;
+                }
+                EDemoCommands::DemFullPacket => {
+                    if !self.needs_packet_scan() && !self.needs_demo_string_table_scan() {
+                        self.write_message_or_raw(&message, payload.as_deref())?;
+                        continue;
+                    }
+
+                    let payload = payload
+                        .take()
+                        .map(Ok)
+                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
+                    let mut full = CDemoFullPacket::decode(payload.as_slice())?;
+                    let should_process = self.parser.context.last_full_packet_tick == u32::MAX
+                        || self.parser.skip_deltas;
+
+                    if let Some(table) = full.string_table.take() {
+                        if self.needs_demo_string_table_scan() {
+                            if let Some(rewritten) =
+                                self.rewrite_string_tables(message.tick, table)?
+                            {
+                                if should_process && self.needs_demo_string_table_state() {
+                                    self.parser.dem_string_tables(rewritten.clone())?;
+                                }
+                                full.string_table = Some(rewritten);
+                            }
+                        } else {
+                            full.string_table = Some(table);
+                        }
+                    }
+
+                    if let Some(packet) = full.packet.as_mut() {
+                        if self.needs_packet_scan() {
+                            let rewritten = self.rewrite_packet_data(
+                                message.tick,
+                                packet.data(),
+                                should_process && self.needs_packet_state(),
+                            )?;
+                            packet.data = Some(rewritten);
+                        }
+                    }
+
+                    self.parser.context.last_full_packet_tick = message.tick;
+                    let full_bytes = full.encode_to_vec();
+                    self.write_demo_message_with_compression(
+                        message.msg_type,
+                        message.tick,
+                        &full_bytes,
+                        message.compressed,
+                    )?;
+                }
+                EDemoCommands::DemSendTables if self.needs_class_metadata() => {
+                    let payload = payload
+                        .take()
+                        .map(Ok)
+                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
+                    let msg = crate::proto::CDemoSendTables::decode(payload.as_slice())?;
+                    self.parser.dem_send_tables(msg)?;
+                    self.write_demo_message_with_compression(
+                        message.msg_type,
+                        message.tick,
+                        &payload,
+                        message.compressed,
+                    )?;
+                }
+                EDemoCommands::DemClassInfo if self.needs_class_metadata() => {
+                    let payload = payload
+                        .take()
+                        .map(Ok)
+                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
+                    let msg = crate::proto::CDemoClassInfo::decode(payload.as_slice())?;
+                    self.parser.dem_class_info(msg)?;
+                    self.write_demo_message_with_compression(
+                        message.msg_type,
+                        message.tick,
+                        &payload,
+                        message.compressed,
+                    )?;
+                }
+                EDemoCommands::DemStringTables => {
+                    if !self.needs_demo_string_table_scan() {
+                        self.write_message_or_raw(&message, payload.as_deref())?;
+                        continue;
+                    }
+
+                    let payload = payload
+                        .take()
+                        .map(Ok)
+                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
+                    let mut msg = CDemoStringTables::decode(payload.as_slice())?;
+                    if let Some(mut replacer) = self.entity_replacer.take() {
+                        self.rewrite_instance_baselines(&mut msg, &mut replacer)?;
+                        self.entity_replacer = Some(replacer);
+                    }
+                    let mut changed =
+                        self.rewrite_demo_string_table_entries(message.tick, &mut msg)?;
+                    let mut out_payload: Option<Vec<u8>> = None;
+                    if let Some(rewriter) = self.string_table_rewriter.as_mut() {
+                        match rewriter(message.tick, &mut msg)? {
+                            MessageRewrite::Drop => continue,
+                            MessageRewrite::Keep => {}
+                            MessageRewrite::Rewrite => {
+                                changed = false;
+                                out_payload = Some(msg.encode_to_vec());
+                            }
+                            MessageRewrite::Replace(bytes) => {
+                                msg = CDemoStringTables::decode(bytes.as_slice())?;
+                                changed = false;
+                                out_payload = Some(bytes);
+                            }
+                        }
+                    }
+                    let payload = out_payload.unwrap_or_else(|| {
+                        if changed {
+                            msg.encode_to_vec()
+                        } else {
+                            payload
+                        }
+                    });
+                    if self.needs_demo_string_table_state() {
+                        self.parser.dem_string_tables(msg)?;
+                    }
+                    self.write_demo_message_with_compression(
+                        message.msg_type,
+                        message.tick,
+                        &payload,
+                        message.compressed,
+                    )?;
+                }
+                _ => {
+                    self.write_message_or_raw(&message, payload.as_deref())?;
+                }
+            }
+        }
+
+        self.finalize_file_info_offset()?;
+        Ok(())
+    }
+}

@@ -1,5 +1,5 @@
 use super::*;
-use crate::entity::field::{Decode, Encode, FieldPath, FieldState};
+use crate::entity::field::{Decode, Encode, FieldPath};
 use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{bit_position, copy_original_bits, copy_remaining_bits};
 use crate::stream::field_path::read_and_copy_field_path;
@@ -64,10 +64,11 @@ where
             .classes
             .get_by_id_rc(class_id as usize)
             .clone();
-        let mut entity = Entity::default();
-        entity.index = 0;
-        entity.class = class;
-        entity.state = FieldState::default();
+        let entity = Entity {
+            index: 0,
+            class,
+            ..Default::default()
+        };
 
         if !self.should_rewrite_entity(EntityEvents::Created, &entity) {
             return Ok(None);
@@ -100,7 +101,6 @@ where
 
             if let Some(next_value) = replacement {
                 decoder.encode(&mut writer, &next_value)?;
-                entity.state.set(&fp, next_value);
                 changed = true;
             } else {
                 copy_original_bits(
@@ -109,7 +109,6 @@ where
                     value_end - value_start,
                     &mut writer,
                 )?;
-                entity.state.set(&fp, value);
             }
         }
 

@@ -1,5 +1,5 @@
 use super::*;
-use crate::proto::{EBaseGameEvents, EBaseUserMessages, NetMessages, SvcMessages};
+use crate::proto::{Message, SvcMessages};
 use crate::reader::{BitsReader, SliceReader};
 use crate::writer::{BitsWriter, BitstreamWriter};
 
@@ -15,8 +15,7 @@ where
         process_state: bool,
     ) -> Result<Vec<u8>, ParserError> {
         let mut reader = SliceReader::new(data);
-        let mut out = Vec::with_capacity(data.len());
-        let mut writer = BitstreamWriter::new(&mut out);
+        let mut messages = Vec::new();
 
         while reader.remaining_bytes() != 0 {
             let msg_type = reader.read_ubit_var() as i32;
@@ -33,23 +32,25 @@ where
             }
 
             let mut handled_entity = false;
-            if let Ok(svc_msg) = SvcMessages::try_from(msg_type) {
-                match svc_msg {
-                    SvcMessages::SvcPacketEntities => {
-                        if let Some(mut replacer) = self.entity_replacer.take() {
-                            if let Some(rewritten) = self.rewrite_svc_packet_entities(
-                                msg_payload.as_slice(),
-                                &mut replacer,
-                            )? {
-                                msg_payload = rewritten;
+            let mut processed_state = false;
+            if self.needs_svc_packet_scan() {
+                if let Ok(svc_msg) = SvcMessages::try_from(msg_type) {
+                    match svc_msg {
+                        SvcMessages::SvcPacketEntities => {
+                            if let Some(mut replacer) = self.entity_replacer.take() {
+                                if let Some(rewritten) = self.rewrite_svc_packet_entities(
+                                    msg_payload.as_slice(),
+                                    &mut replacer,
+                                )? {
+                                    msg_payload = rewritten;
+                                }
+                                self.entity_replacer = Some(replacer);
+                                handled_entity = true;
                             }
-                            self.entity_replacer = Some(replacer);
-                            handled_entity = true;
                         }
-                    }
-                    SvcMessages::SvcCreateStringTable => {
-                        if self.string_table_entry_rewriter.is_some()
-                            || self.svc_create_string_table_rewriter.is_some()
+                        SvcMessages::SvcCreateStringTable
+                            if self.string_table_entry_rewriter.is_some()
+                                || self.svc_create_string_table_rewriter.is_some() =>
                         {
                             let mut msg = CSvcMsgCreateStringTable::decode(msg_payload.as_slice())?;
                             let mut changed =
@@ -64,18 +65,27 @@ where
                                     }
                                     MessageRewrite::Replace(bytes) => {
                                         changed = false;
+                                        if process_state
+                                            && self.string_table_entry_rewriter.is_some()
+                                        {
+                                            msg =
+                                                CSvcMsgCreateStringTable::decode(bytes.as_slice())?;
+                                        }
                                         msg_payload = bytes;
                                     }
                                 }
+                            }
+                            if process_state && self.string_table_entry_rewriter.is_some() {
+                                self.process_create_string_table(msg.clone())?;
+                                processed_state = true;
                             }
                             if changed {
                                 msg_payload = msg.encode_to_vec();
                             }
                         }
-                    }
-                    SvcMessages::SvcUpdateStringTable => {
-                        if self.string_table_entry_rewriter.is_some()
-                            || self.svc_update_string_table_rewriter.is_some()
+                        SvcMessages::SvcUpdateStringTable
+                            if self.string_table_entry_rewriter.is_some()
+                                || self.svc_update_string_table_rewriter.is_some() =>
                         {
                             let mut msg = CSvcMsgUpdateStringTable::decode(msg_payload.as_slice())?;
                             let mut changed =
@@ -90,72 +100,108 @@ where
                                     }
                                     MessageRewrite::Replace(bytes) => {
                                         changed = false;
+                                        if process_state
+                                            && self.string_table_entry_rewriter.is_some()
+                                        {
+                                            msg =
+                                                CSvcMsgUpdateStringTable::decode(bytes.as_slice())?;
+                                        }
                                         msg_payload = bytes;
                                     }
                                 }
+                            }
+                            if process_state && self.string_table_entry_rewriter.is_some() {
+                                self.process_update_string_table(msg.clone())?;
+                                processed_state = true;
                             }
                             if changed {
                                 msg_payload = msg.encode_to_vec();
                             }
                         }
+                        _ => {}
                     }
-                    _ => {}
                 }
             }
 
-            if process_state && !handled_entity {
-                self.process_packet_message(msg_type, msg_payload.as_slice())?;
+            if process_state && !handled_entity && !processed_state {
+                self.process_packet_message_state(msg_type, msg_payload.as_slice())?;
             }
 
-            writer.write_ubit_var(msg_type as u32)?;
-            writer.write_var_u32(msg_payload.len() as u32)?;
-            writer.write_bytes(msg_payload.as_slice())?;
+            messages.push(PacketMessage::new(msg_type, msg_payload));
         }
 
+        if let Some(rewriter) = self.packet_messages_rewriter.as_mut() {
+            rewriter(tick, &mut messages)?;
+        }
+
+        let mut out = Vec::with_capacity(data.len());
+        let mut writer = BitstreamWriter::new(&mut out);
+        for message in messages {
+            writer.write_ubit_var(message.msg_type as u32)?;
+            writer.write_var_u32(message.payload.len() as u32)?;
+            writer.write_bytes(message.payload.as_slice())?;
+        }
         writer.flush()?;
         drop(writer);
         Ok(out)
     }
+}
 
-    pub(crate) fn process_packet_message(
-        &mut self,
-        msg_type: i32,
-        msg_buf: &[u8],
-    ) -> Result<(), ParserError> {
-        #[cfg(feature = "dota")]
-        if let Ok(msg) = crate::proto::EDotaUserMessages::try_from(msg_type) {
-            self.parser.on_dota_user_message(msg, msg_buf)?;
-            return Ok(());
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::Parser;
+    use crate::proto::EDemoCommands;
+    use crate::reader::BitsReader;
+    use crate::writer::{write_var_u32_to_buf, BitsWriter};
+    use std::io::Cursor;
+
+    fn minimal_replay() -> Vec<u8> {
+        let mut replay = Vec::new();
+        replay.extend_from_slice(b"PBDEMS2\0");
+        replay.extend_from_slice(&16_u32.to_le_bytes());
+        replay.extend_from_slice(&[0; 4]);
+        write_var_u32_to_buf(&mut replay, EDemoCommands::DemFileInfo as u64);
+        write_var_u32_to_buf(&mut replay, 0);
+        write_var_u32_to_buf(&mut replay, 0);
+        replay
+    }
+
+    fn packet_data(messages: &[(i32, &[u8])]) -> Vec<u8> {
+        let mut out = Vec::new();
+        let mut writer = BitstreamWriter::new(&mut out);
+        for (msg_type, payload) in messages {
+            writer.write_ubit_var(*msg_type as u32).unwrap();
+            writer.write_var_u32(payload.len() as u32).unwrap();
+            writer.write_bytes(payload).unwrap();
         }
+        writer.flush().unwrap();
+        drop(writer);
+        out
+    }
 
-        #[cfg(feature = "deadlock")]
-        if let Ok(msg) = crate::proto::CitadelUserMessageIds::try_from(msg_type) {
-            self.parser.on_citadel_user_message(msg, msg_buf)?;
-            return Ok(());
-        } else if let Ok(msg) = crate::proto::ECitadelGameEvents::try_from(msg_type) {
-            self.parser.on_citadel_game_event(msg, msg_buf)?;
-            return Ok(());
-        }
+    #[test]
+    fn packet_messages_rewriter_can_append_message() {
+        let replay = minimal_replay();
+        let parser = Parser::from_slice(&replay).unwrap();
+        let output = Cursor::new(Vec::new());
+        let mut writer = DemoWriter::new(parser, output);
 
-        #[cfg(feature = "cs2")]
-        if let Ok(msg) = crate::proto::ECstrike15UserMessages::try_from(msg_type) {
-            self.parser.on_cs2_user_message(msg, msg_buf)?;
-            return Ok(());
-        } else if let Ok(msg) = crate::proto::ECsgoGameEvents::try_from(msg_type) {
-            self.parser.on_cs2_game_event(msg, msg_buf)?;
-            return Ok(());
-        }
+        writer.set_packet_messages_rewriter(|_tick, messages| {
+            messages.push(PacketMessage::new(9, [4, 5, 6]));
+            Ok(())
+        });
 
-        if let Ok(msg) = SvcMessages::try_from(msg_type) {
-            self.parser.on_svc_message(msg, msg_buf)?;
-        } else if let Ok(msg) = EBaseUserMessages::try_from(msg_type) {
-            self.parser.on_base_user_message(msg, msg_buf)?;
-        } else if let Ok(msg) = EBaseGameEvents::try_from(msg_type) {
-            self.parser.on_base_game_event(msg, msg_buf)?;
-        } else if let Ok(msg) = NetMessages::try_from(msg_type) {
-            self.parser.on_net_message(msg, msg_buf)?;
-        }
+        let input = packet_data(&[(7, &[1, 2, 3])]);
+        let output = writer.rewrite_packet_data(0, &input, false).unwrap();
+        let mut reader = SliceReader::new(&output);
 
-        Ok(())
+        assert_eq!(reader.read_ubit_var(), 7);
+        assert_eq!(reader.read_var_u32(), 3);
+        assert_eq!(reader.read_bytes(3), [1, 2, 3]);
+        assert_eq!(reader.read_ubit_var(), 9);
+        assert_eq!(reader.read_var_u32(), 3);
+        assert_eq!(reader.read_bytes(3), [4, 5, 6]);
+        assert_eq!(reader.remaining_bytes(), 0);
     }
 }

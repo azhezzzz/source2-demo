@@ -2202,8 +2202,8 @@ pub mod c_game_info {
         pub struct CPlayerInfo {
             #[prost(string, optional, tag = "1")]
             pub hero_name: ::core::option::Option<::prost::alloc::string::String>,
-            #[prost(string, optional, tag = "2")]
-            pub player_name: ::core::option::Option<::prost::alloc::string::String>,
+            #[prost(bytes = "vec", optional, tag = "2")]
+            pub player_name: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
             #[prost(bool, optional, tag = "3")]
             pub is_fake_client: ::core::option::Option<bool>,
             #[prost(uint64, optional, tag = "4")]

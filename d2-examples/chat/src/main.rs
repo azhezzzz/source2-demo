@@ -10,7 +10,7 @@ impl Chat {
         let gi = ctx.replay_info().game_info.as_ref()?;
         let dota = gi.dota.as_ref()?;
         let pi = dota.player_info.get(player_id as usize)?;
-        pi.player_name.clone()
+        String::from_utf8_lossy(pi.player_name()).to_string().into()
     }
 
     #[on_message]

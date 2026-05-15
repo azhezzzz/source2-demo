@@ -281,7 +281,8 @@ fn fetch_protobufs_from_github() -> std::io::Result<()> {
                     let content = response
                         .body_mut()
                         .read_to_string()
-                        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Failed to read response: {}", e)))?;
+                        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Failed to read response: {}", e)))?
+                        .replace("optional string player_name = 2;", "optional bytes player_name = 2;");
 
                     let file_path = format!("{}/{}", proto_dir, file);
                     fs::write(&file_path, content)?;

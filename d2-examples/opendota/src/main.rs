@@ -1,13 +1,13 @@
 // https://github.com/odota/parser/blob/5c3ac03bc5a8fb84a3b4873b788155988e9d1176/src/main/java/opendota/Parse.java
 // slightly outdated
 
-use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::fmt::{Display, Formatter};
+use std::rc::Rc;
 
-use hashbrown::HashMap;
 use anyhow::{Result, bail};
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
 use source2_demo::prelude::*;
@@ -184,9 +184,7 @@ impl App {
         }
 
         let item_entity = ctx.entities().get_by_handle(item_handle)?;
-        let item_name = entity_names
-            .get_row(property!(item_entity, "m_pEntity.m_nameStringableIndex"))?
-            .key();
+        let item_name = entity_names.get_row(property!(item_entity, "m_pEntity.m_nameStringableIndex"))?.key();
 
         Ok(Item {
             id: item_name.into(),
@@ -225,9 +223,7 @@ impl App {
         }
 
         let ability_entity = ctx.entities().get_by_handle(ability_handle)?;
-        let ability_name = entity_names
-            .get_row(property!(ability_entity, "m_pEntity.m_nameStringableIndex"))?
-            .key();
+        let ability_name = entity_names.get_row(property!(ability_entity, "m_pEntity.m_nameStringableIndex"))?.key();
 
         Ok(Ability {
             id: ability_name.into(),
@@ -463,16 +459,16 @@ impl App {
                                 let name1 = "npc_dota_hero_".to_string() + &class["CDOTA_Unit_Hero_".len()..].to_lowercase();
                                 let name2 = "npc_dota_hero".to_string()
                                     + &class["CDOTA_Unit_Hero_".len()..]
-                                    .to_lowercase()
-                                    .chars()
-                                    .map(|c| {
-                                        if c.is_ascii_uppercase() {
-                                            format!("_{}", c.to_lowercase())
-                                        } else {
-                                            c.to_string()
-                                        }
-                                    })
-                                    .collect::<String>();
+                                        .to_lowercase()
+                                        .chars()
+                                        .map(|c| {
+                                            if c.is_ascii_uppercase() {
+                                                format!("_{}", c.to_lowercase())
+                                            } else {
+                                                c.to_string()
+                                            }
+                                        })
+                                        .collect::<String>();
                                 self.name_to_slot.insert(name1.clone(), i);
                                 self.name_to_slot.insert(name2.clone(), i);
                                 self.class_to_combat_log.insert(class.to_string(), name1);

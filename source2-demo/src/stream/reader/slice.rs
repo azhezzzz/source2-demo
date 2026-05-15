@@ -3,7 +3,7 @@ use bitter::BitReader;
 
 const UBIT_VAR_BIT_COUNTS: [u8; 4] = [0, 4, 8, 28];
 const UBIT_VAR_FIELDPATH_BIT_COUNTS: [u8; 5] = [2, 4, 10, 17, 31];
-const NORMAL_RESOLUTION_FACTOR: f32 = (1.0 / (1 << 11) as f32) - 1.0;
+const NORMAL_RESOLUTION_FACTOR: f32 = 1.0 / ((1 << 11) - 1) as f32;
 const COORDINATE_RESOLUTION_FACTOR: f32 = 1.0 / (1 << 5) as f32;
 
 #[doc(hidden)]

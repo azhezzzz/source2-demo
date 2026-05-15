@@ -2221,6 +2221,8 @@ pub struct CMsgPlayerBulletHit {
     pub penetration_count: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "7")]
     pub is_kill: ::core::option::Option<bool>,
+    #[prost(bool, optional, tag = "8")]
+    pub through_smoke: ::core::option::Option<bool>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, ::prost::Message)]

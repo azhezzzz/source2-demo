@@ -28,6 +28,7 @@ where
             self.rewrite_entity_data(entity_data, packet_entities.updated_entries(), replacer)?;
         if changed {
             packet_entities.entity_data = Some(rewritten);
+            packet_entities.serialized_entities = None; // ??
             Ok(Some(packet_entities.encode_to_vec()))
         } else {
             Ok(None)

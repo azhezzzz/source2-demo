@@ -1,12 +1,11 @@
 use super::*;
-use crate::entity::field::{Decode, Encode, FieldPath, FieldState, Skip};
-use crate::proto::CSvcMsgPacketEntities;
+use crate::entity::field::{Decode, Encode, FieldPath, Skip};
+use crate::proto::{CSvcMsgPacketEntities, Message};
 use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{
     bit_position, copy_bits, copy_original_bits, copy_remaining_bits, copy_ubit_var, copy_var_u32,
 };
 use crate::stream::field_path::{read_and_copy_field_path, FieldOp};
-use crate::try_observers;
 use crate::writer::{BitsWriter, BitstreamWriter};
 
 impl<'a, R, W> DemoWriter<'a, R, W>
@@ -78,16 +77,6 @@ where
                     )?;
                 }
                 EntityEvents::Deleted => {
-                    let parser = &mut self.parser;
-                    try_observers!(
-                        parser,
-                        TRACK_ENTITY,
-                        on_entity(
-                            &parser.context,
-                            EntityEvents::Deleted,
-                            &parser.context.entities.entities_vec[index]
-                        )
-                    )?;
                     self.parser.context.entities.entities_vec[index].index = u32::MAX;
                 }
             }
@@ -120,34 +109,14 @@ where
             .get_by_id_rc(class_id as usize)
             .clone();
 
-        let mut entity = Entity::default();
-        entity.index = index as u32;
-        entity.serial = serial;
-        entity.class = class;
+        let mut entity = Entity {
+            index: index as u32,
+            serial,
+            class,
+            ..Default::default()
+        };
 
         let changed = if self.should_rewrite_entity(EntityEvents::Created, &entity) {
-            if self.track_entity_state {
-                entity.state = self
-                    .parser
-                    .context
-                    .baselines
-                    .states
-                    .entry(class_id)
-                    .or_insert_with(|| {
-                        let mut state = FieldState::default();
-                        if let Some(baseline) =
-                            self.parser.context.baselines.baselines.get(&class_id)
-                        {
-                            self.parser.field_reader.read_fields(
-                                &mut SliceReader::new(baseline.as_ref()),
-                                &entity.class.serializer,
-                                &mut state,
-                            );
-                        }
-                        state
-                    })
-                    .clone();
-            }
             self.rewrite_fields(
                 reader,
                 writer,
@@ -161,17 +130,6 @@ where
             false
         };
         self.parser.context.entities.entities_vec[index] = entity;
-
-        let parser = &mut self.parser;
-        try_observers!(
-            parser,
-            TRACK_ENTITY,
-            on_entity(
-                &parser.context,
-                EntityEvents::Created,
-                &parser.context.entities.entities_vec[index]
-            )
-        )?;
 
         Ok(changed)
     }
@@ -199,17 +157,6 @@ where
             false
         };
         self.parser.context.entities.entities_vec[index] = entity;
-
-        let parser = &mut self.parser;
-        try_observers!(
-            parser,
-            TRACK_ENTITY,
-            on_entity(
-                &parser.context,
-                EntityEvents::Updated,
-                &parser.context.entities.entities_vec[index]
-            )
-        )?;
 
         Ok(changed)
     }
@@ -283,9 +230,6 @@ where
 
             if let Some(next_value) = replacement {
                 decoder.encode(writer, &next_value)?;
-                if self.track_entity_state {
-                    entity.state.set(&fp, next_value);
-                }
                 changed = true;
             } else {
                 copy_original_bits(
@@ -294,9 +238,6 @@ where
                     value_end - value_start,
                     writer,
                 )?;
-                if self.track_entity_state {
-                    entity.state.set(&fp, value);
-                }
             }
         }
 

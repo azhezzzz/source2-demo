@@ -267,13 +267,17 @@ impl Skip for VectorDecoder {
 
 impl Encode for VectorDecoder {
     fn encode(&self, writer: &mut BitstreamWriter<'_>, value: &FieldValue) -> io::Result<()> {
+        let decoder = Float32Decoder {
+            properties: self.properties,
+        };
+
         match self.dimensions {
             2 => {
                 let v: [f32; 2] = value
                     .try_into()
                     .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "expected vec2"))?;
-                writer.write_f32(v[0])?;
-                writer.write_f32(v[1])
+                decoder.encode(writer, &FieldValue::Float(v[0]))?;
+                decoder.encode(writer, &FieldValue::Float(v[1]))
             }
             3 => {
                 if self.properties.encoder == Some(FieldEncoder::Normal) {
@@ -285,19 +289,19 @@ impl Encode for VectorDecoder {
                     let v: [f32; 3] = value.try_into().map_err(|_| {
                         io::Error::new(io::ErrorKind::InvalidInput, "expected vec3")
                     })?;
-                    writer.write_f32(v[0])?;
-                    writer.write_f32(v[1])?;
-                    writer.write_f32(v[2])
+                    decoder.encode(writer, &FieldValue::Float(v[0]))?;
+                    decoder.encode(writer, &FieldValue::Float(v[1]))?;
+                    decoder.encode(writer, &FieldValue::Float(v[2]))
                 }
             }
             4 => {
                 let v: [f32; 4] = value
                     .try_into()
                     .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "expected vec4"))?;
-                writer.write_f32(v[0])?;
-                writer.write_f32(v[1])?;
-                writer.write_f32(v[2])?;
-                writer.write_f32(v[3])
+                decoder.encode(writer, &FieldValue::Float(v[0]))?;
+                decoder.encode(writer, &FieldValue::Float(v[1]))?;
+                decoder.encode(writer, &FieldValue::Float(v[2]))?;
+                decoder.encode(writer, &FieldValue::Float(v[3]))
             }
             _ => unreachable!("Invalid vector dimension: {}", self.dimensions),
         }

@@ -15,7 +15,7 @@ use crate::proto::{
     CDemoStringTables, CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, EDemoCommands,
 };
 use crate::reader::{BitsReader, MessageReader};
-use crate::string_table::{PackedStringTableState, StringTableEntry};
+use crate::string_table::{PackedStringTableState, StringTableEntryUpdate};
 use std::io::{Seek, Write};
 
 use raw::RawDemoMessage;
@@ -121,7 +121,7 @@ where
     /// and binary value.
     pub fn set_string_table_entry_rewriter<F>(&mut self, rewriter: F)
     where
-        F: FnMut(u32, &str, &mut StringTableEntry) -> Result<(), ParserError> + 'a,
+        F: FnMut(u32, &str, &mut StringTableEntryUpdate) -> Result<(), ParserError> + 'a,
     {
         self.string_table_entry_rewriter = Some(Box::new(rewriter));
     }

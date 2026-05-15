@@ -68,7 +68,7 @@ mod rewrite;
 mod row;
 
 pub use container::*;
-pub use rewrite::StringTableEntry;
+pub use rewrite::StringTableEntryUpdate;
 pub use row::*;
 
 pub(crate) use rewrite::{

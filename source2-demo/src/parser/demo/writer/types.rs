@@ -4,7 +4,7 @@ use crate::error::ParserError;
 use crate::proto::{
     CDemoStringTables, CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, EDemoCommands, Message,
 };
-use crate::string_table::StringTableEntry;
+use crate::string_table::StringTableEntryUpdate;
 
 /// Outcome for a demo message rewrite operation.
 pub enum MessageRewrite {
@@ -98,7 +98,7 @@ pub type StringTableRewriter<'a> =
 
 /// Callback for decoded string table entry rewrite decisions.
 pub type StringTableEntryRewriter<'a> =
-    dyn FnMut(u32, &str, &mut StringTableEntry) -> Result<(), ParserError> + 'a;
+    dyn FnMut(u32, &str, &mut StringTableEntryUpdate) -> Result<(), ParserError> + 'a;
 
 /// Callback for svc create string table rewrite decisions.
 pub type SvcCreateStringTableRewriter<'a> =

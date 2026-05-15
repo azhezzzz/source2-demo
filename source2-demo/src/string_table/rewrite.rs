@@ -3,16 +3,16 @@ use crate::proto::{CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable};
 use crate::reader::{BitsReader, SliceReader};
 use crate::writer::{BitsWriter, BitstreamWriter};
 
-/// A mutable string table entry passed to demo rewrite hooks.
+/// A mutable string table entry update passed to demo rewrite hooks.
 #[derive(Clone, Debug)]
-pub struct StringTableEntry {
+pub struct StringTableEntryUpdate {
     index: i32,
     key: Option<String>,
     value: Option<Vec<u8>>,
     value_compressed: bool,
 }
 
-impl StringTableEntry {
+impl StringTableEntryUpdate {
     pub(crate) fn new(index: i32, key: Option<String>, value: Option<Vec<u8>>) -> Self {
         Self {
             index,
@@ -137,7 +137,7 @@ impl PackedStringTableState {
         mut rewrite: F,
     ) -> Result<Option<Vec<u8>>, ParserError>
     where
-        F: FnMut(&mut StringTableEntry) -> Result<(), ParserError>,
+        F: FnMut(&mut StringTableEntryUpdate) -> Result<(), ParserError>,
     {
         let entries = self.decode_entries(data, num_entries)?;
         let mut changed = false;
@@ -163,7 +163,7 @@ impl PackedStringTableState {
         &mut self,
         data: &[u8],
         num_entries: i32,
-    ) -> Result<Vec<StringTableEntry>, ParserError> {
+    ) -> Result<Vec<StringTableEntryUpdate>, ParserError> {
         let mut reader = SliceReader::new(data);
         let mut index = -1;
         let mut delta_pos = 0;
@@ -221,7 +221,7 @@ impl PackedStringTableState {
                 }
             });
 
-            entries.push(StringTableEntry::new_with_compression(
+            entries.push(StringTableEntryUpdate::new_with_compression(
                 index,
                 key,
                 value,
@@ -239,7 +239,7 @@ pub(crate) fn rewrite_create_string_table<F>(
     rewrite: F,
 ) -> Result<bool, ParserError>
 where
-    F: FnMut(&mut StringTableEntry) -> Result<(), ParserError>,
+    F: FnMut(&mut StringTableEntryUpdate) -> Result<(), ParserError>,
 {
     let data = if msg.data_compressed() {
         snap::raw::Decoder::new().decompress_vec(msg.string_data())?
@@ -267,7 +267,7 @@ pub(crate) fn rewrite_update_string_table<F>(
     rewrite: F,
 ) -> Result<bool, ParserError>
 where
-    F: FnMut(&mut StringTableEntry) -> Result<(), ParserError>,
+    F: FnMut(&mut StringTableEntryUpdate) -> Result<(), ParserError>,
 {
     let Some(rewritten) = state.rewrite(msg.string_data(), msg.num_changed_entries(), rewrite)?
     else {
@@ -283,12 +283,13 @@ pub(crate) fn rewrite_demo_string_table_items<F>(
     mut rewrite: F,
 ) -> Result<bool, ParserError>
 where
-    F: FnMut(&mut StringTableEntry) -> Result<(), ParserError>,
+    F: FnMut(&mut StringTableEntryUpdate) -> Result<(), ParserError>,
 {
     let mut changed = false;
 
     for (index, item) in items.iter_mut().enumerate() {
-        let mut entry = StringTableEntry::new(index as i32, item.str.clone(), item.data.clone());
+        let mut entry =
+            StringTableEntryUpdate::new(index as i32, item.str.clone(), item.data.clone());
         let before_key = entry.key.clone();
         let before_value = entry.value.clone();
         rewrite(&mut entry)?;
@@ -305,7 +306,7 @@ where
 }
 
 fn encode_entries(
-    entries: &[StringTableEntry],
+    entries: &[StringTableEntryUpdate],
     format: PackedStringTableFormat,
 ) -> Result<Vec<u8>, ParserError> {
     let mut out = Vec::new();

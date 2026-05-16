@@ -2,7 +2,8 @@
 //!
 //! # Procedural Macros for Source 2 Replay Parser
 //!
-//! This crate provides procedural macros that simplify implementing the Observer trait.
+//! This crate provides procedural macros that simplify implementing the `Observer`
+//! and `DemoRewriter` traits.
 //!
 //! ## Overview
 //!
@@ -30,6 +31,32 @@
 //!     fn on_tick(&mut self, ctx: &Context) -> ObserverResult {
 //!         println!("Tick: {}", ctx.tick());
 //!         Ok(())
+//!     }
+//! }
+//! ```
+//!
+//! ### `#[rewriter]` - Demo writer implementation macro
+//!
+//! Automatically implements the `DemoRewriter` trait. Packet message handlers can
+//! either receive the raw packet payload or a decoded protobuf message. The
+//! protobuf form infers the packet id from the message type, just like
+//! `#[on_message]`.
+//!
+//! ```no_run
+//! # use source2_demo::error::ParserError;
+//! # use source2_demo::prelude::*;
+//! # use source2_demo::proto::CDotaUserMsgChatMessage;
+//! # use source2_demo::writer::*;
+//! struct RemoveChat;
+//!
+//! #[rewriter]
+//! impl RemoveChat {
+//!     #[rewrite_packet_message]
+//!     fn remove_chat(
+//!         &mut self,
+//!         _message: CDotaUserMsgChatMessage,
+//!     ) -> Result<MessageRewrite, ParserError> {
+//!         Ok(MessageRewrite::Drop)
 //!     }
 //! }
 //! ```
@@ -778,6 +805,245 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(ret)
 }
 
+/// Implements the `DemoRewriter` trait for your struct.
+///
+/// Apply this to an inherent `impl` block and mark methods with writer callback
+/// attributes such as `#[rewrite_packet_message]`,
+/// `#[rewrite_string_table_entry]`, `#[replace_entity_field]`, and
+/// `#[should_rewrite_entity]`.
+///
+/// Handler methods should use the same return type as the corresponding
+/// `DemoRewriter` callback.
+#[proc_macro_attribute]
+pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as ItemImpl);
+    let struct_name = &input.self_ty;
+
+    let mut interests = quote!(::source2_demo::writer::RewriteInterests::empty());
+    macro_rules! add_flag {
+        ($flag:ident) => {
+            interests = quote!(#interests | ::source2_demo::writer::RewriteInterests::$flag);
+        };
+    }
+
+    let mut rewrite_demo_message_body = quote!();
+    let mut rewrite_packet_message_body = quote!();
+    let mut rewrite_packet_messages_body = quote!();
+    let mut rewrite_demo_string_tables_body = quote!();
+    let mut rewrite_string_table_entry_body = quote!();
+    let mut rewrite_svc_create_string_table_body = quote!();
+    let mut rewrite_svc_update_string_table_body = quote!();
+    let mut replace_entity_field_body = quote!();
+    let mut should_rewrite_entity_body = quote!();
+
+    for item in &input.items {
+        let syn::ImplItem::Fn(method) = item else {
+            continue;
+        };
+
+        let method_name = method.sig.ident.clone();
+        for attr in &method.attrs {
+            let Some(ident) = attr.path().get_ident() else {
+                continue;
+            };
+
+            match ident.to_string().as_str() {
+                "rewrite_demo_message" => {
+                    add_flag!(DEMO_MESSAGE);
+                    rewrite_demo_message_body.extend(quote! {
+                        match self.#method_name(tick, msg_type, payload)? {
+                            ::source2_demo::writer::MessageRewrite::Keep => {}
+                            rewrite => return Ok(rewrite),
+                        }
+                    });
+                }
+                "rewrite_packet_message" => {
+                    add_flag!(PACKET_MESSAGE);
+                    let (first_arg_type, _) = get_arg_type(method, 1);
+                    let first_arg_type_string = first_arg_type.to_token_stream().to_string();
+
+                    if first_arg_type_string == "u32" {
+                        let (arg_type, is_ref, is_mut_ref) = get_arg_type_details(method, 2);
+                        if arg_type.to_token_stream().to_string() == "i32" {
+                            rewrite_packet_message_body.extend(quote! {
+                                match self.#method_name(tick, msg_type, payload)? {
+                                    ::source2_demo::writer::MessageRewrite::Keep => {}
+                                    rewrite => return Ok(rewrite),
+                                }
+                            });
+                        } else {
+                            extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, &method_name, &arg_type, is_ref, is_mut_ref, quote! { tick });
+                        }
+                    } else if first_arg_type_string == "i32" {
+                        rewrite_packet_message_body.extend(quote! {
+                            match self.#method_name(tick, msg_type, payload)? {
+                                ::source2_demo::writer::MessageRewrite::Keep => {}
+                                rewrite => return Ok(rewrite),
+                            }
+                        });
+                    } else {
+                        let (arg_type, is_ref, is_mut_ref) = get_arg_type_details(method, 1);
+                        extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, &method_name, &arg_type, is_ref, is_mut_ref, quote! {});
+                    }
+                }
+                "rewrite_packet_messages" => {
+                    add_flag!(PACKET_MESSAGES);
+                    rewrite_packet_messages_body.extend(quote! {
+                        self.#method_name(tick, messages)?;
+                    });
+                }
+                "rewrite_demo_string_tables" => {
+                    add_flag!(DEMO_STRING_TABLES);
+                    rewrite_demo_string_tables_body.extend(quote! {
+                        match self.#method_name(tick, message)? {
+                            ::source2_demo::writer::MessageRewrite::Keep => {}
+                            rewrite => return Ok(rewrite),
+                        }
+                    });
+                }
+                "rewrite_string_table_entry" => {
+                    add_flag!(STRING_TABLE_ENTRIES);
+                    rewrite_string_table_entry_body.extend(quote! {
+                        self.#method_name(tick, table_name, entry)?;
+                    });
+                }
+                "rewrite_svc_create_string_table" => {
+                    add_flag!(SVC_CREATE_STRING_TABLE);
+                    rewrite_svc_create_string_table_body.extend(quote! {
+                        match self.#method_name(tick, message)? {
+                            ::source2_demo::writer::MessageRewrite::Keep => {}
+                            rewrite => return Ok(rewrite),
+                        }
+                    });
+                }
+                "rewrite_svc_update_string_table" => {
+                    add_flag!(SVC_UPDATE_STRING_TABLE);
+                    rewrite_svc_update_string_table_body.extend(quote! {
+                        match self.#method_name(tick, message)? {
+                            ::source2_demo::writer::MessageRewrite::Keep => {}
+                            rewrite => return Ok(rewrite),
+                        }
+                    });
+                }
+                "replace_entity_field" => {
+                    add_flag!(ENTITY_FIELDS);
+                    replace_entity_field_body.extend(quote! {
+                        if let Some(value) = self.#method_name(event, entity, field_name, value) {
+                            return Some(value);
+                        }
+                    });
+                }
+                "should_rewrite_entity" => {
+                    add_flag!(ENTITY_FIELDS);
+                    should_rewrite_entity_body.extend(quote! {
+                        if !self.#method_name(event, entity) {
+                            return false;
+                        }
+                    });
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let ret = quote! {
+        impl ::source2_demo::writer::DemoRewriter for #struct_name {
+            fn interests(&self) -> ::source2_demo::writer::RewriteInterests {
+                #interests
+            }
+
+            fn rewrite_demo_message(
+                &mut self,
+                tick: u32,
+                msg_type: ::source2_demo::proto::EDemoCommands,
+                payload: &[u8],
+            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
+                #rewrite_demo_message_body
+                Ok(::source2_demo::writer::MessageRewrite::Keep)
+            }
+
+            fn rewrite_packet_message(
+                &mut self,
+                tick: u32,
+                msg_type: i32,
+                payload: &[u8],
+            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
+                #rewrite_packet_message_body
+                Ok(::source2_demo::writer::MessageRewrite::Keep)
+            }
+
+            fn rewrite_packet_messages(
+                &mut self,
+                tick: u32,
+                messages: &mut Vec<::source2_demo::writer::PacketMessage>,
+            ) -> Result<(), ::source2_demo::error::ParserError> {
+                #rewrite_packet_messages_body
+                Ok(())
+            }
+
+            fn rewrite_demo_string_tables(
+                &mut self,
+                tick: u32,
+                message: &mut ::source2_demo::proto::CDemoStringTables,
+            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
+                #rewrite_demo_string_tables_body
+                Ok(::source2_demo::writer::MessageRewrite::Keep)
+            }
+
+            fn rewrite_string_table_entry(
+                &mut self,
+                tick: u32,
+                table_name: &str,
+                entry: &mut ::source2_demo::writer::StringTableEntryUpdate,
+            ) -> Result<(), ::source2_demo::error::ParserError> {
+                #rewrite_string_table_entry_body
+                Ok(())
+            }
+
+            fn rewrite_svc_create_string_table(
+                &mut self,
+                tick: u32,
+                message: &mut ::source2_demo::proto::CSvcMsgCreateStringTable,
+            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
+                #rewrite_svc_create_string_table_body
+                Ok(::source2_demo::writer::MessageRewrite::Keep)
+            }
+
+            fn rewrite_svc_update_string_table(
+                &mut self,
+                tick: u32,
+                message: &mut ::source2_demo::proto::CSvcMsgUpdateStringTable,
+            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
+                #rewrite_svc_update_string_table_body
+                Ok(::source2_demo::writer::MessageRewrite::Keep)
+            }
+
+            fn replace_entity_field(
+                &mut self,
+                event: ::source2_demo::EntityEvents,
+                entity: &::source2_demo::Entity,
+                field_name: &str,
+                value: &::source2_demo::FieldValue,
+            ) -> Option<::source2_demo::FieldValue> {
+                #replace_entity_field_body
+                None
+            }
+
+            fn should_rewrite_entity(
+                &mut self,
+                event: ::source2_demo::EntityEvents,
+                entity: &::source2_demo::Entity,
+            ) -> bool {
+                #should_rewrite_entity_body
+                true
+            }
+        }
+        #input
+    };
+
+    TokenStream::from(ret)
+}
+
 fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
     if let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(n) {
         if let Type::Reference(x) = pat_type.ty.as_ref() {
@@ -787,6 +1053,64 @@ fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
         }
     } else {
         panic!("Expected argument")
+    }
+}
+
+fn get_arg_type_details(method: &syn::ImplItemFn, n: usize) -> (Type, bool, bool) {
+    if let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(n) {
+        if let Type::Reference(reference) = pat_type.ty.as_ref() {
+            (*reference.elem.clone(), true, reference.mutability.is_some())
+        } else {
+            (*pat_type.ty.clone(), false, false)
+        }
+    } else {
+        panic!("Expected argument")
+    }
+}
+
+fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, method_name: &Ident, arg_type: &Type, is_ref: bool, is_mut_ref: bool, prefix_arg: proc_macro2::TokenStream) {
+    let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
+    let message_arg = if is_ref {
+        if is_mut_ref {
+            quote! { &mut message }
+        } else {
+            quote! { &message }
+        }
+    } else {
+        quote! { message }
+    };
+    let method_args = if prefix_arg.is_empty() {
+        quote! { #message_arg }
+    } else {
+        quote! { #prefix_arg, #message_arg }
+    };
+
+    if is_ref {
+        body.extend(quote! {
+            if msg_type == #enum_type as i32 {
+                let mut message = <#arg_type as ::source2_demo::proto::Message>::decode(payload)?;
+                match self.#method_name(#method_args)? {
+                    ::source2_demo::writer::MessageRewrite::Keep => {}
+                    ::source2_demo::writer::MessageRewrite::Rewrite => {
+                        return Ok(::source2_demo::writer::MessageRewrite::Replace(
+                            ::source2_demo::proto::Message::encode_to_vec(&message),
+                        ));
+                    }
+                    rewrite => return Ok(rewrite),
+                }
+            }
+        });
+    } else {
+        body.extend(quote! {
+            if msg_type == #enum_type as i32 {
+                let message = <#arg_type as ::source2_demo::proto::Message>::decode(payload)?;
+                match self.#method_name(#method_args)? {
+                    ::source2_demo::writer::MessageRewrite::Keep
+                    | ::source2_demo::writer::MessageRewrite::Rewrite => {}
+                    rewrite => return Ok(rewrite),
+                }
+            }
+        });
     }
 }
 
@@ -857,6 +1181,60 @@ fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
 /// ```
 #[proc_macro_attribute]
 pub fn on_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as an outer demo message rewriter.
+#[proc_macro_attribute]
+pub fn rewrite_demo_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as a packet message rewriter.
+#[proc_macro_attribute]
+pub fn rewrite_packet_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as a packet message list rewriter.
+#[proc_macro_attribute]
+pub fn rewrite_packet_messages(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as a demo string table rewriter.
+#[proc_macro_attribute]
+pub fn rewrite_demo_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as a string table entry rewriter.
+#[proc_macro_attribute]
+pub fn rewrite_string_table_entry(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as an `svc_CreateStringTable` rewriter.
+#[proc_macro_attribute]
+pub fn rewrite_svc_create_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as an `svc_UpdateStringTable` rewriter.
+#[proc_macro_attribute]
+pub fn rewrite_svc_update_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as an entity field replacer.
+#[proc_macro_attribute]
+pub fn replace_entity_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a `#[rewriter]` method as an entity rewrite filter.
+#[proc_macro_attribute]
+pub fn should_rewrite_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 

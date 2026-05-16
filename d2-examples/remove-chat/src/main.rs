@@ -1,29 +1,20 @@
 use source2_demo::error::ParserError;
 use source2_demo::prelude::*;
+use source2_demo::proto::CDotaUserMsgChatMessage;
 use source2_demo::writer::*;
 
 use std::fs::File;
 
 struct RemoveChat;
 
-impl DemoRewriter for RemoveChat {
-    fn interests(&self) -> RewriteInterests {
-        RewriteInterests::PACKET_MESSAGE
-    }
-
-    fn rewrite_packet_message(
+#[rewriter]
+impl RemoveChat {
+    #[rewrite_packet_message]
+    fn remove_chat(
         &mut self,
-        _tick: u32,
-        msg_type: i32,
-        _payload: &[u8],
+        _message: CDotaUserMsgChatMessage,
     ) -> Result<MessageRewrite, ParserError> {
-        if let Ok(user_msg) = EDotaUserMessages::try_from(msg_type) {
-            if user_msg == EDotaUserMessages::DotaUmChatMessage {
-                return Ok(MessageRewrite::Drop);
-            }
-        }
-
-        Ok(MessageRewrite::Keep)
+        Ok(MessageRewrite::Drop)
     }
 }
 

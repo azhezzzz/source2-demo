@@ -14,21 +14,23 @@ where
         &mut self,
         msg: &mut CDemoStringTables,
         replacer: &mut EntityFieldReplacer<'_>,
-    ) -> Result<(), ParserError> {
+    ) -> Result<bool, ParserError> {
+        let mut changed = false;
         for table in msg.tables.iter_mut() {
             if table.table_name() != "instancebaseline" {
                 continue;
             }
-            self.rewrite_instance_baseline_items(&mut table.items, replacer)?;
+            changed |= self.rewrite_instance_baseline_items(&mut table.items, replacer)?;
         }
-        Ok(())
+        Ok(changed)
     }
 
     pub(crate) fn rewrite_instance_baseline_items(
         &mut self,
         items: &mut [crate::proto::c_demo_string_tables::ItemsT],
         replacer: &mut EntityFieldReplacer<'_>,
-    ) -> Result<(), ParserError> {
+    ) -> Result<bool, ParserError> {
+        let mut changed = false;
         for item in items.iter_mut() {
             let Some(class_id) = item
                 .str
@@ -47,9 +49,10 @@ where
                 self.rewrite_instance_baseline_data(class_id, data, replacer)?
             {
                 item.data = Some(rewritten);
+                changed = true;
             }
         }
-        Ok(())
+        Ok(changed)
     }
 
     pub(crate) fn rewrite_instance_baseline_data(

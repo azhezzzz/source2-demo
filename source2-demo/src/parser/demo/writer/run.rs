@@ -141,12 +141,12 @@ where
                         .map(Ok)
                         .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
                     let mut msg = CDemoStringTables::decode(payload.as_slice())?;
+                    let mut changed = false;
                     if let Some(mut replacer) = self.entity_replacer.take() {
-                        self.rewrite_instance_baselines(&mut msg, &mut replacer)?;
+                        changed |= self.rewrite_instance_baselines(&mut msg, &mut replacer)?;
                         self.entity_replacer = Some(replacer);
                     }
-                    let mut changed =
-                        self.rewrite_demo_string_table_entries(message.tick, &mut msg)?;
+                    changed |= self.rewrite_demo_string_table_entries(message.tick, &mut msg)?;
                     let mut out_payload: Option<Vec<u8>> = None;
                     if let Some(rewriter) = self.string_table_rewriter.as_mut() {
                         match rewriter(message.tick, &mut msg)? {

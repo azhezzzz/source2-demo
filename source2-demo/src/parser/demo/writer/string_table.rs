@@ -2,7 +2,7 @@ use super::*;
 use crate::proto::Message;
 use crate::string_table::{
     rewrite_create_string_table, rewrite_demo_string_table_items, rewrite_update_string_table,
-    PackedStringTableFormat, PackedStringTableState,
+    PackedStringTableFormat, PackedStringTableState, StringTableEntryUpdate,
 };
 
 impl<'a, R, W> DemoWriter<'a, R, W>
@@ -16,7 +16,7 @@ where
         mut msg: CDemoStringTables,
     ) -> Result<Option<CDemoStringTables>, ParserError> {
         if let Some(mut replacer) = self.entity_replacer.take() {
-            self.rewrite_instance_baselines(&mut msg, &mut replacer)?;
+            let _ = self.rewrite_instance_baselines(&mut msg, &mut replacer)?;
             self.entity_replacer = Some(replacer);
         }
         self.rewrite_demo_string_table_entries(tick, &mut msg)?;

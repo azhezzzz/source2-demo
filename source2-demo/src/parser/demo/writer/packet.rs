@@ -49,7 +49,8 @@ where
                             }
                         }
                         SvcMessages::SvcCreateStringTable
-                            if self.string_table_entry_rewriter.is_some()
+                            if self.entity_replacer.is_some()
+                                || self.string_table_entry_rewriter.is_some()
                                 || self.svc_create_string_table_rewriter.is_some() =>
                         {
                             let mut msg = CSvcMsgCreateStringTable::decode(msg_payload.as_slice())?;
@@ -66,7 +67,8 @@ where
                                     MessageRewrite::Replace(bytes) => {
                                         changed = false;
                                         if process_state
-                                            && self.string_table_entry_rewriter.is_some()
+                                            && (self.entity_replacer.is_some()
+                                                || self.string_table_entry_rewriter.is_some())
                                         {
                                             msg =
                                                 CSvcMsgCreateStringTable::decode(bytes.as_slice())?;
@@ -75,7 +77,10 @@ where
                                     }
                                 }
                             }
-                            if process_state && self.string_table_entry_rewriter.is_some() {
+                            if process_state
+                                && (self.entity_replacer.is_some()
+                                    || self.string_table_entry_rewriter.is_some())
+                            {
                                 self.process_create_string_table(msg.clone())?;
                                 processed_state = true;
                             }
@@ -84,7 +89,8 @@ where
                             }
                         }
                         SvcMessages::SvcUpdateStringTable
-                            if self.string_table_entry_rewriter.is_some()
+                            if self.entity_replacer.is_some()
+                                || self.string_table_entry_rewriter.is_some()
                                 || self.svc_update_string_table_rewriter.is_some() =>
                         {
                             let mut msg = CSvcMsgUpdateStringTable::decode(msg_payload.as_slice())?;
@@ -101,7 +107,8 @@ where
                                     MessageRewrite::Replace(bytes) => {
                                         changed = false;
                                         if process_state
-                                            && self.string_table_entry_rewriter.is_some()
+                                            && (self.entity_replacer.is_some()
+                                                || self.string_table_entry_rewriter.is_some())
                                         {
                                             msg =
                                                 CSvcMsgUpdateStringTable::decode(bytes.as_slice())?;
@@ -110,7 +117,10 @@ where
                                     }
                                 }
                             }
-                            if process_state && self.string_table_entry_rewriter.is_some() {
+                            if process_state
+                                && (self.entity_replacer.is_some()
+                                    || self.string_table_entry_rewriter.is_some())
+                            {
                                 self.process_update_string_table(msg.clone())?;
                                 processed_state = true;
                             }

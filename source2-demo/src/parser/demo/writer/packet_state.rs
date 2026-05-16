@@ -23,16 +23,34 @@ where
             SvcMessages::SvcServerInfo if self.entity_replacer.is_some() => {
                 self.process_server_info(CSvcMsgServerInfo::decode(msg_buf)?);
             }
-            SvcMessages::SvcCreateStringTable if self.string_table_entry_rewriter.is_some() => {
+            SvcMessages::SvcCreateStringTable
+                if self.entity_replacer.is_some() || self.string_table_entry_rewriter.is_some() =>
+            {
                 self.process_create_string_table(CSvcMsgCreateStringTable::decode(msg_buf)?)?;
             }
-            SvcMessages::SvcUpdateStringTable if self.string_table_entry_rewriter.is_some() => {
-                self.process_update_string_table(CSvcMsgUpdateStringTable::decode(msg_buf)?)?;
+            SvcMessages::SvcUpdateStringTable
+                if self.entity_replacer.is_some() || self.string_table_entry_rewriter.is_some() =>
+            {
+                let msg = CSvcMsgUpdateStringTable::decode(msg_buf)?;
+                if self.string_table_entry_rewriter.is_some()
+                    || self.is_instance_baseline_table(msg.table_id() as usize)
+                {
+                    self.process_update_string_table(msg)?;
+                }
             }
             _ => {}
         }
 
         Ok(())
+    }
+
+    fn is_instance_baseline_table(&self, table_id: usize) -> bool {
+        self.parser
+            .context
+            .string_tables
+            .tables
+            .get(table_id)
+            .is_some_and(|table| table.name() == "instancebaseline")
     }
 
     fn process_server_info(&mut self, server_info: CSvcMsgServerInfo) {

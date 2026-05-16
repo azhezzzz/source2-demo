@@ -19,15 +19,26 @@ where
         self.writer.write_all(&header)?;
         self.bytes_written = header.len() as u64;
 
-        while let Some(message) = self.read_next_raw_message()? {
+        'messages: while let Some(message) = self.read_next_raw_message()? {
             let mut payload = None;
-            if let Some(rewriter) = self.demo_rewriter.as_mut() {
-                let decoded = Self::decode_raw_payload(&message)?;
-                match rewriter(message.tick, message.msg_type, decoded.as_slice())? {
-                    MessageRewrite::Drop => continue,
-                    MessageRewrite::Replace(bytes) => payload = Some(bytes),
-                    MessageRewrite::Keep | MessageRewrite::Rewrite => payload = Some(decoded),
+            if self.has_rewriters(RewriteInterests::DEMO_MESSAGE) {
+                let mut decoded = Self::decode_raw_payload(&message)?;
+                for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                    rewriter
+                        .interests()
+                        .contains(RewriteInterests::DEMO_MESSAGE)
+                }) {
+                    match rewriter.rewrite_demo_message(
+                        message.tick,
+                        message.msg_type,
+                        decoded.as_slice(),
+                    )? {
+                        MessageRewrite::Drop => continue 'messages,
+                        MessageRewrite::Replace(bytes) => decoded = bytes,
+                        MessageRewrite::Keep | MessageRewrite::Rewrite => {}
+                    }
                 }
+                payload = Some(decoded);
             }
 
             match message.msg_type {
@@ -130,15 +141,18 @@ where
                     let payload = Self::materialize_payload(&mut payload, &message)?;
                     let mut msg = CDemoStringTables::decode(payload.as_slice())?;
                     let mut changed = false;
-                    if let Some(mut replacer) = self.entity_replacer.take() {
-                        changed |= self.rewrite_instance_baselines(&mut msg, &mut replacer)?;
-                        self.entity_replacer = Some(replacer);
+                    if self.rewrites_entity_fields() {
+                        changed |= self.rewrite_instance_baselines(&mut msg)?;
                     }
                     changed |= self.rewrite_demo_string_table_entries(message.tick, &mut msg)?;
                     let mut out_payload: Option<Vec<u8>> = None;
-                    if let Some(rewriter) = self.string_table_rewriter.as_mut() {
-                        match rewriter(message.tick, &mut msg)? {
-                            MessageRewrite::Drop => continue,
+                    for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                        rewriter
+                            .interests()
+                            .contains(RewriteInterests::DEMO_STRING_TABLES)
+                    }) {
+                        match rewriter.rewrite_demo_string_tables(message.tick, &mut msg)? {
+                            MessageRewrite::Drop => continue 'messages,
                             MessageRewrite::Keep => {}
                             MessageRewrite::Rewrite => {
                                 changed = false;

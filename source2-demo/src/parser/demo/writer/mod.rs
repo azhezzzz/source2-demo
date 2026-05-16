@@ -12,19 +12,13 @@ use crate::entity::field::FieldValue;
 use crate::entity::{Entity, EntityEvents};
 use crate::error::ParserError;
 use crate::parser::Parser;
-use crate::proto::{
-    CDemoStringTables, CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, EDemoCommands,
-};
 use crate::reader::{BitsReader, MessageReader, SeekableReader, SliceReader};
-use crate::string_table::{PackedStringTableState, StringTableEntryUpdate};
+use crate::string_table::PackedStringTableState;
 use std::io::{Seek, Write};
 
 use raw::RawDemoMessage;
 pub use types::{
-    rewrite_protobuf_message, DemoMessageRewriter, EntityFieldReplacer, EntityRewriteFilter,
-    MessageRewrite, PacketMessage, PacketMessageRewriter, PacketMessagesRewriter,
-    StringTableEntryRewriter, StringTableRewriter, SvcCreateStringTableRewriter,
-    SvcUpdateStringTableRewriter,
+    rewrite_protobuf_message, DemoRewriter, MessageRewrite, PacketMessage, RewriteInterests,
 };
 
 const INSTANCE_BASELINE_TABLE: &str = "instancebaseline";
@@ -41,16 +35,9 @@ where
 {
     parser: Parser<'a, R>,
     writer: W,
-    demo_rewriter: Option<Box<DemoMessageRewriter<'a>>>,
-    packet_rewriter: Option<Box<PacketMessageRewriter<'a>>>,
-    packet_messages_rewriter: Option<Box<PacketMessagesRewriter<'a>>>,
-    string_table_rewriter: Option<Box<StringTableRewriter<'a>>>,
-    string_table_entry_rewriter: Option<Box<StringTableEntryRewriter<'a>>>,
     string_table_rewrite_states: Vec<Option<PackedStringTableState>>,
-    svc_create_string_table_rewriter: Option<Box<SvcCreateStringTableRewriter<'a>>>,
-    svc_update_string_table_rewriter: Option<Box<SvcUpdateStringTableRewriter<'a>>>,
-    entity_replacer: Option<Box<EntityFieldReplacer<'a>>>,
-    entity_rewrite_filter: Option<Box<EntityRewriteFilter<'a>>>,
+    rewriters: Vec<Box<dyn DemoRewriter + 'a>>,
+    rewriter_interests: RewriteInterests,
     bytes_written: u64,
     file_info_offset: Option<u64>,
 }
@@ -65,121 +52,64 @@ where
         Self {
             parser,
             writer,
-            demo_rewriter: None,
-            packet_rewriter: None,
-            packet_messages_rewriter: None,
-            string_table_rewriter: None,
-            string_table_entry_rewriter: None,
             string_table_rewrite_states: Vec::new(),
-            svc_create_string_table_rewriter: None,
-            svc_update_string_table_rewriter: None,
-            entity_replacer: None,
-            entity_rewrite_filter: None,
+            rewriters: Vec::new(),
+            rewriter_interests: RewriteInterests::empty(),
             bytes_written: 0,
             file_info_offset: None,
         }
     }
 
-    /// Registers a hook that can rewrite outer demo message payloads.
-    pub fn set_demo_message_rewriter<F>(&mut self, rewriter: F)
-    where
-        F: FnMut(u32, EDemoCommands, &[u8]) -> Result<MessageRewrite, ParserError> + 'a,
-    {
-        self.demo_rewriter = Some(Box::new(rewriter));
-    }
-
-    /// Registers a hook that can rewrite one inner packet message payload at a
-    /// time.
-    pub fn set_packet_message_rewriter<F>(&mut self, rewriter: F)
-    where
-        F: FnMut(u32, i32, &[u8]) -> Result<MessageRewrite, ParserError> + 'a,
-    {
-        self.packet_rewriter = Some(Box::new(rewriter));
-    }
-
-    /// Registers a hook that can mutate the final list of messages inside each
-    /// packet after per-message rewrite hooks have run.
+    /// Registers a grouped demo rewriter.
     ///
-    /// Messages inserted by this hook are output-only; they are not processed
-    /// for writer metadata state.
-    pub fn set_packet_message_list_rewriter<F>(&mut self, rewriter: F)
+    /// Rewriters run in registration order. For message payload rewrites, each
+    /// rewriter sees the output of the previous rewriter.
+    pub fn register_rewriter<T>(&mut self, rewriter: T)
     where
-        F: FnMut(u32, &mut Vec<PacketMessage>) -> Result<(), ParserError> + 'a,
+        T: DemoRewriter + 'a,
     {
-        self.packet_messages_rewriter = Some(Box::new(rewriter));
-    }
-
-    /// Registers a hook that can rewrite outer demo string table messages.
-    pub fn set_demo_string_tables_rewriter<F>(&mut self, rewriter: F)
-    where
-        F: FnMut(u32, &mut CDemoStringTables) -> Result<MessageRewrite, ParserError> + 'a,
-    {
-        self.string_table_rewriter = Some(Box::new(rewriter));
-    }
-
-    /// Registers a hook that can rewrite decoded string table entry updates.
-    ///
-    /// This hook handles full `CDemoStringTables`, `svc_CreateStringTable`,
-    /// and `svc_UpdateStringTable` payloads. The callback receives the demo
-    /// tick, table name, and a mutable entry containing its table index, key,
-    /// and binary value.
-    pub fn set_string_table_entry_update_rewriter<F>(&mut self, rewriter: F)
-    where
-        F: FnMut(u32, &str, &mut StringTableEntryUpdate) -> Result<(), ParserError> + 'a,
-    {
-        self.string_table_entry_rewriter = Some(Box::new(rewriter));
-    }
-
-    /// Registers a hook that can rewrite svc create string table messages.
-    pub fn set_svc_create_string_table_rewriter<F>(&mut self, rewriter: F)
-    where
-        F: FnMut(u32, &mut CSvcMsgCreateStringTable) -> Result<MessageRewrite, ParserError> + 'a,
-    {
-        self.svc_create_string_table_rewriter = Some(Box::new(rewriter));
-    }
-
-    /// Registers a hook that can rewrite svc update string table messages.
-    pub fn set_svc_update_string_table_rewriter<F>(&mut self, rewriter: F)
-    where
-        F: FnMut(u32, &mut CSvcMsgUpdateStringTable) -> Result<MessageRewrite, ParserError> + 'a,
-    {
-        self.svc_update_string_table_rewriter = Some(Box::new(rewriter));
-    }
-
-    /// Registers a hook that can replace entity field values during rewrites.
-    pub fn set_entity_field_replacer<F>(&mut self, replacer: F)
-    where
-        F: FnMut(EntityEvents, &Entity, &str, &FieldValue) -> Option<FieldValue> + 'a,
-    {
-        self.entity_replacer = Some(Box::new(replacer));
-    }
-
-    /// Registers a predicate that limits which entities use the field
-    /// replacement path.
-    ///
-    /// Entities rejected by this filter keep their original field bits and do
-    /// not run replacement callbacks. The writer only decodes enough field
-    /// structure to continue reading the packet. Instance baselines rejected by
-    /// this filter are left untouched without decoding their fields.
-    pub fn set_entity_rewrite_filter<F>(&mut self, filter: F)
-    where
-        F: FnMut(EntityEvents, &Entity) -> bool + 'a,
-    {
-        self.entity_rewrite_filter = Some(Box::new(filter));
+        self.rewriter_interests |= rewriter.interests();
+        self.rewriters.push(Box::new(rewriter));
     }
 
     pub(crate) fn should_rewrite_entity(&mut self, event: EntityEvents, entity: &Entity) -> bool {
-        self.entity_rewrite_filter
-            .as_mut()
-            .map_or(true, |filter| filter(event, entity))
+        self.rewriters
+            .iter_mut()
+            .filter(|rewriter| {
+                rewriter
+                    .interests()
+                    .contains(RewriteInterests::ENTITY_FIELDS)
+            })
+            .all(|rewriter| rewriter.should_rewrite_entity(event, entity))
+    }
+
+    pub(crate) fn replace_entity_field(
+        &mut self,
+        event: EntityEvents,
+        entity: &Entity,
+        field_name: &str,
+        value: &FieldValue,
+    ) -> Option<FieldValue> {
+        self.rewriters
+            .iter_mut()
+            .filter(|rewriter| {
+                rewriter
+                    .interests()
+                    .contains(RewriteInterests::ENTITY_FIELDS)
+            })
+            .find_map(|rewriter| rewriter.replace_entity_field(event, entity, field_name, value))
+    }
+
+    fn has_rewriters(&self, interests: RewriteInterests) -> bool {
+        self.rewriter_interests.intersects(interests)
     }
 
     fn rewrites_entity_fields(&self) -> bool {
-        self.entity_replacer.is_some()
+        self.has_rewriters(RewriteInterests::ENTITY_FIELDS)
     }
 
     fn rewrites_string_table_entries(&self) -> bool {
-        self.string_table_entry_rewriter.is_some()
+        self.has_rewriters(RewriteInterests::STRING_TABLE_ENTRIES)
     }
 
     fn needs_string_table_context(&self) -> bool {
@@ -187,18 +117,21 @@ where
     }
 
     fn needs_packet_scan(&self) -> bool {
-        self.packet_rewriter.is_some()
-            || self.packet_messages_rewriter.is_some()
-            || self.entity_replacer.is_some()
-            || self.string_table_entry_rewriter.is_some()
-            || self.svc_create_string_table_rewriter.is_some()
-            || self.svc_update_string_table_rewriter.is_some()
+        self.has_rewriters(RewriteInterests::PACKET_MESSAGE | RewriteInterests::PACKET_MESSAGES)
+            || self.rewrites_entity_fields()
+            || self.rewrites_string_table_entries()
+            || self.has_rewriters(
+                RewriteInterests::SVC_CREATE_STRING_TABLE
+                    | RewriteInterests::SVC_UPDATE_STRING_TABLE,
+            )
     }
 
     fn needs_svc_packet_scan(&self) -> bool {
         self.needs_string_table_context()
-            || self.svc_create_string_table_rewriter.is_some()
-            || self.svc_update_string_table_rewriter.is_some()
+            || self.has_rewriters(
+                RewriteInterests::SVC_CREATE_STRING_TABLE
+                    | RewriteInterests::SVC_UPDATE_STRING_TABLE,
+            )
     }
 
     fn needs_packet_state(&self) -> bool {
@@ -210,7 +143,8 @@ where
     }
 
     fn needs_demo_string_table_scan(&self) -> bool {
-        self.needs_string_table_context() || self.string_table_rewriter.is_some()
+        self.needs_string_table_context()
+            || self.has_rewriters(RewriteInterests::DEMO_STRING_TABLES)
     }
 
     fn needs_demo_string_table_state(&self) -> bool {

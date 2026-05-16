@@ -1,7 +1,31 @@
+use source2_demo::error::ParserError;
 use source2_demo::prelude::*;
 use source2_demo::writer::*;
 
 use std::fs::File;
+
+struct RemoveChat;
+
+impl DemoRewriter for RemoveChat {
+    fn interests(&self) -> RewriteInterests {
+        RewriteInterests::PACKET_MESSAGE
+    }
+
+    fn rewrite_packet_message(
+        &mut self,
+        _tick: u32,
+        msg_type: i32,
+        _payload: &[u8],
+    ) -> Result<MessageRewrite, ParserError> {
+        if let Ok(user_msg) = EDotaUserMessages::try_from(msg_type) {
+            if user_msg == EDotaUserMessages::DotaUmChatMessage {
+                return Ok(MessageRewrite::Drop);
+            }
+        }
+
+        Ok(MessageRewrite::Keep)
+    }
+}
 
 fn main() -> anyhow::Result<()> {
     let args = std::env::args().collect::<Vec<_>>();
@@ -17,16 +41,7 @@ fn main() -> anyhow::Result<()> {
     let output = File::create(output_path)?;
 
     let mut writer = DemoWriter::from_reader(input, output)?;
-
-    writer.set_packet_message_rewriter(|_tick, msg_type, _payload| {
-        if let Ok(user_msg) = EDotaUserMessages::try_from(msg_type) {
-            if user_msg == EDotaUserMessages::DotaUmChatMessage {
-                return Ok(MessageRewrite::Drop);
-            }
-        }
-
-        Ok(MessageRewrite::Keep)
-    });
+    writer.register_rewriter(RemoveChat);
 
     let start = std::time::Instant::now();
     writer.run()?;

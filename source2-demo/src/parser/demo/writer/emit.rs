@@ -1,4 +1,5 @@
 use super::*;
+use crate::proto::EDemoCommands;
 use crate::writer::{write_var_u32_to_buf, MessageWriter};
 use std::io::{SeekFrom, Write};
 

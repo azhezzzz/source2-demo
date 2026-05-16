@@ -1,5 +1,5 @@
 use super::*;
-use crate::proto::{Message, SvcMessages};
+use crate::proto::{CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, Message, SvcMessages};
 use crate::reader::{BitsReader, SliceReader};
 use crate::writer::{BitsWriter, BitstreamWriter};
 
@@ -17,15 +17,19 @@ where
         let mut reader = SliceReader::new(data);
         let mut messages = Vec::new();
 
-        while reader.remaining_bytes() != 0 {
+        'messages: while reader.remaining_bytes() != 0 {
             let msg_type = reader.read_ubit_var() as i32;
             let size = reader.read_var_u32();
             let msg_buf = reader.read_bytes(size);
 
             let mut msg_payload = msg_buf;
-            if let Some(packet_rewriter) = self.packet_rewriter.as_mut() {
-                match packet_rewriter(tick, msg_type, msg_payload.as_slice())? {
-                    MessageRewrite::Drop => continue,
+            for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                rewriter
+                    .interests()
+                    .contains(RewriteInterests::PACKET_MESSAGE)
+            }) {
+                match rewriter.rewrite_packet_message(tick, msg_type, msg_payload.as_slice())? {
+                    MessageRewrite::Drop => continue 'messages,
                     MessageRewrite::Replace(bytes) => msg_payload = bytes,
                     MessageRewrite::Keep | MessageRewrite::Rewrite => {}
                 }
@@ -39,28 +43,29 @@ where
 
                 if let Ok(svc_msg) = SvcMessages::try_from(msg_type) {
                     match svc_msg {
-                        SvcMessages::SvcPacketEntities => {
-                            if let Some(mut replacer) = self.entity_replacer.take() {
-                                if let Some(rewritten) = self.rewrite_svc_packet_entities(
-                                    msg_payload.as_slice(),
-                                    &mut replacer,
-                                )? {
-                                    msg_payload = rewritten;
-                                }
-                                self.entity_replacer = Some(replacer);
-                                handled_entity = true;
+                        SvcMessages::SvcPacketEntities if self.rewrites_entity_fields() => {
+                            if let Some(rewritten) =
+                                self.rewrite_svc_packet_entities(msg_payload.as_slice())?
+                            {
+                                msg_payload = rewritten;
                             }
+                            handled_entity = true;
                         }
                         SvcMessages::SvcCreateStringTable
                             if needs_string_table_context
-                                || self.svc_create_string_table_rewriter.is_some() =>
+                                || self
+                                    .has_rewriters(RewriteInterests::SVC_CREATE_STRING_TABLE) =>
                         {
                             let mut msg = CSvcMsgCreateStringTable::decode(msg_payload.as_slice())?;
                             let mut changed =
                                 self.rewrite_create_string_table_entries(tick, &mut msg)?;
-                            if let Some(rewriter) = self.svc_create_string_table_rewriter.as_mut() {
-                                match rewriter(tick, &mut msg)? {
-                                    MessageRewrite::Drop => continue,
+                            for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                                rewriter
+                                    .interests()
+                                    .contains(RewriteInterests::SVC_CREATE_STRING_TABLE)
+                            }) {
+                                match rewriter.rewrite_svc_create_string_table(tick, &mut msg)? {
+                                    MessageRewrite::Drop => continue 'messages,
                                     MessageRewrite::Keep => {}
                                     MessageRewrite::Rewrite => {
                                         changed = false;
@@ -86,14 +91,19 @@ where
                         }
                         SvcMessages::SvcUpdateStringTable
                             if needs_string_table_context
-                                || self.svc_update_string_table_rewriter.is_some() =>
+                                || self
+                                    .has_rewriters(RewriteInterests::SVC_UPDATE_STRING_TABLE) =>
                         {
                             let mut msg = CSvcMsgUpdateStringTable::decode(msg_payload.as_slice())?;
                             let mut changed =
                                 self.rewrite_update_string_table_entries(tick, &mut msg)?;
-                            if let Some(rewriter) = self.svc_update_string_table_rewriter.as_mut() {
-                                match rewriter(tick, &mut msg)? {
-                                    MessageRewrite::Drop => continue,
+                            for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                                rewriter
+                                    .interests()
+                                    .contains(RewriteInterests::SVC_UPDATE_STRING_TABLE)
+                            }) {
+                                match rewriter.rewrite_svc_update_string_table(tick, &mut msg)? {
+                                    MessageRewrite::Drop => continue 'messages,
                                     MessageRewrite::Keep => {}
                                     MessageRewrite::Rewrite => {
                                         changed = false;
@@ -129,8 +139,12 @@ where
             messages.push(PacketMessage::new(msg_type, msg_payload));
         }
 
-        if let Some(rewriter) = self.packet_messages_rewriter.as_mut() {
-            rewriter(tick, &mut messages)?;
+        for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+            rewriter
+                .interests()
+                .contains(RewriteInterests::PACKET_MESSAGES)
+        }) {
+            rewriter.rewrite_packet_messages(tick, &mut messages)?;
         }
 
         let mut out = Vec::with_capacity(data.len());
@@ -179,17 +193,31 @@ mod tests {
         out
     }
 
+    struct AppendPacketMessage;
+
+    impl DemoRewriter for AppendPacketMessage {
+        fn interests(&self) -> RewriteInterests {
+            RewriteInterests::PACKET_MESSAGES
+        }
+
+        fn rewrite_packet_messages(
+            &mut self,
+            _tick: u32,
+            messages: &mut Vec<PacketMessage>,
+        ) -> Result<(), ParserError> {
+            messages.push(PacketMessage::new(11, [7, 8, 9]));
+            Ok(())
+        }
+    }
+
     #[test]
-    fn packet_messages_rewriter_can_append_message() {
+    fn registered_demo_rewriter_can_append_packet_message() {
         let replay = minimal_replay();
         let parser = Parser::from_slice(&replay).unwrap();
         let output = Cursor::new(Vec::new());
         let mut writer = DemoWriter::new(parser, output);
 
-        writer.set_packet_message_list_rewriter(|_tick, messages| {
-            messages.push(PacketMessage::new(9, [4, 5, 6]));
-            Ok(())
-        });
+        writer.register_rewriter(AppendPacketMessage);
 
         let input = packet_data(&[(7, &[1, 2, 3])]);
         let output = writer.rewrite_packet_data(0, &input, false).unwrap();
@@ -198,9 +226,9 @@ mod tests {
         assert_eq!(reader.read_ubit_var(), 7);
         assert_eq!(reader.read_var_u32(), 3);
         assert_eq!(reader.read_bytes(3), [1, 2, 3]);
-        assert_eq!(reader.read_ubit_var(), 9);
+        assert_eq!(reader.read_ubit_var(), 11);
         assert_eq!(reader.read_var_u32(), 3);
-        assert_eq!(reader.read_bytes(3), [4, 5, 6]);
+        assert_eq!(reader.read_bytes(3), [7, 8, 9]);
         assert_eq!(reader.remaining_bytes(), 0);
     }
 }

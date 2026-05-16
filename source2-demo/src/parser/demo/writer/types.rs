@@ -6,6 +6,32 @@ use crate::proto::{
 };
 use crate::string_table::StringTableEntryUpdate;
 
+bitflags::bitflags! {
+    /// Bitflags for declaring which rewrite callbacks a [`DemoRewriter`] uses.
+    ///
+    /// These flags let [`DemoWriter`](super::DemoWriter) skip expensive decoding
+    /// paths when no registered rewriter needs them.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    pub struct RewriteInterests: u32 {
+        /// Interest in outer demo command payload rewrites.
+        const DEMO_MESSAGE = 1 << 0;
+        /// Interest in individual packet message payload rewrites.
+        const PACKET_MESSAGE = 1 << 1;
+        /// Interest in mutating the final packet message list.
+        const PACKET_MESSAGES = 1 << 2;
+        /// Interest in outer `CDemoStringTables` rewrites.
+        const DEMO_STRING_TABLES = 1 << 3;
+        /// Interest in decoded string table entry updates.
+        const STRING_TABLE_ENTRIES = 1 << 4;
+        /// Interest in `svc_CreateStringTable` rewrites.
+        const SVC_CREATE_STRING_TABLE = 1 << 5;
+        /// Interest in `svc_UpdateStringTable` rewrites.
+        const SVC_UPDATE_STRING_TABLE = 1 << 6;
+        /// Interest in entity field replacement and entity rewrite filtering.
+        const ENTITY_FIELDS = 1 << 7;
+    }
+}
+
 /// Outcome for a demo message rewrite operation.
 pub enum MessageRewrite {
     /// Leave the message unchanged.
@@ -16,6 +42,107 @@ pub enum MessageRewrite {
     Replace(Vec<u8>),
     /// Drop the message entirely.
     Drop,
+}
+
+/// Trait for grouped demo rewrite behavior.
+///
+/// Implement this trait when a rewrite has state or spans several message
+/// types.
+#[allow(unused_variables)]
+pub trait DemoRewriter {
+    /// Declares which rewrite callbacks this rewriter wants to receive.
+    ///
+    /// Return an empty [`RewriteInterests`] to leave the demo unchanged.
+    fn interests(&self) -> RewriteInterests {
+        RewriteInterests::empty()
+    }
+
+    /// Rewrites an outer demo command payload.
+    fn rewrite_demo_message(
+        &mut self,
+        tick: u32,
+        msg_type: EDemoCommands,
+        payload: &[u8],
+    ) -> Result<MessageRewrite, ParserError> {
+        Ok(MessageRewrite::Keep)
+    }
+
+    /// Rewrites one packet message payload.
+    fn rewrite_packet_message(
+        &mut self,
+        tick: u32,
+        msg_type: i32,
+        payload: &[u8],
+    ) -> Result<MessageRewrite, ParserError> {
+        Ok(MessageRewrite::Keep)
+    }
+
+    /// Mutates the full packet message list after per-message rewrites.
+    ///
+    /// Messages inserted here are output-only; they are not processed for
+    /// writer metadata state.
+    fn rewrite_packet_messages(
+        &mut self,
+        tick: u32,
+        messages: &mut Vec<PacketMessage>,
+    ) -> Result<(), ParserError> {
+        Ok(())
+    }
+
+    /// Rewrites an outer demo string table payload after it has been decoded.
+    fn rewrite_demo_string_tables(
+        &mut self,
+        tick: u32,
+        message: &mut CDemoStringTables,
+    ) -> Result<MessageRewrite, ParserError> {
+        Ok(MessageRewrite::Keep)
+    }
+
+    /// Rewrites one decoded string table entry update.
+    fn rewrite_string_table_entry(
+        &mut self,
+        tick: u32,
+        table_name: &str,
+        entry: &mut StringTableEntryUpdate,
+    ) -> Result<(), ParserError> {
+        Ok(())
+    }
+
+    /// Rewrites a decoded `svc_CreateStringTable` message.
+    fn rewrite_svc_create_string_table(
+        &mut self,
+        tick: u32,
+        message: &mut CSvcMsgCreateStringTable,
+    ) -> Result<MessageRewrite, ParserError> {
+        Ok(MessageRewrite::Keep)
+    }
+
+    /// Rewrites a decoded `svc_UpdateStringTable` message.
+    fn rewrite_svc_update_string_table(
+        &mut self,
+        tick: u32,
+        message: &mut CSvcMsgUpdateStringTable,
+    ) -> Result<MessageRewrite, ParserError> {
+        Ok(MessageRewrite::Keep)
+    }
+
+    /// Returns a replacement value for a decoded entity field.
+    ///
+    /// The first registered rewriter that returns `Some` wins.
+    fn replace_entity_field(
+        &mut self,
+        event: EntityEvents,
+        entity: &Entity,
+        field_name: &str,
+        value: &FieldValue,
+    ) -> Option<FieldValue> {
+        None
+    }
+
+    /// Decides whether an entity should enter the decoded field rewrite path.
+    fn should_rewrite_entity(&mut self, event: EntityEvents, entity: &Entity) -> bool {
+        true
+    }
 }
 
 /// Helper to rewrite any prost message by decoding, mutating, and re-encoding.
@@ -36,15 +163,7 @@ where
     }
 }
 
-/// Callback for demo command rewrite decisions.
-pub type DemoMessageRewriter<'a> =
-    dyn FnMut(u32, EDemoCommands, &[u8]) -> Result<MessageRewrite, ParserError> + 'a;
-
-/// Callback for packet message rewrite decisions.
-pub type PacketMessageRewriter<'a> =
-    dyn FnMut(u32, i32, &[u8]) -> Result<MessageRewrite, ParserError> + 'a;
-
-/// Decoded packet message passed to packet-list rewrite hooks.
+/// Decoded packet message passed to packet-list rewriters.
 #[derive(Clone, Debug)]
 pub struct PacketMessage {
     /// Inner packet message type.
@@ -86,35 +205,6 @@ impl PacketMessage {
         self.payload = message.encode_to_vec();
     }
 }
-
-/// Callback for mutating the full list of packet messages after per-message
-/// rewrites have run.
-pub type PacketMessagesRewriter<'a> =
-    dyn FnMut(u32, &mut Vec<PacketMessage>) -> Result<(), ParserError> + 'a;
-
-/// Callback for string table rewrite decisions.
-pub type StringTableRewriter<'a> =
-    dyn FnMut(u32, &mut CDemoStringTables) -> Result<MessageRewrite, ParserError> + 'a;
-
-/// Callback for decoded string table entry rewrite decisions.
-pub type StringTableEntryRewriter<'a> =
-    dyn FnMut(u32, &str, &mut StringTableEntryUpdate) -> Result<(), ParserError> + 'a;
-
-/// Callback for svc create string table rewrite decisions.
-pub type SvcCreateStringTableRewriter<'a> =
-    dyn FnMut(u32, &mut CSvcMsgCreateStringTable) -> Result<MessageRewrite, ParserError> + 'a;
-
-/// Callback for svc update string table rewrite decisions.
-pub type SvcUpdateStringTableRewriter<'a> =
-    dyn FnMut(u32, &mut CSvcMsgUpdateStringTable) -> Result<MessageRewrite, ParserError> + 'a;
-
-/// Replacement callback for decoded entity fields.
-pub type EntityFieldReplacer<'a> =
-    dyn FnMut(EntityEvents, &Entity, &str, &FieldValue) -> Option<FieldValue> + 'a;
-
-/// Predicate callback that decides whether an entity should enter the slower
-/// field replacement path.
-pub type EntityRewriteFilter<'a> = dyn FnMut(EntityEvents, &Entity) -> bool + 'a;
 
 #[cfg(test)]
 mod tests {

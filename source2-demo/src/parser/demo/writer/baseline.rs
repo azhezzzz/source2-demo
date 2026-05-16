@@ -1,6 +1,6 @@
 use super::*;
 use crate::entity::field::{Decode, Encode, FieldPath};
-use crate::proto::c_demo_string_tables::ItemsT;
+use crate::proto::{c_demo_string_tables::ItemsT, CDemoStringTables};
 use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{bit_position, copy_original_bits, copy_remaining_bits};
 use crate::stream::field_path::read_and_copy_field_path;
@@ -14,14 +14,13 @@ where
     pub(crate) fn rewrite_instance_baselines(
         &mut self,
         msg: &mut CDemoStringTables,
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<bool, ParserError> {
         let mut changed = false;
         for table in msg.tables.iter_mut() {
             if table.table_name() != INSTANCE_BASELINE_TABLE {
                 continue;
             }
-            changed |= self.rewrite_instance_baseline_items(&mut table.items, replacer)?;
+            changed |= self.rewrite_instance_baseline_items(&mut table.items)?;
         }
         Ok(changed)
     }
@@ -29,7 +28,6 @@ where
     pub(crate) fn rewrite_instance_baseline_items(
         &mut self,
         items: &mut [ItemsT],
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<bool, ParserError> {
         let mut changed = false;
         for item in items.iter_mut() {
@@ -46,9 +44,7 @@ where
             let Some(data) = item.data.as_deref() else {
                 continue;
             };
-            if let Some(rewritten) =
-                self.rewrite_instance_baseline_data(class_id, data, replacer)?
-            {
+            if let Some(rewritten) = self.rewrite_instance_baseline_data(class_id, data)? {
                 item.data = Some(rewritten);
                 changed = true;
             }
@@ -60,7 +56,6 @@ where
         &mut self,
         class_id: i32,
         data: &[u8],
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<Option<Vec<u8>>, ParserError> {
         let Some(class) = self
             .parser
@@ -105,7 +100,8 @@ where
             let value_start = bit_position(&reader);
             let value = decoder.decode(&mut reader);
             let value_end = bit_position(&reader);
-            let replacement = replacer(EntityEvents::Created, &entity, &name, &value);
+            let replacement =
+                self.replace_entity_field(EntityEvents::Created, &entity, &name, &value);
 
             if let Some(next_value) = replacement {
                 decoder.encode(&mut writer, &next_value)?;

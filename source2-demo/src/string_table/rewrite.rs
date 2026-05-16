@@ -3,7 +3,7 @@ use crate::proto::{CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable};
 use crate::reader::{BitsReader, SliceReader};
 use crate::writer::{BitsWriter, BitstreamWriter};
 
-/// A mutable string table entry update passed to demo rewrite hooks.
+/// A mutable string table entry update passed to demo rewriters.
 #[derive(Clone, Debug)]
 pub struct StringTableEntryUpdate {
     index: i32,

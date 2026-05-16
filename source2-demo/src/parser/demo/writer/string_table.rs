@@ -1,5 +1,7 @@
 use super::*;
-use crate::proto::Message;
+use crate::proto::{
+    CDemoStringTables, CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, Message,
+};
 use crate::string_table::{
     rewrite_create_string_table, rewrite_demo_string_table_items, rewrite_update_string_table,
     PackedStringTableFormat, PackedStringTableState, StringTableEntryUpdate,
@@ -15,13 +17,16 @@ where
         tick: u32,
         mut msg: CDemoStringTables,
     ) -> Result<Option<CDemoStringTables>, ParserError> {
-        if let Some(mut replacer) = self.entity_replacer.take() {
-            let _ = self.rewrite_instance_baselines(&mut msg, &mut replacer)?;
-            self.entity_replacer = Some(replacer);
+        if self.rewrites_entity_fields() {
+            let _ = self.rewrite_instance_baselines(&mut msg)?;
         }
         self.rewrite_demo_string_table_entries(tick, &mut msg)?;
-        if let Some(rewriter) = self.string_table_rewriter.as_mut() {
-            match rewriter(tick, &mut msg)? {
+        for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+            rewriter
+                .interests()
+                .contains(RewriteInterests::DEMO_STRING_TABLES)
+        }) {
+            match rewriter.rewrite_demo_string_tables(tick, &mut msg)? {
                 MessageRewrite::Drop => return Ok(None),
                 MessageRewrite::Keep | MessageRewrite::Rewrite => {}
                 MessageRewrite::Replace(bytes) => {
@@ -47,23 +52,21 @@ where
         let table_id = self.string_table_rewrite_states.len();
         let mut state =
             PackedStringTableState::new(PackedStringTableFormat::from_create_message(msg));
-        let mut entry_rewriter = self.string_table_entry_rewriter.take();
-        let mut entity_replacer = self.entity_replacer.take();
 
         let changed = rewrite_create_string_table(msg, &mut state, |entry| {
             if rewrite_baselines {
-                if let Some(replacer) = entity_replacer.as_deref_mut() {
-                    self.rewrite_instance_baseline_entry_update(entry, None, replacer)?;
-                }
+                self.rewrite_instance_baseline_entry_update(entry, None)?;
             }
-            if let Some(rewriter) = entry_rewriter.as_deref_mut() {
-                rewriter(tick, &table_name, entry)?;
+            for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                rewriter
+                    .interests()
+                    .contains(RewriteInterests::STRING_TABLE_ENTRIES)
+            }) {
+                rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
             }
             Ok(())
         });
 
-        self.string_table_entry_rewriter = entry_rewriter;
-        self.entity_replacer = entity_replacer;
         let changed = changed?;
 
         self.ensure_string_table_rewrite_state(table_id);
@@ -106,27 +109,25 @@ where
                 "missing rewrite state for string table {table_id}"
             )));
         };
-        let mut entry_rewriter = self.string_table_entry_rewriter.take();
-        let mut entity_replacer = self.entity_replacer.take();
 
         let changed = rewrite_update_string_table(msg, &mut state, |entry| {
             if rewrite_baselines {
-                if let Some(replacer) = entity_replacer.as_deref_mut() {
-                    let fallback_key = usize::try_from(entry.index())
-                        .ok()
-                        .and_then(|index| existing_keys.get(index))
-                        .map(String::as_str);
-                    self.rewrite_instance_baseline_entry_update(entry, fallback_key, replacer)?;
-                }
+                let fallback_key = usize::try_from(entry.index())
+                    .ok()
+                    .and_then(|index| existing_keys.get(index))
+                    .map(String::as_str);
+                self.rewrite_instance_baseline_entry_update(entry, fallback_key)?;
             }
-            if let Some(rewriter) = entry_rewriter.as_deref_mut() {
-                rewriter(tick, &table_name, entry)?;
+            for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                rewriter
+                    .interests()
+                    .contains(RewriteInterests::STRING_TABLE_ENTRIES)
+            }) {
+                rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
             }
             Ok(())
         });
 
-        self.string_table_entry_rewriter = entry_rewriter;
-        self.entity_replacer = entity_replacer;
         self.string_table_rewrite_states[table_id] = Some(state);
         changed
     }
@@ -136,18 +137,32 @@ where
         tick: u32,
         msg: &mut CDemoStringTables,
     ) -> Result<bool, ParserError> {
-        let Some(rewriter) = self.string_table_entry_rewriter.as_mut() else {
+        if !self.rewrites_string_table_entries() {
             return Ok(false);
-        };
+        }
 
         let mut changed = false;
         for table in msg.tables.iter_mut() {
             let table_name = table.table_name().to_string();
             changed |= rewrite_demo_string_table_items(&mut table.items, |entry| {
-                rewriter(tick, &table_name, entry)
+                for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                    rewriter
+                        .interests()
+                        .contains(RewriteInterests::STRING_TABLE_ENTRIES)
+                }) {
+                    rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
+                }
+                Ok(())
             })?;
             changed |= rewrite_demo_string_table_items(&mut table.items_clientside, |entry| {
-                rewriter(tick, &table_name, entry)
+                for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+                    rewriter
+                        .interests()
+                        .contains(RewriteInterests::STRING_TABLE_ENTRIES)
+                }) {
+                    rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
+                }
+                Ok(())
             })?;
         }
         Ok(changed)
@@ -164,7 +179,6 @@ where
         &mut self,
         entry: &mut StringTableEntryUpdate,
         fallback_key: Option<&str>,
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<(), ParserError> {
         let Some(class_id) = entry
             .key()
@@ -180,7 +194,7 @@ where
         let Some(data) = entry.value() else {
             return Ok(());
         };
-        if let Some(rewritten) = self.rewrite_instance_baseline_data(class_id, data, replacer)? {
+        if let Some(rewritten) = self.rewrite_instance_baseline_data(class_id, data)? {
             entry.set_value(rewritten);
         }
         Ok(())

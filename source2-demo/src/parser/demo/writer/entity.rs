@@ -16,7 +16,6 @@ where
     pub(crate) fn rewrite_svc_packet_entities(
         &mut self,
         msg: &[u8],
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<Option<Vec<u8>>, ParserError> {
         let mut packet_entities = CSvcMsgPacketEntities::decode(msg)?;
         let Some(entity_data) = packet_entities.entity_data.as_deref() else {
@@ -24,7 +23,7 @@ where
         };
 
         let (rewritten, changed) =
-            self.rewrite_entity_data(entity_data, packet_entities.updated_entries(), replacer)?;
+            self.rewrite_entity_data(entity_data, packet_entities.updated_entries())?;
         if changed {
             packet_entities.entity_data = Some(rewritten);
             packet_entities.serialized_entities = None;
@@ -38,7 +37,6 @@ where
         &mut self,
         entity_data: &[u8],
         updated_entries: i32,
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<(Vec<u8>, bool), ParserError> {
         let mut reader = SliceReader::new(entity_data);
         let mut out = Vec::with_capacity(entity_data.len());
@@ -64,7 +62,6 @@ where
                         &mut writer,
                         &mut path_reader,
                         index,
-                        replacer,
                     )?;
                 }
                 EntityEvents::Updated => {
@@ -73,7 +70,6 @@ where
                         &mut writer,
                         &mut path_reader,
                         index,
-                        replacer,
                     )?;
                 }
                 EntityEvents::Deleted => {
@@ -94,7 +90,6 @@ where
         writer: &mut BitstreamWriter<'_>,
         path_reader: &mut FieldPathCodec,
         index: usize,
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<bool, ParserError> {
         let class_id = copy_bits(reader, writer, self.parser.context.classes.class_id_size)? as i32;
 
@@ -123,7 +118,6 @@ where
                 path_reader,
                 EntityEvents::Created,
                 &mut entity,
-                replacer,
             )?
         } else {
             Self::skip_original_fields(reader, writer, path_reader, &entity)?;
@@ -140,7 +134,6 @@ where
         writer: &mut BitstreamWriter<'_>,
         path_reader: &mut FieldPathCodec,
         index: usize,
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<bool, ParserError> {
         let mut entity = self.parser.context.entities.entities_vec[index].clone();
         let changed = if self.should_rewrite_entity(EntityEvents::Updated, &entity) {
@@ -150,7 +143,6 @@ where
                 path_reader,
                 EntityEvents::Updated,
                 &mut entity,
-                replacer,
             )?
         } else {
             Self::skip_original_fields(reader, writer, path_reader, &entity)?;
@@ -206,7 +198,6 @@ where
         path_reader: &mut FieldPathCodec,
         event: EntityEvents,
         entity: &mut Entity,
-        replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<bool, ParserError> {
         let mut paths = Vec::new();
         let mut fp = FieldPath::default();
@@ -226,7 +217,7 @@ where
             let value_start = bit_position(reader);
             let value = decoder.decode(reader);
             let value_end = bit_position(reader);
-            let replacement = replacer(event, entity, &name, &value);
+            let replacement = self.replace_entity_field(event, entity, &name, &value);
 
             if let Some(next_value) = replacement {
                 decoder.encode(writer, &next_value)?;

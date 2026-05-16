@@ -16,8 +16,7 @@ fn main() -> anyhow::Result<()> {
     let input = File::open(input_path)?;
     let output = File::create(output_path)?;
 
-    let parser = Parser::from_reader(input)?;
-    let mut writer = DemoWriter::new(parser, output);
+    let mut writer = DemoWriter::from_reader(input, output)?;
 
     writer.set_packet_rewriter(|_tick, msg_type, _payload| {
         if let Ok(user_msg) = EDotaUserMessages::try_from(msg_type) {

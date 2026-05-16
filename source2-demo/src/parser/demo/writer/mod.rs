@@ -14,7 +14,7 @@ use crate::parser::Parser;
 use crate::proto::{
     CDemoStringTables, CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, EDemoCommands,
 };
-use crate::reader::{BitsReader, MessageReader};
+use crate::reader::{BitsReader, MessageReader, SeekableReader, SliceReader};
 use crate::string_table::{PackedStringTableState, StringTableEntryUpdate};
 use std::io::{Seek, Write};
 
@@ -217,5 +217,32 @@ where
     /// Returns the wrapped parser and output writer.
     pub fn into_parts(self) -> (Parser<'a, R>, W) {
         (self.parser, self.writer)
+    }
+}
+
+impl<'a, W> DemoWriter<'a, SliceReader<'a>, W>
+where
+    W: Write + Seek,
+{
+    /// Creates a demo writer from replay bytes and an output target.
+    ///
+    /// This is a convenience wrapper around [`Parser::from_slice`] and
+    /// [`DemoWriter::new`].
+    pub fn from_slice(replay: &'a [u8], writer: W) -> Result<Self, ParserError> {
+        Ok(Self::new(Parser::from_slice(replay)?, writer))
+    }
+}
+
+impl<S, W> DemoWriter<'static, SeekableReader<S>, W>
+where
+    S: std::io::Read + std::io::Seek,
+    W: Write + Seek,
+{
+    /// Creates a demo writer from a seekable reader and an output target.
+    ///
+    /// This is a convenience wrapper around [`Parser::from_reader`] and
+    /// [`DemoWriter::new`].
+    pub fn from_reader(reader: S, writer: W) -> Result<Self, ParserError> {
+        Ok(Self::new(Parser::from_reader(reader)?, writer))
     }
 }

@@ -1,5 +1,6 @@
 use super::*;
 use crate::entity::field::{Decode, Encode, FieldPath};
+use crate::proto::c_demo_string_tables::ItemsT;
 use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{bit_position, copy_original_bits, copy_remaining_bits};
 use crate::stream::field_path::read_and_copy_field_path;
@@ -17,7 +18,7 @@ where
     ) -> Result<bool, ParserError> {
         let mut changed = false;
         for table in msg.tables.iter_mut() {
-            if table.table_name() != "instancebaseline" {
+            if table.table_name() != INSTANCE_BASELINE_TABLE {
                 continue;
             }
             changed |= self.rewrite_instance_baseline_items(&mut table.items, replacer)?;
@@ -27,7 +28,7 @@ where
 
     pub(crate) fn rewrite_instance_baseline_items(
         &mut self,
-        items: &mut [crate::proto::c_demo_string_tables::ItemsT],
+        items: &mut [ItemsT],
         replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<bool, ParserError> {
         let mut changed = false;

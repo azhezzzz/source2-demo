@@ -8,6 +8,7 @@ mod run;
 mod string_table;
 mod types;
 
+use crate::entity::field::FieldValue;
 use crate::entity::{Entity, EntityEvents};
 use crate::error::ParserError;
 use crate::parser::Parser;
@@ -25,6 +26,8 @@ pub use types::{
     StringTableEntryRewriter, StringTableRewriter, SvcCreateStringTableRewriter,
     SvcUpdateStringTableRewriter,
 };
+
+const INSTANCE_BASELINE_TABLE: &str = "instancebaseline";
 
 /// Demo writer that reads demo messages and emits a rewritten stream.
 ///
@@ -146,13 +149,7 @@ where
     /// Registers a hook that can replace entity field values during rewrites.
     pub fn set_entity_field_replacer<F>(&mut self, replacer: F)
     where
-        F: FnMut(
-                EntityEvents,
-                &crate::entity::Entity,
-                &str,
-                &crate::entity::field::FieldValue,
-            ) -> Option<crate::entity::field::FieldValue>
-            + 'a,
+        F: FnMut(EntityEvents, &Entity, &str, &FieldValue) -> Option<FieldValue> + 'a,
     {
         self.entity_replacer = Some(Box::new(replacer));
     }
@@ -166,19 +163,27 @@ where
     /// this filter are left untouched without decoding their fields.
     pub fn set_entity_rewrite_filter<F>(&mut self, filter: F)
     where
-        F: FnMut(EntityEvents, &crate::entity::Entity) -> bool + 'a,
+        F: FnMut(EntityEvents, &Entity) -> bool + 'a,
     {
         self.entity_rewrite_filter = Some(Box::new(filter));
     }
 
-    pub(crate) fn should_rewrite_entity(
-        &mut self,
-        event: EntityEvents,
-        entity: &crate::entity::Entity,
-    ) -> bool {
+    pub(crate) fn should_rewrite_entity(&mut self, event: EntityEvents, entity: &Entity) -> bool {
         self.entity_rewrite_filter
             .as_mut()
             .map_or(true, |filter| filter(event, entity))
+    }
+
+    fn rewrites_entity_fields(&self) -> bool {
+        self.entity_replacer.is_some()
+    }
+
+    fn rewrites_string_table_entries(&self) -> bool {
+        self.string_table_entry_rewriter.is_some()
+    }
+
+    fn needs_string_table_context(&self) -> bool {
+        self.rewrites_entity_fields() || self.rewrites_string_table_entries()
     }
 
     fn needs_packet_scan(&self) -> bool {
@@ -191,28 +196,25 @@ where
     }
 
     fn needs_svc_packet_scan(&self) -> bool {
-        self.entity_replacer.is_some()
-            || self.string_table_entry_rewriter.is_some()
+        self.needs_string_table_context()
             || self.svc_create_string_table_rewriter.is_some()
             || self.svc_update_string_table_rewriter.is_some()
     }
 
     fn needs_packet_state(&self) -> bool {
-        self.entity_replacer.is_some() || self.string_table_entry_rewriter.is_some()
+        self.needs_string_table_context()
     }
 
     fn needs_class_metadata(&self) -> bool {
-        self.entity_replacer.is_some()
+        self.rewrites_entity_fields()
     }
 
     fn needs_demo_string_table_scan(&self) -> bool {
-        self.entity_replacer.is_some()
-            || self.string_table_entry_rewriter.is_some()
-            || self.string_table_rewriter.is_some()
+        self.needs_string_table_context() || self.string_table_rewriter.is_some()
     }
 
     fn needs_demo_string_table_state(&self) -> bool {
-        self.string_table_entry_rewriter.is_some()
+        self.rewrites_string_table_entries()
     }
 
     /// Returns the wrapped parser and output writer.

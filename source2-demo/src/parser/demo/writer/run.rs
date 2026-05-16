@@ -1,6 +1,9 @@
 use super::*;
 use crate::parser::demo::DemoCommands;
-use crate::proto::{CDemoFullPacket, CDemoPacket, CDemoStringTables, EDemoCommands, Message};
+use crate::proto::{
+    CDemoClassInfo, CDemoFullPacket, CDemoPacket, CDemoSendTables, CDemoStringTables,
+    EDemoCommands, Message,
+};
 use crate::reader::{BitsReader, MessageReader};
 use std::io::{Seek, Write};
 
@@ -34,10 +37,7 @@ where
                         continue;
                     }
 
-                    let payload = payload
-                        .take()
-                        .map(Ok)
-                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
+                    let payload = Self::materialize_payload(&mut payload, &message)?;
                     let mut packet = CDemoPacket::decode(payload.as_slice())?;
                     let rewritten = self.rewrite_packet_data(
                         message.tick,
@@ -59,10 +59,7 @@ where
                         continue;
                     }
 
-                    let payload = payload
-                        .take()
-                        .map(Ok)
-                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
+                    let payload = Self::materialize_payload(&mut payload, &message)?;
                     let mut full = CDemoFullPacket::decode(payload.as_slice())?;
                     let should_process = self.parser.context.last_full_packet_tick == u32::MAX
                         || self.parser.skip_deltas;
@@ -103,11 +100,8 @@ where
                     )?;
                 }
                 EDemoCommands::DemSendTables if self.needs_class_metadata() => {
-                    let payload = payload
-                        .take()
-                        .map(Ok)
-                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
-                    let msg = crate::proto::CDemoSendTables::decode(payload.as_slice())?;
+                    let payload = Self::materialize_payload(&mut payload, &message)?;
+                    let msg = CDemoSendTables::decode(payload.as_slice())?;
                     self.parser.dem_send_tables(msg)?;
                     self.write_demo_message_with_compression(
                         message.msg_type,
@@ -117,11 +111,8 @@ where
                     )?;
                 }
                 EDemoCommands::DemClassInfo if self.needs_class_metadata() => {
-                    let payload = payload
-                        .take()
-                        .map(Ok)
-                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
-                    let msg = crate::proto::CDemoClassInfo::decode(payload.as_slice())?;
+                    let payload = Self::materialize_payload(&mut payload, &message)?;
+                    let msg = CDemoClassInfo::decode(payload.as_slice())?;
                     self.parser.dem_class_info(msg)?;
                     self.write_demo_message_with_compression(
                         message.msg_type,
@@ -136,10 +127,7 @@ where
                         continue;
                     }
 
-                    let payload = payload
-                        .take()
-                        .map(Ok)
-                        .unwrap_or_else(|| Self::decode_raw_payload(&message))?;
+                    let payload = Self::materialize_payload(&mut payload, &message)?;
                     let mut msg = CDemoStringTables::decode(payload.as_slice())?;
                     let mut changed = false;
                     if let Some(mut replacer) = self.entity_replacer.take() {

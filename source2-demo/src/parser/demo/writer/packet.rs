@@ -34,6 +34,9 @@ where
             let mut handled_entity = false;
             let mut processed_state = false;
             if self.needs_svc_packet_scan() {
+                let needs_string_table_context = self.needs_string_table_context();
+                let update_string_table_state = process_state && needs_string_table_context;
+
                 if let Ok(svc_msg) = SvcMessages::try_from(msg_type) {
                     match svc_msg {
                         SvcMessages::SvcPacketEntities => {
@@ -49,8 +52,7 @@ where
                             }
                         }
                         SvcMessages::SvcCreateStringTable
-                            if self.entity_replacer.is_some()
-                                || self.string_table_entry_rewriter.is_some()
+                            if needs_string_table_context
                                 || self.svc_create_string_table_rewriter.is_some() =>
                         {
                             let mut msg = CSvcMsgCreateStringTable::decode(msg_payload.as_slice())?;
@@ -66,10 +68,7 @@ where
                                     }
                                     MessageRewrite::Replace(bytes) => {
                                         changed = false;
-                                        if process_state
-                                            && (self.entity_replacer.is_some()
-                                                || self.string_table_entry_rewriter.is_some())
-                                        {
+                                        if update_string_table_state {
                                             msg =
                                                 CSvcMsgCreateStringTable::decode(bytes.as_slice())?;
                                         }
@@ -77,11 +76,8 @@ where
                                     }
                                 }
                             }
-                            if process_state
-                                && (self.entity_replacer.is_some()
-                                    || self.string_table_entry_rewriter.is_some())
-                            {
-                                self.process_create_string_table(msg.clone())?;
+                            if update_string_table_state {
+                                self.process_create_string_table(&msg)?;
                                 processed_state = true;
                             }
                             if changed {
@@ -89,8 +85,7 @@ where
                             }
                         }
                         SvcMessages::SvcUpdateStringTable
-                            if self.entity_replacer.is_some()
-                                || self.string_table_entry_rewriter.is_some()
+                            if needs_string_table_context
                                 || self.svc_update_string_table_rewriter.is_some() =>
                         {
                             let mut msg = CSvcMsgUpdateStringTable::decode(msg_payload.as_slice())?;
@@ -106,10 +101,7 @@ where
                                     }
                                     MessageRewrite::Replace(bytes) => {
                                         changed = false;
-                                        if process_state
-                                            && (self.entity_replacer.is_some()
-                                                || self.string_table_entry_rewriter.is_some())
-                                        {
+                                        if update_string_table_state {
                                             msg =
                                                 CSvcMsgUpdateStringTable::decode(bytes.as_slice())?;
                                         }
@@ -117,11 +109,8 @@ where
                                     }
                                 }
                             }
-                            if process_state
-                                && (self.entity_replacer.is_some()
-                                    || self.string_table_entry_rewriter.is_some())
-                            {
-                                self.process_update_string_table(msg.clone())?;
+                            if update_string_table_state {
+                                self.process_update_string_table(&msg)?;
                                 processed_state = true;
                             }
                             if changed {

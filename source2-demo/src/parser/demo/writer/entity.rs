@@ -27,7 +27,7 @@ where
             self.rewrite_entity_data(entity_data, packet_entities.updated_entries(), replacer)?;
         if changed {
             packet_entities.entity_data = Some(rewritten);
-            packet_entities.serialized_entities = None; // ??
+            packet_entities.serialized_entities = None;
             Ok(Some(packet_entities.encode_to_vec()))
         } else {
             Ok(None)
@@ -100,7 +100,7 @@ where
 
         let serial = copy_bits(reader, writer, 17)?;
 
-        let _handle = copy_var_u32(reader, writer)?;
+        let _ = copy_var_u32(reader, writer)?;
 
         let class = self
             .parser

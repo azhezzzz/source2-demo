@@ -44,4 +44,14 @@ where
             Ok(message.raw_payload.clone())
         }
     }
+
+    pub(crate) fn materialize_payload(
+        payload: &mut Option<Vec<u8>>,
+        message: &RawDemoMessage,
+    ) -> Result<Vec<u8>, ParserError> {
+        payload
+            .take()
+            .map(Ok)
+            .unwrap_or_else(|| Self::decode_raw_payload(message))
+    }
 }

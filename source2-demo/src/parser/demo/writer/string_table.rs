@@ -38,8 +38,9 @@ where
         msg: &mut CSvcMsgCreateStringTable,
     ) -> Result<bool, ParserError> {
         let table_name = msg.name().to_string();
-        let rewrite_baselines = table_name == "instancebaseline" && self.entity_replacer.is_some();
-        if self.string_table_entry_rewriter.is_none() && !rewrite_baselines {
+        let rewrite_baselines =
+            table_name == INSTANCE_BASELINE_TABLE && self.rewrites_entity_fields();
+        if !self.rewrites_string_table_entries() && !rewrite_baselines {
             return Ok(false);
         }
 
@@ -80,8 +81,9 @@ where
             return Ok(false);
         };
         let table_name = table.name().to_string();
-        let rewrite_baselines = table_name == "instancebaseline" && self.entity_replacer.is_some();
-        if self.string_table_entry_rewriter.is_none() && !rewrite_baselines {
+        let rewrite_baselines =
+            table_name == INSTANCE_BASELINE_TABLE && self.rewrites_entity_fields();
+        if !self.rewrites_string_table_entries() && !rewrite_baselines {
             return Ok(false);
         }
         let existing_keys = if rewrite_baselines {
@@ -99,9 +101,11 @@ where
             self.string_table_rewrite_states[table_id] = Some(state_from_context);
         }
 
-        let mut state = self.string_table_rewrite_states[table_id]
-            .take()
-            .expect("string table rewrite state");
+        let Some(mut state) = self.string_table_rewrite_states[table_id].take() else {
+            return Err(ParserError::IoError(format!(
+                "missing rewrite state for string table {table_id}"
+            )));
+        };
         let mut entry_rewriter = self.string_table_entry_rewriter.take();
         let mut entity_replacer = self.entity_replacer.take();
 

@@ -3,6 +3,7 @@ use crate::proto::{
     CSvcMsgCreateStringTable, CSvcMsgServerInfo, CSvcMsgUpdateStringTable, Message, SvcMessages,
 };
 use crate::reader::{BitsReader, MessageReader};
+use crate::StringTable;
 use std::io::{Seek, Write};
 
 impl<'a, R, W> DemoWriter<'a, R, W>
@@ -20,22 +21,19 @@ where
         };
 
         match msg {
-            SvcMessages::SvcServerInfo if self.entity_replacer.is_some() => {
+            SvcMessages::SvcServerInfo if self.rewrites_entity_fields() => {
                 self.process_server_info(CSvcMsgServerInfo::decode(msg_buf)?);
             }
-            SvcMessages::SvcCreateStringTable
-                if self.entity_replacer.is_some() || self.string_table_entry_rewriter.is_some() =>
-            {
-                self.process_create_string_table(CSvcMsgCreateStringTable::decode(msg_buf)?)?;
+            SvcMessages::SvcCreateStringTable if self.needs_string_table_context() => {
+                let msg = CSvcMsgCreateStringTable::decode(msg_buf)?;
+                self.process_create_string_table(&msg)?;
             }
-            SvcMessages::SvcUpdateStringTable
-                if self.entity_replacer.is_some() || self.string_table_entry_rewriter.is_some() =>
-            {
+            SvcMessages::SvcUpdateStringTable if self.needs_string_table_context() => {
                 let msg = CSvcMsgUpdateStringTable::decode(msg_buf)?;
-                if self.string_table_entry_rewriter.is_some()
+                if self.rewrites_string_table_entries()
                     || self.is_instance_baseline_table(msg.table_id() as usize)
                 {
-                    self.process_update_string_table(msg)?;
+                    self.process_update_string_table(&msg)?;
                 }
             }
             _ => {}
@@ -50,7 +48,7 @@ where
             .string_tables
             .tables
             .get(table_id)
-            .is_some_and(|table| table.name() == "instancebaseline")
+            .is_some_and(|table| table.name() == INSTANCE_BASELINE_TABLE)
     }
 
     fn process_server_info(&mut self, server_info: CSvcMsgServerInfo) {
@@ -79,9 +77,8 @@ where
 
     pub(crate) fn process_create_string_table(
         &mut self,
-        msg: CSvcMsgCreateStringTable,
+        msg: &CSvcMsgCreateStringTable,
     ) -> Result<(), ParserError> {
-        use crate::StringTable;
         use std::cell::RefCell;
 
         let mut table = StringTable {
@@ -119,7 +116,7 @@ where
 
     pub(crate) fn process_update_string_table(
         &mut self,
-        msg: CSvcMsgUpdateStringTable,
+        msg: &CSvcMsgUpdateStringTable,
     ) -> Result<(), ParserError> {
         let Some(table) = self
             .parser

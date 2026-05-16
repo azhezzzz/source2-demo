@@ -58,12 +58,16 @@ where
         data: &[u8],
         replacer: &mut EntityFieldReplacer<'_>,
     ) -> Result<Option<Vec<u8>>, ParserError> {
-        let class = self
+        let Some(class) = self
             .parser
             .context
             .classes
-            .get_by_id_rc(class_id as usize)
-            .clone();
+            .classes_vec
+            .get(class_id as usize)
+            .cloned()
+        else {
+            return Ok(None);
+        };
         let entity = Entity {
             index: 0,
             class,

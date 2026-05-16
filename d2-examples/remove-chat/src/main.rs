@@ -18,7 +18,7 @@ fn main() -> anyhow::Result<()> {
 
     let mut writer = DemoWriter::from_reader(input, output)?;
 
-    writer.set_packet_rewriter(|_tick, msg_type, _payload| {
+    writer.set_packet_message_rewriter(|_tick, msg_type, _payload| {
         if let Ok(user_msg) = EDotaUserMessages::try_from(msg_type) {
             if user_msg == EDotaUserMessages::DotaUmChatMessage {
                 return Ok(MessageRewrite::Drop);

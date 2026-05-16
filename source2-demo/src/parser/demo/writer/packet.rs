@@ -187,7 +187,7 @@ mod tests {
         let output = Cursor::new(Vec::new());
         let mut writer = DemoWriter::new(parser, output);
 
-        writer.set_packet_messages_rewriter(|_tick, messages| {
+        writer.set_packet_message_list_rewriter(|_tick, messages| {
             messages.push(PacketMessage::new(9, [4, 5, 6]));
             Ok(())
         });

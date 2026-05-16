@@ -77,16 +77,17 @@ where
         }
     }
 
-    /// Registers a hook that can rewrite demo command payloads.
-    pub fn set_demo_rewriter<F>(&mut self, rewriter: F)
+    /// Registers a hook that can rewrite outer demo message payloads.
+    pub fn set_demo_message_rewriter<F>(&mut self, rewriter: F)
     where
         F: FnMut(u32, EDemoCommands, &[u8]) -> Result<MessageRewrite, ParserError> + 'a,
     {
         self.demo_rewriter = Some(Box::new(rewriter));
     }
 
-    /// Registers a hook that can rewrite packet message payloads.
-    pub fn set_packet_rewriter<F>(&mut self, rewriter: F)
+    /// Registers a hook that can rewrite one inner packet message payload at a
+    /// time.
+    pub fn set_packet_message_rewriter<F>(&mut self, rewriter: F)
     where
         F: FnMut(u32, i32, &[u8]) -> Result<MessageRewrite, ParserError> + 'a,
     {
@@ -98,28 +99,28 @@ where
     ///
     /// Messages inserted by this hook are output-only; they are not processed
     /// for writer metadata state.
-    pub fn set_packet_messages_rewriter<F>(&mut self, rewriter: F)
+    pub fn set_packet_message_list_rewriter<F>(&mut self, rewriter: F)
     where
         F: FnMut(u32, &mut Vec<PacketMessage>) -> Result<(), ParserError> + 'a,
     {
         self.packet_messages_rewriter = Some(Box::new(rewriter));
     }
 
-    /// Registers a hook that can rewrite string table payloads.
-    pub fn set_string_table_rewriter<F>(&mut self, rewriter: F)
+    /// Registers a hook that can rewrite outer demo string table messages.
+    pub fn set_demo_string_tables_rewriter<F>(&mut self, rewriter: F)
     where
         F: FnMut(u32, &mut CDemoStringTables) -> Result<MessageRewrite, ParserError> + 'a,
     {
         self.string_table_rewriter = Some(Box::new(rewriter));
     }
 
-    /// Registers a hook that can rewrite decoded string table entries.
+    /// Registers a hook that can rewrite decoded string table entry updates.
     ///
     /// This hook handles full `CDemoStringTables`, `svc_CreateStringTable`,
     /// and `svc_UpdateStringTable` payloads. The callback receives the demo
     /// tick, table name, and a mutable entry containing its table index, key,
     /// and binary value.
-    pub fn set_string_table_entry_rewriter<F>(&mut self, rewriter: F)
+    pub fn set_string_table_entry_update_rewriter<F>(&mut self, rewriter: F)
     where
         F: FnMut(u32, &str, &mut StringTableEntryUpdate) -> Result<(), ParserError> + 'a,
     {
@@ -143,7 +144,7 @@ where
     }
 
     /// Registers a hook that can replace entity field values during rewrites.
-    pub fn set_entity_replacer<F>(&mut self, replacer: F)
+    pub fn set_entity_field_replacer<F>(&mut self, replacer: F)
     where
         F: FnMut(
                 EntityEvents,

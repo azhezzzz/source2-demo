@@ -3,10 +3,8 @@ use crate::proto::{
     CDemoStringTables, CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, Message,
 };
 use crate::string_table::{
-    rewrite_create_string_table, rewrite_create_string_table_preserving_key_bits,
-    rewrite_demo_string_table_items, rewrite_update_string_table,
-    rewrite_update_string_table_preserving_key_bits, PackedStringTableFormat,
-    PackedStringTableState, StringTableEntryUpdate,
+    rewrite_create_string_table, rewrite_demo_string_table_items, rewrite_update_string_table,
+    PackedStringTableFormat, PackedStringTableState, StringTableEntryUpdate,
 };
 
 impl<'a, R, W> DemoWriter<'a, R, W>
@@ -55,7 +53,7 @@ where
         let mut state =
             PackedStringTableState::new(PackedStringTableFormat::from_create_message(msg));
 
-        let mut rewrite_entry = |entry: &mut StringTableEntryUpdate| {
+        let changed = rewrite_create_string_table(msg, &mut state, |entry| {
             if rewrite_baselines {
                 self.rewrite_instance_baseline_entry_update(entry, None)?;
             }
@@ -67,13 +65,7 @@ where
                 rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
             }
             Ok(())
-        };
-
-        let changed = if rewrite_baselines {
-            rewrite_create_string_table_preserving_key_bits(msg, &mut state, &mut rewrite_entry)
-        } else {
-            rewrite_create_string_table(msg, &mut state, &mut rewrite_entry)
-        };
+        });
 
         let changed = changed?;
 
@@ -118,7 +110,7 @@ where
             )));
         };
 
-        let mut rewrite_entry = |entry: &mut StringTableEntryUpdate| {
+        let changed = rewrite_update_string_table(msg, &mut state, |entry| {
             if rewrite_baselines {
                 let fallback_key = usize::try_from(entry.index())
                     .ok()
@@ -134,13 +126,7 @@ where
                 rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
             }
             Ok(())
-        };
-
-        let changed = if rewrite_baselines {
-            rewrite_update_string_table_preserving_key_bits(msg, &mut state, &mut rewrite_entry)
-        } else {
-            rewrite_update_string_table(msg, &mut state, &mut rewrite_entry)
-        };
+        });
 
         self.string_table_rewrite_states[table_id] = Some(state);
         changed

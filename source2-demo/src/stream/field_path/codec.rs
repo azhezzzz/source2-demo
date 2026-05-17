@@ -3,17 +3,9 @@ use crate::stream::field_path::{FieldOp, FIELD_OPS};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub(crate) struct FieldPathCodec {
     tree: FieldPathTree,
-}
-
-impl Default for FieldPathCodec {
-    fn default() -> Self {
-        Self {
-            tree: FieldPathTree::default(),
-        }
-    }
 }
 
 impl FieldPathCodec {

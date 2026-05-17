@@ -199,7 +199,7 @@ where
     }
 
     fn needs_demo_string_table_state(&self) -> bool {
-        self.rewrites_string_table_entries()
+        self.rewrites_entity_fields() || self.rewrites_string_table_entries()
     }
 
     /// Returns the wrapped parser and output writer.

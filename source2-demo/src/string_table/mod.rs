@@ -72,8 +72,10 @@ pub use rewrite::StringTableEntryUpdate;
 pub use row::*;
 
 pub(crate) use rewrite::{
-    rewrite_create_string_table, rewrite_demo_string_table_items, rewrite_update_string_table,
-    PackedStringTableFormat, PackedStringTableState,
+    rewrite_create_string_table, rewrite_create_string_table_preserving_key_bits,
+    rewrite_demo_string_table_items, rewrite_update_string_table,
+    rewrite_update_string_table_preserving_key_bits, PackedStringTableFormat,
+    PackedStringTableState,
 };
 
 use crate::entity::BaselineContainer;

@@ -3,7 +3,7 @@ use crate::entity::field::{Decode, Encode, FieldPath};
 use crate::proto::{c_demo_string_tables::ItemsT, CDemoStringTables};
 use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{bit_position, copy_original_bits, copy_remaining_bits};
-use crate::stream::field_path::read_and_copy_field_path;
+use crate::stream::field_path::FieldOp;
 use crate::writer::{BitsWriter, BitstreamWriter};
 
 impl<'a, R, W> DemoWriter<'a, R, W>
@@ -82,16 +82,19 @@ where
         let mut writer = BitstreamWriter::new(&mut out);
         let path_reader = FieldPathCodec::default();
 
+        let paths_start = bit_position(&reader);
         let mut paths = Vec::new();
         let mut fp = FieldPath::default();
         loop {
-            let (path, done) =
-                read_and_copy_field_path(&path_reader, &mut reader, &mut writer, &mut fp)?;
-            if done {
+            let op = path_reader.read_op(&mut reader);
+            if op == FieldOp::FieldPathEncodeFinish {
                 break;
             }
-            paths.push(path);
+            op.execute(&mut reader, &mut fp);
+            paths.push(fp);
         }
+        let paths_end = bit_position(&reader);
+        copy_original_bits(data, paths_start, paths_end - paths_start, &mut writer)?;
 
         let mut changed = false;
         for fp in paths {

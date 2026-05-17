@@ -1,6 +1,7 @@
 use crate::error::ParserError;
 use crate::proto::{CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable};
 use crate::reader::{BitsReader, SliceReader};
+use crate::stream::copy::{bit_position, copy_original_bits};
 use crate::writer::{BitsWriter, BitstreamWriter};
 
 /// A mutable string table entry update passed to demo rewriters.
@@ -159,6 +160,121 @@ impl PackedStringTableState {
         }
     }
 
+    pub(crate) fn rewrite_preserving_key_bits<F>(
+        &mut self,
+        data: &[u8],
+        num_entries: i32,
+        mut rewrite: F,
+    ) -> Result<Option<Vec<u8>>, ParserError>
+    where
+        F: FnMut(&mut StringTableEntryUpdate) -> Result<(), ParserError>,
+    {
+        let mut reader = SliceReader::new(data);
+        let mut index = -1;
+        let mut delta_pos = 0;
+        let mut changed = false;
+        let mut out = Vec::with_capacity(data.len());
+        let mut writer = BitstreamWriter::new(&mut out);
+
+        for _ in 0..num_entries {
+            reader.refill();
+
+            let entry_start = bit_position(&reader);
+            index += 1;
+            if !reader.read_bool() {
+                index += reader.read_var_u32() as i32 + 1;
+            }
+
+            let key = reader.read_bool().then(|| {
+                let delta_zero = if delta_pos > 32 { delta_pos & 31 } else { 0 };
+                let key = if reader.read_bool() {
+                    let pos = (delta_zero + reader.read_bits_unchecked(5) as usize) & 31;
+                    let size = reader.read_bits_unchecked(5) as usize;
+
+                    if delta_pos < pos || self.keys[pos].len() < size {
+                        reader.read_cstring()
+                    } else {
+                        self.keys[pos][..size].to_string() + &reader.read_cstring()
+                    }
+                } else {
+                    reader.read_cstring()
+                };
+                self.keys[delta_pos & 31].clone_from(&key);
+                delta_pos += 1;
+                key
+            });
+
+            let value_present = reader.read_bool();
+            let value_header_start = bit_position(&reader);
+            let mut value_compressed = false;
+            let value = value_present.then(|| {
+                let bit_size = if self.format.user_data_fixed_size {
+                    self.format.user_data_size as u32
+                } else {
+                    if (self.format.flags & 0x1) != 0 {
+                        value_compressed = reader.read_bool();
+                    }
+                    if self.format.var_int_bit_counts {
+                        reader.read_ubit_var() * 8
+                    } else {
+                        reader.read_bits_unchecked(17) * 8
+                    }
+                };
+
+                let bytes = reader.read_bits_as_bytes(bit_size);
+                if value_compressed {
+                    snap::raw::Decoder::new()
+                        .decompress_vec(&bytes)
+                        .unwrap_or(bytes)
+                } else {
+                    bytes
+                }
+            });
+            let entry_end = bit_position(&reader);
+
+            let before_key = key.clone();
+            let before_value = value.clone();
+            let mut entry =
+                StringTableEntryUpdate::new_with_compression(index, key, value, value_compressed);
+            rewrite(&mut entry)?;
+
+            if entry.key != before_key {
+                return Err(ParserError::IoError(
+                    "preserving packed string table rewrite does not support key changes"
+                        .to_string(),
+                ));
+            }
+            if entry.value.is_some() != before_value.is_some() {
+                return Err(ParserError::IoError(
+                    "preserving packed string table rewrite does not support value presence changes"
+                        .to_string(),
+                ));
+            }
+
+            if entry.value == before_value {
+                copy_original_bits(data, entry_start, entry_end - entry_start, &mut writer)?;
+                continue;
+            }
+
+            changed = true;
+            copy_original_bits(
+                data,
+                entry_start,
+                value_header_start - entry_start,
+                &mut writer,
+            )?;
+            write_entry_value(&mut writer, self.format, &entry)?;
+        }
+
+        if changed {
+            writer.flush()?;
+            drop(writer);
+            Ok(Some(out))
+        } else {
+            Ok(None)
+        }
+    }
+
     fn decode_entries(
         &mut self,
         data: &[u8],
@@ -261,6 +377,35 @@ where
     Ok(true)
 }
 
+pub(crate) fn rewrite_create_string_table_preserving_key_bits<F>(
+    msg: &mut CSvcMsgCreateStringTable,
+    state: &mut PackedStringTableState,
+    rewrite: F,
+) -> Result<bool, ParserError>
+where
+    F: FnMut(&mut StringTableEntryUpdate) -> Result<(), ParserError>,
+{
+    let data = if msg.data_compressed() {
+        snap::raw::Decoder::new().decompress_vec(msg.string_data())?
+    } else {
+        msg.string_data().to_vec()
+    };
+
+    let Some(rewritten) = state.rewrite_preserving_key_bits(&data, msg.num_entries(), rewrite)?
+    else {
+        return Ok(false);
+    };
+
+    msg.uncompressed_size = Some(rewritten.len() as i32);
+    if msg.data_compressed() {
+        msg.string_data = Some(snap::raw::Encoder::new().compress_vec(&rewritten)?);
+        msg.data_compressed = Some(true);
+    } else {
+        msg.string_data = Some(rewritten);
+    }
+    Ok(true)
+}
+
 pub(crate) fn rewrite_update_string_table<F>(
     msg: &mut CSvcMsgUpdateStringTable,
     state: &mut PackedStringTableState,
@@ -270,6 +415,24 @@ where
     F: FnMut(&mut StringTableEntryUpdate) -> Result<(), ParserError>,
 {
     let Some(rewritten) = state.rewrite(msg.string_data(), msg.num_changed_entries(), rewrite)?
+    else {
+        return Ok(false);
+    };
+
+    msg.string_data = Some(rewritten);
+    Ok(true)
+}
+
+pub(crate) fn rewrite_update_string_table_preserving_key_bits<F>(
+    msg: &mut CSvcMsgUpdateStringTable,
+    state: &mut PackedStringTableState,
+    rewrite: F,
+) -> Result<bool, ParserError>
+where
+    F: FnMut(&mut StringTableEntryUpdate) -> Result<(), ParserError>,
+{
+    let Some(rewritten) =
+        state.rewrite_preserving_key_bits(msg.string_data(), msg.num_changed_entries(), rewrite)?
     else {
         return Ok(false);
     };
@@ -330,47 +493,97 @@ fn encode_entries(
             writer.write_bit(false)?;
         }
 
-        if let Some(value) = entry.value.as_deref() {
-            writer.write_bit(true)?;
-
-            if format.user_data_fixed_size {
-                let expected_bytes = (format.user_data_size as usize).div_ceil(8);
-                if value.len() != expected_bytes {
-                    return Err(ParserError::IoError(format!(
-                        "fixed-size string table entry expected {expected_bytes} bytes, got {}",
-                        value.len()
-                    )));
-                }
-                writer.write_bits_as_bytes(value, format.user_data_size as u32)?;
-            } else {
-                let compressed;
-                let (value, is_compressed) = if (format.flags & 0x1) != 0 {
-                    compressed = snap::raw::Encoder::new().compress_vec(value)?;
-                    if compressed.len() < value.len() || entry.value_compressed {
-                        (compressed.as_slice(), true)
-                    } else {
-                        (value, false)
-                    }
-                } else {
-                    (value, false)
-                };
-
-                if (format.flags & 0x1) != 0 {
-                    writer.write_bit(is_compressed)?;
-                }
-                if format.var_int_bit_counts {
-                    writer.write_ubit_var(value.len() as u32)?;
-                } else {
-                    writer.write_bits(17, value.len() as u64)?;
-                }
-                writer.write_bits_as_bytes(value, (value.len() * 8) as u32)?;
-            }
-        } else {
-            writer.write_bit(false)?;
-        }
+        writer.write_bit(entry.value.is_some())?;
+        write_entry_value(&mut writer, format, entry)?;
     }
 
     writer.flush()?;
     drop(writer);
     Ok(out)
+}
+
+fn write_entry_value(
+    writer: &mut BitstreamWriter<'_>,
+    format: PackedStringTableFormat,
+    entry: &StringTableEntryUpdate,
+) -> Result<(), ParserError> {
+    let Some(value) = entry.value.as_deref() else {
+        return Ok(());
+    };
+
+    if format.user_data_fixed_size {
+        let expected_bytes = (format.user_data_size as usize).div_ceil(8);
+        if value.len() != expected_bytes {
+            return Err(ParserError::IoError(format!(
+                "fixed-size string table entry expected {expected_bytes} bytes, got {}",
+                value.len()
+            )));
+        }
+        writer.write_bits_as_bytes(value, format.user_data_size as u32)?;
+    } else {
+        let compressed;
+        let (value, is_compressed) = if (format.flags & 0x1) != 0 {
+            compressed = snap::raw::Encoder::new().compress_vec(value)?;
+            if compressed.len() < value.len() || entry.value_compressed {
+                (compressed.as_slice(), true)
+            } else {
+                (value, false)
+            }
+        } else {
+            (value, false)
+        };
+
+        if (format.flags & 0x1) != 0 {
+            writer.write_bit(is_compressed)?;
+        }
+        if format.var_int_bit_counts {
+            writer.write_ubit_var(value.len() as u32)?;
+        } else {
+            writer.write_bits(17, value.len() as u64)?;
+        }
+        writer.write_bits_as_bytes(value, (value.len() * 8) as u32)?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn preserving_rewrite_keeps_sparse_index_and_key_bits() {
+        let format = PackedStringTableFormat {
+            user_data_fixed_size: false,
+            user_data_size: 0,
+            flags: 0,
+            var_int_bit_counts: false,
+        };
+        let entries = [
+            StringTableEntryUpdate::new(16, Some("16".to_string()), Some(vec![1, 2, 3])),
+            StringTableEntryUpdate::new(20, Some("20".to_string()), Some(vec![4, 5, 6])),
+        ];
+        let data = encode_entries(&entries, format).unwrap();
+        let mut state = PackedStringTableState::new(format);
+
+        let rewritten = state
+            .rewrite_preserving_key_bits(&data, entries.len() as i32, |entry| {
+                if entry.index() == 16 {
+                    entry.set_value(vec![9, 8, 7, 6]);
+                }
+                Ok(())
+            })
+            .unwrap()
+            .unwrap();
+
+        let decoded = PackedStringTableState::new(format)
+            .decode_entries(&rewritten, entries.len() as i32)
+            .unwrap();
+
+        assert_eq!(decoded[0].index(), 16);
+        assert_eq!(decoded[0].key(), Some("16"));
+        assert_eq!(decoded[0].value(), Some([9, 8, 7, 6].as_slice()));
+        assert_eq!(decoded[1].index(), 20);
+        assert_eq!(decoded[1].key(), Some("20"));
+        assert_eq!(decoded[1].value(), Some([4, 5, 6].as_slice()));
+    }
 }

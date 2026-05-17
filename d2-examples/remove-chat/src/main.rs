@@ -5,6 +5,7 @@ use source2_demo::writer::*;
 
 use std::fs::File;
 
+#[derive(Default)]
 struct RemoveChat;
 
 #[rewriter]
@@ -32,7 +33,7 @@ fn main() -> anyhow::Result<()> {
     let output = File::create(output_path)?;
 
     let mut writer = DemoWriter::from_reader(input, output)?;
-    writer.register_rewriter(RemoveChat);
+    writer.register_rewriter::<RemoveChat>();
 
     let start = std::time::Instant::now();
     writer.run()?;

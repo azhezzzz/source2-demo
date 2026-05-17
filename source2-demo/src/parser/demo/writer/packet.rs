@@ -193,6 +193,7 @@ mod tests {
         out
     }
 
+    #[derive(Default)]
     struct AppendPacketMessage;
 
     impl DemoRewriter for AppendPacketMessage {
@@ -217,7 +218,7 @@ mod tests {
         let output = Cursor::new(Vec::new());
         let mut writer = DemoWriter::new(parser, output);
 
-        writer.register_rewriter(AppendPacketMessage);
+        writer.add_rewriter(AppendPacketMessage);
 
         let input = packet_data(&[(7, &[1, 2, 3])]);
         let output = writer.rewrite_packet_data(0, &input, false).unwrap();
@@ -230,5 +231,40 @@ mod tests {
         assert_eq!(reader.read_var_u32(), 3);
         assert_eq!(reader.read_bytes(3), [7, 8, 9]);
         assert_eq!(reader.remaining_bytes(), 0);
+    }
+
+    #[derive(Default)]
+    struct CountingPacketRewriter {
+        packets: usize,
+    }
+
+    impl DemoRewriter for CountingPacketRewriter {
+        fn interests(&self) -> RewriteInterests {
+            RewriteInterests::PACKET_MESSAGES
+        }
+
+        fn rewrite_packet_messages(
+            &mut self,
+            _tick: u32,
+            messages: &mut Vec<PacketMessage>,
+        ) -> Result<(), ParserError> {
+            self.packets += messages.len();
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn registered_rewriter_returns_rewriter_state_handle() {
+        let replay = minimal_replay();
+        let parser = Parser::from_slice(&replay).unwrap();
+        let output = Cursor::new(Vec::new());
+        let mut writer = DemoWriter::new(parser, output);
+
+        let rewriter = writer.register_rewriter::<CountingPacketRewriter>();
+
+        let input = packet_data(&[(7, &[1, 2, 3])]);
+        writer.rewrite_packet_data(0, &input, false).unwrap();
+
+        assert_eq!(rewriter.borrow().packets, 1);
     }
 }

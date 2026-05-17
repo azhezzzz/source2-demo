@@ -14,7 +14,9 @@ use crate::error::ParserError;
 use crate::parser::Parser;
 use crate::reader::{BitsReader, MessageReader, SeekableReader, SliceReader};
 use crate::string_table::PackedStringTableState;
+use std::cell::RefCell;
 use std::io::{Seek, Write};
+use std::rc::Rc;
 
 use raw::RawDemoMessage;
 pub use types::{
@@ -60,16 +62,65 @@ where
         }
     }
 
-    /// Registers a grouped demo rewriter.
+    /// Adds an already constructed demo rewriter and returns a handle to its
+    /// state.
     ///
-    /// Rewriters run in registration order. For message payload rewrites, each
-    /// rewriter sees the output of the previous rewriter.
-    pub fn register_rewriter<T>(&mut self, rewriter: T)
+    /// Use this when the rewriter needs custom constructor state. Rewriters run
+    /// in registration order. For message payload rewrites, each rewriter sees
+    /// the output of the previous rewriter.
+    pub fn add_rewriter<T>(&mut self, rewriter: T) -> Rc<RefCell<T>>
     where
         T: DemoRewriter + 'a,
     {
-        self.rewriter_interests |= rewriter.interests();
-        self.rewriters.push(Box::new(rewriter));
+        let rewriter = Rc::new(RefCell::new(rewriter));
+        self.rewriter_interests |= rewriter.borrow().interests();
+        self.rewriters.push(Box::new(rewriter.clone()));
+        rewriter
+    }
+
+    /// Registers a default demo rewriter and returns a handle to its state.
+    ///
+    /// This mirrors
+    /// [`Parser::register_observer`](crate::Parser::register_observer): the
+    /// writer constructs `T::default()`, registers it, and returns an
+    /// `Rc<RefCell<T>>` so callers can inspect accumulated state after writing.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use source2_demo::error::ParserError;
+    /// # use source2_demo::prelude::*;
+    /// # use source2_demo::proto::CDotaUserMsgChatMessage;
+    /// # use source2_demo::writer::*;
+    /// # use std::fs::File;
+    /// #[derive(Default)]
+    /// struct RemoveChat;
+    ///
+    /// #[rewriter]
+    /// impl RemoveChat {
+    ///     #[rewrite_packet_message]
+    ///     fn remove_chat(
+    ///         &mut self,
+    ///         _message: CDotaUserMsgChatMessage,
+    ///     ) -> Result<MessageRewrite, ParserError> {
+    ///         Ok(MessageRewrite::Drop)
+    ///     }
+    /// }
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// # let input = File::open("input.dem")?;
+    /// # let output = File::create("output.dem")?;
+    /// let mut writer = DemoWriter::from_reader(input, output)?;
+    /// writer.register_rewriter::<RemoveChat>();
+    /// writer.run()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn register_rewriter<T>(&mut self) -> Rc<RefCell<T>>
+    where
+        T: DemoRewriter + Default + 'a,
+    {
+        self.add_rewriter(T::default())
     }
 
     pub(crate) fn should_rewrite_entity(&mut self, event: EntityEvents, entity: &Entity) -> bool {

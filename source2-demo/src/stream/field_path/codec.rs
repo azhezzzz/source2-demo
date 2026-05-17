@@ -1,22 +1,18 @@
 use crate::reader::{BitsReader, SliceReader};
 use crate::stream::field_path::{FieldOp, FIELD_OPS};
-use crate::writer::{BitsWriter, BitstreamWriter};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
-use std::io;
 
 #[derive(Clone, Debug)]
 pub(crate) struct FieldPathCodec {
     tree: FieldPathTree,
-    codes: Vec<Vec<bool>>,
 }
 
 impl Default for FieldPathCodec {
     fn default() -> Self {
-        let tree = FieldPathTree::default();
-        let mut codes = vec![Vec::new(); FIELD_OPS.len()];
-        tree.fill_codes(&mut Vec::new(), &mut codes);
-        Self { tree, codes }
+        Self {
+            tree: FieldPathTree::default(),
+        }
     }
 }
 
@@ -35,14 +31,6 @@ impl FieldPathCodec {
                 return FIELD_OPS[*value as usize].0;
             }
         }
-    }
-
-    #[inline]
-    pub(crate) fn write_op(&self, writer: &mut BitstreamWriter<'_>, op: FieldOp) -> io::Result<()> {
-        for bit in &self.codes[op as usize] {
-            writer.write_bit(*bit)?;
-        }
-        Ok(())
     }
 }
 
@@ -89,19 +77,6 @@ impl Default for FieldPathTree {
 }
 
 impl FieldPathTree {
-    fn fill_codes(&self, prefix: &mut Vec<bool>, codes: &mut [Vec<bool>]) {
-        match self {
-            FieldPathTree::Leaf { value, .. } => codes[*value as usize] = prefix.clone(),
-            FieldPathTree::Node { left, right, .. } => {
-                prefix.push(false);
-                left.fill_codes(prefix, codes);
-                prefix.pop();
-                prefix.push(true);
-                right.fill_codes(prefix, codes);
-                prefix.pop();
-            }
-        }
-    }
     fn weight(&self) -> u32 {
         match self {
             FieldPathTree::Leaf { weight, .. } | FieldPathTree::Node { weight, .. } => *weight,

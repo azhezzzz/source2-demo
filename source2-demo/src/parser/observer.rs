@@ -1,6 +1,8 @@
 use crate::parser::Context;
 use crate::proto::*;
 use crate::{Entity, EntityEvents, GameEvent, StringTable};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[cfg(feature = "dota")]
 use crate::event::CombatLogEntry;
@@ -452,5 +454,144 @@ pub trait Observer {
         msg: &[u8],
     ) -> ObserverResult {
         Ok(())
+    }
+}
+
+impl<T> Observer for Rc<RefCell<T>>
+where
+    T: Observer,
+{
+    fn interests(&self) -> Interests {
+        self.borrow().interests()
+    }
+
+    fn on_demo_command(
+        &mut self,
+        ctx: &Context,
+        msg_type: EDemoCommands,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_demo_command(ctx, msg_type, msg)
+    }
+
+    fn on_net_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: NetMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_net_message(ctx, msg_type, msg)
+    }
+
+    fn on_svc_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: SvcMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_svc_message(ctx, msg_type, msg)
+    }
+
+    fn on_base_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: EBaseUserMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_base_user_message(ctx, msg_type, msg)
+    }
+
+    fn on_base_game_event(
+        &mut self,
+        ctx: &Context,
+        msg_type: EBaseGameEvents,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_base_game_event(ctx, msg_type, msg)
+    }
+
+    fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {
+        self.borrow_mut().on_tick_start(ctx)
+    }
+
+    fn on_tick_end(&mut self, ctx: &Context) -> ObserverResult {
+        self.borrow_mut().on_tick_end(ctx)
+    }
+
+    fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+        self.borrow_mut().on_entity(ctx, event, entity)
+    }
+
+    fn on_game_event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
+        self.borrow_mut().on_game_event(ctx, ge)
+    }
+
+    fn on_string_table(
+        &mut self,
+        ctx: &Context,
+        st: &StringTable,
+        modified: &[i32],
+    ) -> ObserverResult {
+        self.borrow_mut().on_string_table(ctx, st, modified)
+    }
+
+    fn on_stop(&mut self, ctx: &Context) -> ObserverResult {
+        self.borrow_mut().on_stop(ctx)
+    }
+
+    #[cfg(feature = "dota")]
+    fn on_combat_log(&mut self, ctx: &Context, cle: &CombatLogEntry) -> ObserverResult {
+        self.borrow_mut().on_combat_log(ctx, cle)
+    }
+
+    #[cfg(feature = "dota")]
+    fn on_dota_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: EDotaUserMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_dota_user_message(ctx, msg_type, msg)
+    }
+
+    #[cfg(feature = "deadlock")]
+    fn on_citadel_game_event(
+        &mut self,
+        ctx: &Context,
+        msg_type: ECitadelGameEvents,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_citadel_game_event(ctx, msg_type, msg)
+    }
+
+    #[cfg(feature = "deadlock")]
+    fn on_citadel_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: CitadelUserMessageIds,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut()
+            .on_citadel_user_message(ctx, msg_type, msg)
+    }
+
+    #[cfg(feature = "cs2")]
+    fn on_cs2_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: ECstrike15UserMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_cs2_user_message(ctx, msg_type, msg)
+    }
+
+    #[cfg(feature = "cs2")]
+    fn on_cs2_game_event(
+        &mut self,
+        ctx: &Context,
+        msg_type: ECsgoGameEvents,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_cs2_game_event(ctx, msg_type, msg)
     }
 }

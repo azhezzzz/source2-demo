@@ -10,10 +10,10 @@ macro_rules! try_observers {
         if !$self.global_mask.intersects(Interests::$flag) {
             Ok(())
         } else {
-            ($self.observers.iter().zip($self.observer_masks.iter()))
+            ($self.observers.iter_mut().zip($self.observer_masks.iter()))
                 .try_for_each(|(obs, &mask)| {
                     if mask.intersects(Interests::$flag) {
-                        obs.borrow_mut().$method($($arg),*)
+                        obs.$method($($arg),*)
                     } else {
                         Ok(())
                     }

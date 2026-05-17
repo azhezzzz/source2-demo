@@ -295,34 +295,3 @@ impl PacketMessage {
         self.payload = message.encode_to_vec();
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::proto::CSvcMsgServerInfo;
-
-    #[test]
-    fn packet_message_encodes_decodes_and_replaces_protobuf_payload() {
-        let original = CSvcMsgServerInfo {
-            max_classes: Some(128),
-            game_dir: Some("dota_v1234/game".to_string()),
-            ..Default::default()
-        };
-        let mut packet = PacketMessage::encoded(1, &original);
-
-        let decoded: CSvcMsgServerInfo = packet.decode().unwrap();
-        assert_eq!(decoded.max_classes(), 128);
-        assert_eq!(decoded.game_dir(), "dota_v1234/game");
-
-        let replacement = CSvcMsgServerInfo {
-            max_classes: Some(256),
-            game_dir: Some("dota_v5678/game".to_string()),
-            ..Default::default()
-        };
-        packet.replace_with(&replacement);
-
-        let decoded: CSvcMsgServerInfo = packet.decode().unwrap();
-        assert_eq!(decoded.max_classes(), 256);
-        assert_eq!(decoded.game_dir(), "dota_v5678/game");
-    }
-}

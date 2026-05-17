@@ -11,6 +11,9 @@ mod parser;
 mod stream;
 mod string_table;
 
+#[cfg(test)]
+mod tests;
+
 pub(crate) use stream::reader;
 
 /// Demo rewriting APIs and lower-level bitstream writer utilities.

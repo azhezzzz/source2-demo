@@ -34,7 +34,7 @@ Here's a simple program that prints chat messages from a Dota 2 replay. It handl
 
 More examples can be found in the `d2-examples` and `dl-examples` directories.
 
-```rust
+```rust ignore
 use source2_demo::prelude::*;
 use source2_demo::proto::*;
 

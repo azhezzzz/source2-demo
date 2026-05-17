@@ -5,7 +5,7 @@ use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{
     bit_position, copy_bits, copy_original_bits, copy_remaining_bits, copy_ubit_var, copy_var_u32,
 };
-use crate::stream::field_path::{read_and_copy_field_path, FieldOp};
+use crate::stream::field_path::FieldOp;
 use crate::writer::{BitsWriter, BitstreamWriter};
 
 impl<'a, R, W> DemoWriter<'a, R, W>
@@ -199,16 +199,26 @@ where
         event: EntityEvents,
         entity: &mut Entity,
     ) -> Result<bool, ParserError> {
+        let fields_start = bit_position(reader);
         let mut paths = Vec::new();
         let mut fp = FieldPath::default();
 
         loop {
-            let (path, done) = read_and_copy_field_path(path_reader, reader, writer, &mut fp)?;
-            if done {
+            reader.refill();
+            let op = path_reader.read_op(reader);
+            if op == FieldOp::FieldPathEncodeFinish {
                 break;
             }
-            paths.push(path);
+            op.execute(reader, &mut fp);
+            paths.push(fp);
         }
+        let fields_end = bit_position(reader);
+        copy_original_bits(
+            reader.source_buffer,
+            fields_start,
+            fields_end - fields_start,
+            writer,
+        )?;
 
         let mut changed = false;
         for fp in paths {

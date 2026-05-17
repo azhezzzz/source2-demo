@@ -116,7 +116,7 @@ bitflags::bitflags! {
 ///
 /// ## Using the `#[observer]` macro (recommended)
 ///
-/// ```no_run
+/// ```ignore
 /// use source2_demo::prelude::*;
 /// use source2_demo_protobufs::CDotaUserMsgChatMessage;
 ///

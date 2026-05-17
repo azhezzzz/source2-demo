@@ -48,6 +48,7 @@ pub mod writer {
 /// use source2_demo::proto::*;
 ///
 /// // Decode a protobuf message
+/// # let bytes: &[u8] = &[];
 /// let msg = CDemoFileInfo::decode(bytes)?;
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```

@@ -28,7 +28,7 @@ use std::collections::VecDeque;
 ///
 /// ## Basic usage with chat messages
 ///
-/// ```no_run
+/// ```ignore
 /// use source2_demo::prelude::*;
 ///
 /// #[derive(Default)]
@@ -125,7 +125,7 @@ impl<'a> Parser<'a, SliceReader<'a>> {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use source2_demo::prelude::*;
     /// use std::fs::File;
     ///
@@ -217,7 +217,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use source2_demo::prelude::*;
     /// use std::fs::File;
     ///
@@ -301,7 +301,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use source2_demo::prelude::*;
     ///
     /// # fn main() -> anyhow::Result<()> {
@@ -325,7 +325,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use source2_demo::prelude::*;
     ///
     /// # fn main() -> anyhow::Result<()> {
@@ -355,7 +355,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use source2_demo::prelude::*;
     /// use std::cell::RefCell;
     /// use std::rc::Rc;

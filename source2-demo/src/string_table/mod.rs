@@ -58,7 +58,7 @@
 //! println!("Active modifiers: {}", modifiers.iter().count());
 //!
 //! // Get by index
-//! let table = ctx.string_tables().get_by_index(0)?;
+//! let table = ctx.string_tables().get_by_id(0)?;
 //! # Ok(())
 //! # }
 //! ```

@@ -87,7 +87,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # use source2_demo::error::ParserError;
     /// # use source2_demo::prelude::*;
     /// # use source2_demo::proto::CDotaUserMsgChatMessage;

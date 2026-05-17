@@ -81,7 +81,7 @@ use std::rc::Rc;
 ///
 /// #[observer]
 /// #[uses_entities]
-/// impl Observer for EntityTracker {
+/// impl EntityTracker {
 ///     fn on_entity(
 ///         &mut self,
 ///         ctx: &Context,

@@ -73,7 +73,7 @@ impl Classes {
     /// # Examples
     ///
     /// ```no_run
-    /// use source2_demo::prelude::*;
+    /// use source2_demo::Context;
     ///
     /// # fn example(ctx: &Context) -> anyhow::Result<()> {
     /// let class = ctx.classes().get_by_id(42)?;
@@ -105,7 +105,7 @@ impl Classes {
     /// # Examples
     ///
     /// ```no_run
-    /// use source2_demo::prelude::*;
+    /// use source2_demo::Context;
     ///
     /// # fn example(ctx: &Context) -> anyhow::Result<()> {
     /// // Find hero class
@@ -198,7 +198,7 @@ impl Class {
     /// # Examples
     ///
     /// ```no_run
-    /// use source2_demo::prelude::*;
+    /// use source2_demo::Class;
     ///
     /// # fn example(class: &Class) {
     /// match class.name() {
@@ -220,7 +220,7 @@ impl Class {
     /// # Examples
     ///
     /// ```no_run
-    /// use source2_demo::prelude::*;
+    /// use source2_demo::Class;
     ///
     /// # fn example(class: &Class) {
     /// println!("Class ID: {}", class.id());

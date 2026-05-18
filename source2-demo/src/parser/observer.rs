@@ -645,6 +645,16 @@ where
         self.borrow_mut().on_entity(ctx, event, entity)
     }
 
+    fn on_entity_property_changed(
+        &mut self,
+        ctx: &Context,
+        entity: &Entity,
+        field_path: &FieldPath,
+    ) -> ObserverResult {
+        self.borrow_mut()
+            .on_entity_property_changed(ctx, entity, field_path)
+    }
+
     fn on_game_event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
         self.borrow_mut().on_game_event(ctx, ge)
     }

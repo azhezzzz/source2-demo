@@ -1,3 +1,5 @@
+#![allow(clippy::field_reassign_with_default)]
+
 use crate::error::ParserError;
 use crate::parser::{
     Context, DemoRewriter, DemoRunner, DemoWriter, Interests, MessageRewrite, Observer,
@@ -65,15 +67,9 @@ fn replay_with_playback_ticks(
     playback_ticks: i32,
     messages: &[(EDemoCommands, u32, Vec<u8>)],
 ) -> Vec<u8> {
-    let mut all_messages = vec![(
-        EDemoCommands::DemFileInfo,
-        0,
-        CDemoFileInfo {
-            playback_ticks: Some(playback_ticks),
-            ..Default::default()
-        }
-        .encode_to_vec(),
-    )];
+    let mut file_info = CDemoFileInfo::default();
+    file_info.playback_ticks = Some(playback_ticks);
+    let mut all_messages = vec![(EDemoCommands::DemFileInfo, 0, file_info.encode_to_vec())];
     all_messages.extend_from_slice(messages);
     replay_with_messages(&all_messages)
 }
@@ -520,30 +516,24 @@ fn parser_dispatches_packet_net_svc_base_and_dota_messages() {
     } else {
         "unknown7777/game"
     };
-    let server_info = CSvcMsgServerInfo {
-        max_classes: Some(128),
-        game_dir: Some(game_dir.to_string()),
-        ..Default::default()
-    }
-    .encode_to_vec();
-    let net_tick = CNetMsgTick {
-        tick: Some(42),
-        ..Default::default()
-    }
-    .encode_to_vec();
-    let say_text = CUserMessageSayText2 {
-        chat: Some(true),
-        messagename: Some("hello".to_string()),
-        ..Default::default()
-    }
-    .encode_to_vec();
+    let mut server_info = CSvcMsgServerInfo::default();
+    server_info.max_classes = Some(128);
+    server_info.game_dir = Some(game_dir.to_string());
+    let server_info = server_info.encode_to_vec();
+    let mut net_tick = CNetMsgTick::default();
+    net_tick.tick = Some(42);
+    let net_tick = net_tick.encode_to_vec();
+    let mut say_text = CUserMessageSayText2::default();
+    say_text.chat = Some(true);
+    say_text.messagename = Some("hello".to_string());
+    let say_text = say_text.encode_to_vec();
     #[cfg(feature = "dota")]
-    let dota_chat = CDotaUserMsgChatMessage {
-        source_player_id: Some(7),
-        message_text: Some("hi".to_string()),
-        ..Default::default()
-    }
-    .encode_to_vec();
+    let dota_chat = {
+        let mut msg = CDotaUserMsgChatMessage::default();
+        msg.source_player_id = Some(7);
+        msg.message_text = Some("hi".to_string());
+        msg.encode_to_vec()
+    };
     #[cfg(feature = "dota")]
     let packet_messages = vec![
         (SvcMessages::SvcServerInfo as i32, server_info.as_slice()),
@@ -635,16 +625,13 @@ fn parser_builds_game_event_definitions_and_dispatches_named_events() {
         }],
     }
     .encode_to_vec();
-    let event = CSvcMsgGameEvent {
-        eventid: Some(12),
-        keys: vec![csvc_msg_game_event::KeyT {
-            r#type: Some(3),
-            val_long: Some(9001),
-            ..Default::default()
-        }],
-        ..Default::default()
-    }
-    .encode_to_vec();
+    let mut key = csvc_msg_game_event::KeyT::default();
+    key.r#type = Some(3);
+    key.val_long = Some(9001);
+    let mut event = CSvcMsgGameEvent::default();
+    event.eventid = Some(12);
+    event.keys = vec![key];
+    let event = event.encode_to_vec();
     let replay = replay_with_playback_ticks(
         20,
         &[
@@ -708,22 +695,18 @@ fn parser_propagates_observer_errors() {
 
 #[test]
 fn packet_message_encodes_decodes_and_replaces_protobuf_payload() {
-    let original = CSvcMsgServerInfo {
-        max_classes: Some(128),
-        game_dir: Some("dota_v1234/game".to_string()),
-        ..Default::default()
-    };
+    let mut original = CSvcMsgServerInfo::default();
+    original.max_classes = Some(128);
+    original.game_dir = Some("dota_v1234/game".to_string());
     let mut packet = PacketMessage::encoded(1, &original);
 
     let decoded: CSvcMsgServerInfo = packet.decode().unwrap();
     assert_eq!(decoded.max_classes(), 128);
     assert_eq!(decoded.game_dir(), "dota_v1234/game");
 
-    let replacement = CSvcMsgServerInfo {
-        max_classes: Some(256),
-        game_dir: Some("dota_v5678/game".to_string()),
-        ..Default::default()
-    };
+    let mut replacement = CSvcMsgServerInfo::default();
+    replacement.max_classes = Some(256);
+    replacement.game_dir = Some("dota_v5678/game".to_string());
     packet.replace_with(&replacement);
 
     let decoded: CSvcMsgServerInfo = packet.decode().unwrap();

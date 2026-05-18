@@ -107,8 +107,18 @@ impl Default for Context {
 impl Context {
     pub(crate) fn new(replay_info: CDemoFileInfo) -> Self {
         Context {
+            classes: Classes::default(),
+            entities: Entities::default(),
+            string_tables: StringTables::default(),
+            game_events: GameEventList::default(),
+            tick: u32::MAX,
+            previous_tick: u32::MAX,
+            net_tick: u32::MAX,
+            game_build: 0,
             replay_info,
-            ..Default::default()
+            baselines: BaselineContainer::default(),
+            serializers: HashMap::default(),
+            last_full_packet_tick: u32::MAX,
         }
     }
 }

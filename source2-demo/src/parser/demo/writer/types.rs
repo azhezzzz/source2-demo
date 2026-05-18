@@ -1,6 +1,7 @@
 use crate::entity::field::FieldValue;
 use crate::entity::{Entity, EntityEvents};
 use crate::error::ParserError;
+use crate::parser::Context;
 use crate::proto::{
     CDemoStringTables, CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, EDemoCommands, Message,
 };
@@ -62,6 +63,7 @@ pub trait DemoRewriter {
     /// Rewrites an outer demo command payload.
     fn rewrite_demo_message(
         &mut self,
+        ctx: &Context,
         tick: u32,
         msg_type: EDemoCommands,
         payload: &[u8],
@@ -72,6 +74,7 @@ pub trait DemoRewriter {
     /// Rewrites one packet message payload.
     fn rewrite_packet_message(
         &mut self,
+        ctx: &Context,
         tick: u32,
         msg_type: i32,
         payload: &[u8],
@@ -85,6 +88,7 @@ pub trait DemoRewriter {
     /// writer metadata state.
     fn rewrite_packet_messages(
         &mut self,
+        ctx: &Context,
         tick: u32,
         messages: &mut Vec<PacketMessage>,
     ) -> Result<(), ParserError> {
@@ -94,6 +98,7 @@ pub trait DemoRewriter {
     /// Rewrites an outer demo string table payload after it has been decoded.
     fn rewrite_demo_string_tables(
         &mut self,
+        ctx: &Context,
         tick: u32,
         message: &mut CDemoStringTables,
     ) -> Result<MessageRewrite, ParserError> {
@@ -103,6 +108,7 @@ pub trait DemoRewriter {
     /// Rewrites one decoded string table entry update.
     fn rewrite_string_table_entry(
         &mut self,
+        ctx: &Context,
         tick: u32,
         table_name: &str,
         entry: &mut StringTableEntryUpdate,
@@ -113,6 +119,7 @@ pub trait DemoRewriter {
     /// Rewrites a decoded `svc_CreateStringTable` message.
     fn rewrite_svc_create_string_table(
         &mut self,
+        ctx: &Context,
         tick: u32,
         message: &mut CSvcMsgCreateStringTable,
     ) -> Result<MessageRewrite, ParserError> {
@@ -122,6 +129,7 @@ pub trait DemoRewriter {
     /// Rewrites a decoded `svc_UpdateStringTable` message.
     fn rewrite_svc_update_string_table(
         &mut self,
+        ctx: &Context,
         tick: u32,
         message: &mut CSvcMsgUpdateStringTable,
     ) -> Result<MessageRewrite, ParserError> {
@@ -133,6 +141,7 @@ pub trait DemoRewriter {
     /// The first registered rewriter that returns `Some` wins.
     fn replace_entity_field(
         &mut self,
+        ctx: &Context,
         event: EntityEvents,
         entity: &Entity,
         field_name: &str,
@@ -142,7 +151,12 @@ pub trait DemoRewriter {
     }
 
     /// Decides whether an entity should enter the decoded field rewrite path.
-    fn should_rewrite_entity(&mut self, event: EntityEvents, entity: &Entity) -> bool {
+    fn should_rewrite_entity(
+        &mut self,
+        ctx: &Context,
+        event: EntityEvents,
+        entity: &Entity,
+    ) -> bool {
         true
     }
 }
@@ -157,81 +171,96 @@ where
 
     fn rewrite_demo_message(
         &mut self,
+        ctx: &Context,
         tick: u32,
         msg_type: EDemoCommands,
         payload: &[u8],
     ) -> Result<MessageRewrite, ParserError> {
         self.borrow_mut()
-            .rewrite_demo_message(tick, msg_type, payload)
+            .rewrite_demo_message(ctx, tick, msg_type, payload)
     }
 
     fn rewrite_packet_message(
         &mut self,
+        ctx: &Context,
         tick: u32,
         msg_type: i32,
         payload: &[u8],
     ) -> Result<MessageRewrite, ParserError> {
         self.borrow_mut()
-            .rewrite_packet_message(tick, msg_type, payload)
+            .rewrite_packet_message(ctx, tick, msg_type, payload)
     }
 
     fn rewrite_packet_messages(
         &mut self,
+        ctx: &Context,
         tick: u32,
         messages: &mut Vec<PacketMessage>,
     ) -> Result<(), ParserError> {
-        self.borrow_mut().rewrite_packet_messages(tick, messages)
+        self.borrow_mut()
+            .rewrite_packet_messages(ctx, tick, messages)
     }
 
     fn rewrite_demo_string_tables(
         &mut self,
+        ctx: &Context,
         tick: u32,
         message: &mut CDemoStringTables,
     ) -> Result<MessageRewrite, ParserError> {
-        self.borrow_mut().rewrite_demo_string_tables(tick, message)
+        self.borrow_mut()
+            .rewrite_demo_string_tables(ctx, tick, message)
     }
 
     fn rewrite_string_table_entry(
         &mut self,
+        ctx: &Context,
         tick: u32,
         table_name: &str,
         entry: &mut StringTableEntryUpdate,
     ) -> Result<(), ParserError> {
         self.borrow_mut()
-            .rewrite_string_table_entry(tick, table_name, entry)
+            .rewrite_string_table_entry(ctx, tick, table_name, entry)
     }
 
     fn rewrite_svc_create_string_table(
         &mut self,
+        ctx: &Context,
         tick: u32,
         message: &mut CSvcMsgCreateStringTable,
     ) -> Result<MessageRewrite, ParserError> {
         self.borrow_mut()
-            .rewrite_svc_create_string_table(tick, message)
+            .rewrite_svc_create_string_table(ctx, tick, message)
     }
 
     fn rewrite_svc_update_string_table(
         &mut self,
+        ctx: &Context,
         tick: u32,
         message: &mut CSvcMsgUpdateStringTable,
     ) -> Result<MessageRewrite, ParserError> {
         self.borrow_mut()
-            .rewrite_svc_update_string_table(tick, message)
+            .rewrite_svc_update_string_table(ctx, tick, message)
     }
 
     fn replace_entity_field(
         &mut self,
+        ctx: &Context,
         event: EntityEvents,
         entity: &Entity,
         field_name: &str,
         value: &FieldValue,
     ) -> Option<FieldValue> {
         self.borrow_mut()
-            .replace_entity_field(event, entity, field_name, value)
+            .replace_entity_field(ctx, event, entity, field_name, value)
     }
 
-    fn should_rewrite_entity(&mut self, event: EntityEvents, entity: &Entity) -> bool {
-        self.borrow_mut().should_rewrite_entity(event, entity)
+    fn should_rewrite_entity(
+        &mut self,
+        ctx: &Context,
+        event: EntityEvents,
+        entity: &Entity,
+    ) -> bool {
+        self.borrow_mut().should_rewrite_entity(ctx, event, entity)
     }
 }
 

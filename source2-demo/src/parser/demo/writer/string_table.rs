@@ -26,7 +26,8 @@ where
                 .interests()
                 .contains(RewriteInterests::DEMO_STRING_TABLES)
         }) {
-            match rewriter.rewrite_demo_string_tables(tick, &mut msg)? {
+            let ctx = &self.parser.context;
+            match rewriter.rewrite_demo_string_tables(ctx, tick, &mut msg)? {
                 MessageRewrite::Drop => return Ok(None),
                 MessageRewrite::Keep | MessageRewrite::Rewrite => {}
                 MessageRewrite::Replace(bytes) => {
@@ -62,7 +63,8 @@ where
                     .interests()
                     .contains(RewriteInterests::STRING_TABLE_ENTRIES)
             }) {
-                rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
+                let ctx = &self.parser.context;
+                rewriter.rewrite_string_table_entry(ctx, tick, &table_name, entry)?;
             }
             Ok(())
         });
@@ -123,7 +125,8 @@ where
                     .interests()
                     .contains(RewriteInterests::STRING_TABLE_ENTRIES)
             }) {
-                rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
+                let ctx = &self.parser.context;
+                rewriter.rewrite_string_table_entry(ctx, tick, &table_name, entry)?;
             }
             Ok(())
         });
@@ -150,7 +153,8 @@ where
                         .interests()
                         .contains(RewriteInterests::STRING_TABLE_ENTRIES)
                 }) {
-                    rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
+                    let ctx = &self.parser.context;
+                    rewriter.rewrite_string_table_entry(ctx, tick, &table_name, entry)?;
                 }
                 Ok(())
             })?;
@@ -160,7 +164,8 @@ where
                         .interests()
                         .contains(RewriteInterests::STRING_TABLE_ENTRIES)
                 }) {
-                    rewriter.rewrite_string_table_entry(tick, &table_name, entry)?;
+                    let ctx = &self.parser.context;
+                    rewriter.rewrite_string_table_entry(ctx, tick, &table_name, entry)?;
                 }
                 Ok(())
             })?;

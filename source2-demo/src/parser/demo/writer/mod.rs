@@ -28,8 +28,8 @@ const INSTANCE_BASELINE_TABLE: &str = "instancebaseline";
 /// Demo writer that reads demo messages and emits a rewritten stream.
 ///
 /// The writer keeps only the parser metadata needed for rewriting, such as
-/// serializers, classes, string tables, baselines, and entity class identity.
-/// It does not dispatch observers or maintain accumulated entity field state.
+/// serializers, classes, string tables, baselines, and entity state needed by
+/// field rewriters.
 pub struct DemoWriter<'a, R, W>
 where
     R: BitsReader + MessageReader,
@@ -124,6 +124,7 @@ where
     }
 
     pub(crate) fn should_rewrite_entity(&mut self, event: EntityEvents, entity: &Entity) -> bool {
+        let ctx = &self.parser.context;
         self.rewriters
             .iter_mut()
             .filter(|rewriter| {
@@ -131,7 +132,7 @@ where
                     .interests()
                     .contains(RewriteInterests::ENTITY_FIELDS)
             })
-            .all(|rewriter| rewriter.should_rewrite_entity(event, entity))
+            .all(|rewriter| rewriter.should_rewrite_entity(ctx, event, entity))
     }
 
     pub(crate) fn replace_entity_field(
@@ -141,6 +142,7 @@ where
         field_name: &str,
         value: &FieldValue,
     ) -> Option<FieldValue> {
+        let ctx = &self.parser.context;
         self.rewriters
             .iter_mut()
             .filter(|rewriter| {
@@ -148,7 +150,9 @@ where
                     .interests()
                     .contains(RewriteInterests::ENTITY_FIELDS)
             })
-            .find_map(|rewriter| rewriter.replace_entity_field(event, entity, field_name, value))
+            .find_map(|rewriter| {
+                rewriter.replace_entity_field(ctx, event, entity, field_name, value)
+            })
     }
 
     fn has_rewriters(&self, interests: RewriteInterests) -> bool {

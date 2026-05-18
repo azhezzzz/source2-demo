@@ -20,15 +20,19 @@ where
         self.bytes_written = header.len() as u64;
 
         'messages: while let Some(message) = self.read_next_raw_message()? {
+            self.update_context_tick(message.tick);
+
             let mut payload = None;
             if self.has_rewriters(RewriteInterests::DEMO_MESSAGE) {
                 let mut decoded = Self::decode_raw_payload(&message)?;
+                let ctx = &self.parser.context;
                 for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
                     rewriter
                         .interests()
                         .contains(RewriteInterests::DEMO_MESSAGE)
                 }) {
                     match rewriter.rewrite_demo_message(
+                        ctx,
                         message.tick,
                         message.msg_type,
                         decoded.as_slice(),
@@ -146,12 +150,13 @@ where
                     }
                     changed |= self.rewrite_demo_string_table_entries(message.tick, &mut msg)?;
                     let mut out_payload: Option<Vec<u8>> = None;
+                    let ctx = &self.parser.context;
                     for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
                         rewriter
                             .interests()
                             .contains(RewriteInterests::DEMO_STRING_TABLES)
                     }) {
-                        match rewriter.rewrite_demo_string_tables(message.tick, &mut msg)? {
+                        match rewriter.rewrite_demo_string_tables(ctx, message.tick, &mut msg)? {
                             MessageRewrite::Drop => continue 'messages,
                             MessageRewrite::Keep => {}
                             MessageRewrite::Rewrite => {
@@ -190,5 +195,10 @@ where
 
         self.finalize_file_info_offset()?;
         Ok(())
+    }
+
+    fn update_context_tick(&mut self, tick: u32) {
+        self.parser.context.previous_tick = self.parser.context.tick;
+        self.parser.context.tick = tick;
     }
 }

@@ -23,12 +23,18 @@ where
             let msg_buf = reader.read_bytes(size);
 
             let mut msg_payload = msg_buf;
+            let ctx = &self.parser.context;
             for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
                 rewriter
                     .interests()
                     .contains(RewriteInterests::PACKET_MESSAGE)
             }) {
-                match rewriter.rewrite_packet_message(tick, msg_type, msg_payload.as_slice())? {
+                match rewriter.rewrite_packet_message(
+                    ctx,
+                    tick,
+                    msg_type,
+                    msg_payload.as_slice(),
+                )? {
                     MessageRewrite::Drop => continue 'messages,
                     MessageRewrite::Replace(bytes) => msg_payload = bytes,
                     MessageRewrite::Keep | MessageRewrite::Rewrite => {}
@@ -64,7 +70,10 @@ where
                                     .interests()
                                     .contains(RewriteInterests::SVC_CREATE_STRING_TABLE)
                             }) {
-                                match rewriter.rewrite_svc_create_string_table(tick, &mut msg)? {
+                                let ctx = &self.parser.context;
+                                match rewriter
+                                    .rewrite_svc_create_string_table(ctx, tick, &mut msg)?
+                                {
                                     MessageRewrite::Drop => continue 'messages,
                                     MessageRewrite::Keep => {}
                                     MessageRewrite::Rewrite => {
@@ -102,7 +111,10 @@ where
                                     .interests()
                                     .contains(RewriteInterests::SVC_UPDATE_STRING_TABLE)
                             }) {
-                                match rewriter.rewrite_svc_update_string_table(tick, &mut msg)? {
+                                let ctx = &self.parser.context;
+                                match rewriter
+                                    .rewrite_svc_update_string_table(ctx, tick, &mut msg)?
+                                {
                                     MessageRewrite::Drop => continue 'messages,
                                     MessageRewrite::Keep => {}
                                     MessageRewrite::Rewrite => {
@@ -144,7 +156,8 @@ where
                 .interests()
                 .contains(RewriteInterests::PACKET_MESSAGES)
         }) {
-            rewriter.rewrite_packet_messages(tick, &mut messages)?;
+            let ctx = &self.parser.context;
+            rewriter.rewrite_packet_messages(ctx, tick, &mut messages)?;
         }
 
         let mut out = Vec::with_capacity(data.len());

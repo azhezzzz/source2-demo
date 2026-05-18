@@ -148,7 +148,7 @@ mod protobuf_map;
 use crate::protobuf_map::get_enum_from_struct;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, FnArg, Ident, ItemImpl, Token, Type};
+use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, Expr, FnArg, Ident, ItemImpl, Lit, Token, Type};
 
 #[allow(unused_mut)]
 #[proc_macro_attribute]
@@ -809,7 +809,8 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// Apply this to an inherent `impl` block and mark methods with writer callback
 /// attributes such as `#[rewrite_packet_message]`,
-/// `#[rewrite_string_table_entry]`, `#[replace_entity_field]`, and
+/// `#[rewrite_string_table_entry]`, `#[rewrite_field]`,
+/// `#[replace_entity_field]`, and
 /// `#[should_rewrite_entity]`.
 ///
 /// Handler methods should use the same return type as the corresponding
@@ -850,8 +851,9 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
             match ident.to_string().as_str() {
                 "rewrite_demo_message" => {
                     add_flag!(DEMO_MESSAGE);
+                    let args = writer_callback_method_args(method, quote! {});
                     rewrite_demo_message_body.extend(quote! {
-                        match self.#method_name(tick, msg_type, payload)? {
+                        match self.#method_name(#args)? {
                             ::source2_demo::writer::MessageRewrite::Keep => {}
                             rewrite => return Ok(rewrite),
                         }
@@ -859,43 +861,31 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
                 "rewrite_packet_message" => {
                     add_flag!(PACKET_MESSAGE);
-                    let (first_arg_type, _) = get_arg_type(method, 1);
-                    let first_arg_type_string = first_arg_type.to_token_stream().to_string();
-
-                    if first_arg_type_string == "u32" {
-                        let (arg_type, is_ref, is_mut_ref) = get_arg_type_details(method, 2);
-                        if arg_type.to_token_stream().to_string() == "i32" {
-                            rewrite_packet_message_body.extend(quote! {
-                                match self.#method_name(tick, msg_type, payload)? {
-                                    ::source2_demo::writer::MessageRewrite::Keep => {}
-                                    rewrite => return Ok(rewrite),
-                                }
-                            });
-                        } else {
-                            extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, &method_name, &arg_type, is_ref, is_mut_ref, quote! { tick });
-                        }
-                    } else if first_arg_type_string == "i32" {
+                    if packet_message_method_is_raw(method) {
+                        let args = writer_callback_method_args(method, quote! {});
                         rewrite_packet_message_body.extend(quote! {
-                            match self.#method_name(tick, msg_type, payload)? {
+                            match self.#method_name(#args)? {
                                 ::source2_demo::writer::MessageRewrite::Keep => {}
                                 rewrite => return Ok(rewrite),
                             }
                         });
                     } else {
-                        let (arg_type, is_ref, is_mut_ref) = get_arg_type_details(method, 1);
-                        extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, &method_name, &arg_type, is_ref, is_mut_ref, quote! {});
+                        let (arg_type, is_ref, is_mut_ref) = packet_message_method_type(method);
+                        extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, method, &method_name, &arg_type, is_ref, is_mut_ref);
                     }
                 }
                 "rewrite_packet_messages" => {
                     add_flag!(PACKET_MESSAGES);
+                    let args = writer_callback_method_args(method, quote! {});
                     rewrite_packet_messages_body.extend(quote! {
-                        self.#method_name(tick, messages)?;
+                        self.#method_name(#args)?;
                     });
                 }
                 "rewrite_demo_string_tables" => {
                     add_flag!(DEMO_STRING_TABLES);
+                    let args = writer_callback_method_args(method, quote! { message });
                     rewrite_demo_string_tables_body.extend(quote! {
-                        match self.#method_name(tick, message)? {
+                        match self.#method_name(#args)? {
                             ::source2_demo::writer::MessageRewrite::Keep => {}
                             rewrite => return Ok(rewrite),
                         }
@@ -903,14 +893,16 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
                 "rewrite_string_table_entry" => {
                     add_flag!(STRING_TABLE_ENTRIES);
+                    let args = writer_callback_method_args(method, quote! {});
                     rewrite_string_table_entry_body.extend(quote! {
-                        self.#method_name(tick, table_name, entry)?;
+                        self.#method_name(#args)?;
                     });
                 }
                 "rewrite_svc_create_string_table" => {
                     add_flag!(SVC_CREATE_STRING_TABLE);
+                    let args = writer_callback_method_args(method, quote! { message });
                     rewrite_svc_create_string_table_body.extend(quote! {
-                        match self.#method_name(tick, message)? {
+                        match self.#method_name(#args)? {
                             ::source2_demo::writer::MessageRewrite::Keep => {}
                             rewrite => return Ok(rewrite),
                         }
@@ -918,8 +910,9 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
                 "rewrite_svc_update_string_table" => {
                     add_flag!(SVC_UPDATE_STRING_TABLE);
+                    let args = writer_callback_method_args(method, quote! { message });
                     rewrite_svc_update_string_table_body.extend(quote! {
-                        match self.#method_name(tick, message)? {
+                        match self.#method_name(#args)? {
                             ::source2_demo::writer::MessageRewrite::Keep => {}
                             rewrite => return Ok(rewrite),
                         }
@@ -927,16 +920,25 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
                 "replace_entity_field" => {
                     add_flag!(ENTITY_FIELDS);
+                    let args = replace_entity_field_method_args(method);
                     replace_entity_field_body.extend(quote! {
-                        if let Some(value) = self.#method_name(event, entity, field_name, value) {
+                        if let Some(value) = self.#method_name(#args) {
                             return Some(value);
                         }
                     });
                 }
+                "rewrite_field" => {
+                    add_flag!(ENTITY_FIELDS);
+                    match rewrite_field_body(attr, method) {
+                        Ok(tokens) => replace_entity_field_body.extend(tokens),
+                        Err(error) => replace_entity_field_body.extend(error.to_compile_error()),
+                    }
+                }
                 "should_rewrite_entity" => {
                     add_flag!(ENTITY_FIELDS);
+                    let args = should_rewrite_entity_method_args(method);
                     should_rewrite_entity_body.extend(quote! {
-                        if !self.#method_name(event, entity) {
+                        if !self.#method_name(#args) {
                             return false;
                         }
                     });
@@ -954,6 +956,7 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn rewrite_demo_message(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 tick: u32,
                 msg_type: ::source2_demo::proto::EDemoCommands,
                 payload: &[u8],
@@ -964,6 +967,7 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn rewrite_packet_message(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 tick: u32,
                 msg_type: i32,
                 payload: &[u8],
@@ -974,6 +978,7 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn rewrite_packet_messages(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 tick: u32,
                 messages: &mut Vec<::source2_demo::writer::PacketMessage>,
             ) -> Result<(), ::source2_demo::error::ParserError> {
@@ -983,6 +988,7 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn rewrite_demo_string_tables(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 tick: u32,
                 message: &mut ::source2_demo::proto::CDemoStringTables,
             ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
@@ -992,6 +998,7 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn rewrite_string_table_entry(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 tick: u32,
                 table_name: &str,
                 entry: &mut ::source2_demo::writer::StringTableEntryUpdate,
@@ -1002,6 +1009,7 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn rewrite_svc_create_string_table(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 tick: u32,
                 message: &mut ::source2_demo::proto::CSvcMsgCreateStringTable,
             ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
@@ -1011,6 +1019,7 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn rewrite_svc_update_string_table(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 tick: u32,
                 message: &mut ::source2_demo::proto::CSvcMsgUpdateStringTable,
             ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
@@ -1020,6 +1029,7 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn replace_entity_field(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 event: ::source2_demo::EntityEvents,
                 entity: &::source2_demo::Entity,
                 field_name: &str,
@@ -1031,12 +1041,14 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             fn should_rewrite_entity(
                 &mut self,
+                ctx: &::source2_demo::Context,
                 event: ::source2_demo::EntityEvents,
                 entity: &::source2_demo::Entity,
             ) -> bool {
                 #should_rewrite_entity_body
                 true
             }
+
         }
         #input
     };
@@ -1056,19 +1068,313 @@ fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
     }
 }
 
-fn get_arg_type_details(method: &syn::ImplItemFn, n: usize) -> (Type, bool, bool) {
-    if let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(n) {
-        if let Type::Reference(reference) = pat_type.ty.as_ref() {
-            (*reference.elem.clone(), true, reference.mutability.is_some())
+fn rewrite_field_body(attr: &syn::Attribute, method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
+    let method_name = &method.sig.ident;
+    let mut class = None;
+    let mut field = None;
+
+    attr.parse_nested_meta(|meta| {
+        if meta.path.is_ident("class") {
+            let value = meta.value()?;
+            class = Some(value.parse::<Expr>()?);
+            Ok(())
+        } else if meta.path.is_ident("field") {
+            let value = meta.value()?;
+            field = Some(value.parse::<Expr>()?);
+            Ok(())
         } else {
-            (*pat_type.ty.clone(), false, false)
+            Err(meta.error("expected `class = ...` or `field = ...`"))
         }
-    } else {
-        panic!("Expected argument")
+    })?;
+
+    let class = class.ok_or_else(|| syn::Error::new_spanned(attr, "missing `class = ...`"))?;
+    let field = field.ok_or_else(|| syn::Error::new_spanned(attr, "missing `field = ...`"))?;
+    let class_predicate = string_predicate(&quote! { entity.class().name() }, &class)?;
+    let field_predicate = string_predicate(&quote! { field_name }, &field)?;
+    let args = rewrite_field_method_args(method)?;
+
+    Ok(quote! {
+        if (#class_predicate) && (#field_predicate) {
+            let replacement = self.#method_name(#args);
+            if let Some(value) = ::source2_demo::FieldRewriteResult::into_field_rewrite_result(replacement) {
+                return Some(value);
+            }
+        }
+    })
+}
+
+fn string_predicate(target: &proc_macro2::TokenStream, expr: &Expr) -> syn::Result<proc_macro2::TokenStream> {
+    match expr {
+        Expr::Lit(expr_lit) => {
+            let Lit::Str(value) = &expr_lit.lit else {
+                return Err(syn::Error::new_spanned(expr, "expected string literal"));
+            };
+            Ok(quote! { #target == #value })
+        }
+        Expr::Call(call) => {
+            let Expr::Path(path) = call.func.as_ref() else {
+                return Err(syn::Error::new_spanned(&call.func, "expected predicate name"));
+            };
+            let Some(ident) = path.path.get_ident() else {
+                return Err(syn::Error::new_spanned(&path.path, "expected predicate name"));
+            };
+            let name = ident.to_string();
+            match name.as_str() {
+                "exact" => {
+                    let value = single_string_arg(expr, &call.args)?;
+                    Ok(quote! { #target == #value })
+                }
+                "starts_with" => {
+                    let value = single_string_arg(expr, &call.args)?;
+                    Ok(quote! { #target.starts_with(#value) })
+                }
+                "ends_with" => {
+                    let value = single_string_arg(expr, &call.args)?;
+                    Ok(quote! { #target.ends_with(#value) })
+                }
+                "contains" => {
+                    let value = single_string_arg(expr, &call.args)?;
+                    Ok(quote! { #target.contains(#value) })
+                }
+                "any" => {
+                    if call.args.is_empty() {
+                        return Err(syn::Error::new_spanned(expr, "`any` needs at least one argument"));
+                    }
+                    let predicates = call.args.iter().map(|arg| string_predicate(target, arg)).collect::<syn::Result<Vec<_>>>()?;
+                    Ok(quote! { false #( || (#predicates) )* })
+                }
+                "all" => {
+                    if call.args.is_empty() {
+                        return Err(syn::Error::new_spanned(expr, "`all` needs at least one argument"));
+                    }
+                    let predicates = call.args.iter().map(|arg| string_predicate(target, arg)).collect::<syn::Result<Vec<_>>>()?;
+                    Ok(quote! { true #( && (#predicates) )* })
+                }
+                "not" => {
+                    if call.args.len() != 1 {
+                        return Err(syn::Error::new_spanned(expr, "`not` needs exactly one argument"));
+                    }
+                    let predicate = string_predicate(target, call.args.first().unwrap())?;
+                    Ok(quote! { !(#predicate) })
+                }
+                _ => Err(syn::Error::new_spanned(ident, "unknown predicate; expected exact, starts_with, ends_with, contains, any, all, or not")),
+            }
+        }
+        _ => Err(syn::Error::new_spanned(expr, "expected string literal or predicate call")),
     }
 }
 
-fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, method_name: &Ident, arg_type: &Type, is_ref: bool, is_mut_ref: bool, prefix_arg: proc_macro2::TokenStream) {
+fn single_string_arg<'a>(expr: &Expr, args: &'a Punctuated<Expr, Token![,]>) -> syn::Result<&'a syn::LitStr> {
+    if args.len() != 1 {
+        return Err(syn::Error::new_spanned(expr, "predicate needs exactly one argument"));
+    }
+    let Expr::Lit(expr_lit) = args.first().unwrap() else {
+        return Err(syn::Error::new_spanned(expr, "predicate argument must be a string literal"));
+    };
+    let Lit::Str(value) = &expr_lit.lit else {
+        return Err(syn::Error::new_spanned(expr, "predicate argument must be a string literal"));
+    };
+    Ok(value)
+}
+
+fn rewrite_field_method_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
+    let value_arg_index = rewrite_field_value_arg_index(method)?;
+    let mut args = Vec::new();
+
+    for (index, input) in method.sig.inputs.iter().enumerate().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        if index == value_arg_index {
+            args.push(rewrite_field_value_arg(pat_type.ty.as_ref())?);
+            continue;
+        }
+
+        let type_string = pat_type.ty.to_token_stream().to_string();
+        let arg = if type_string == ":: source2_demo :: EntityEvents" || type_string == "source2_demo :: EntityEvents" || type_string == "EntityEvents" {
+            quote! { event }
+        } else if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" {
+            quote! { ctx }
+        } else if type_string == "& :: source2_demo :: Entity" || type_string == "& source2_demo :: Entity" || type_string == "& Entity" {
+            quote! { entity }
+        } else if type_string == "& str" {
+            quote! { field_name }
+        } else if type_string == "& :: source2_demo :: FieldValue" || type_string == "& source2_demo :: FieldValue" || type_string == "& FieldValue" {
+            quote! { value }
+        } else {
+            return Err(syn::Error::new_spanned(pat_type, "unsupported #[rewrite_field] argument"));
+        };
+        args.push(arg);
+    }
+
+    Ok(quote! { #(#args),* })
+}
+
+fn replace_entity_field_method_args(method: &syn::ImplItemFn) -> proc_macro2::TokenStream {
+    let mut args = Vec::new();
+
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = pat_type.ty.to_token_stream().to_string();
+        let arg = if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" {
+            quote! { ctx }
+        } else if type_string == ":: source2_demo :: EntityEvents" || type_string == "source2_demo :: EntityEvents" || type_string == "EntityEvents" {
+            quote! { event }
+        } else if type_string == "& :: source2_demo :: Entity" || type_string == "& source2_demo :: Entity" || type_string == "& Entity" {
+            quote! { entity }
+        } else if type_string == "& str" {
+            quote! { field_name }
+        } else if type_string == "& :: source2_demo :: FieldValue" || type_string == "& source2_demo :: FieldValue" || type_string == "& FieldValue" {
+            quote! { value }
+        } else {
+            quote! { compile_error!("unsupported #[replace_entity_field] argument") }
+        };
+        args.push(arg);
+    }
+
+    Ok::<_, syn::Error>(quote! { #(#args),* }).unwrap()
+}
+
+fn should_rewrite_entity_method_args(method: &syn::ImplItemFn) -> proc_macro2::TokenStream {
+    let mut args = Vec::new();
+
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = pat_type.ty.to_token_stream().to_string();
+        let arg = if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" {
+            quote! { ctx }
+        } else if type_string == ":: source2_demo :: EntityEvents" || type_string == "source2_demo :: EntityEvents" || type_string == "EntityEvents" {
+            quote! { event }
+        } else if type_string == "& :: source2_demo :: Entity" || type_string == "& source2_demo :: Entity" || type_string == "& Entity" {
+            quote! { entity }
+        } else {
+            quote! { compile_error!("unsupported #[should_rewrite_entity] argument") }
+        };
+        args.push(arg);
+    }
+
+    Ok::<_, syn::Error>(quote! { #(#args),* }).unwrap()
+}
+
+fn rewrite_field_value_arg_index(method: &syn::ImplItemFn) -> syn::Result<usize> {
+    for (index, input) in method.sig.inputs.iter().enumerate().skip(1).rev() {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = pat_type.ty.to_token_stream().to_string();
+        if matches!(
+            type_string.as_str(),
+            "& str"
+                | "String"
+                | "& String"
+                | "bool"
+                | "f32"
+                | "i8"
+                | "i16"
+                | "i32"
+                | "i64"
+                | "u8"
+                | "u16"
+                | "u32"
+                | "u64"
+                | "[f32 ; 2]"
+                | "[f32 ; 3]"
+                | "[f32 ; 4]"
+                | "& :: source2_demo :: FieldValue"
+                | "& source2_demo :: FieldValue"
+                | "& FieldValue"
+                | ":: source2_demo :: FieldValue"
+                | "source2_demo :: FieldValue"
+                | "FieldValue"
+        ) {
+            return Ok(index);
+        }
+    }
+
+    Err(syn::Error::new_spanned(&method.sig, "#[rewrite_field] needs a value argument"))
+}
+
+fn rewrite_field_value_arg(ty: &Type) -> syn::Result<proc_macro2::TokenStream> {
+    let type_string = ty.to_token_stream().to_string();
+    match type_string.as_str() {
+        "& str" => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()?.as_str() }),
+        "String" => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()? }),
+        "& String" => Ok(quote! { &<&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()? }),
+        "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue" => Ok(quote! { value }),
+        ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue" => Ok(quote! { value.clone() }),
+        _ => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<#ty>>::try_into(value).ok()? }),
+    }
+}
+
+fn writer_callback_method_args(method: &syn::ImplItemFn, message_arg: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    let mut args = Vec::new();
+
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = pat_type.ty.to_token_stream().to_string();
+        let arg = writer_callback_arg(&type_string, message_arg.clone());
+        args.push(arg);
+    }
+
+    quote! { #(#args),* }
+}
+
+fn writer_callback_arg(type_string: &str, message_arg: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" {
+        quote! { ctx }
+    } else if type_string == "u32" {
+        quote! { tick }
+    } else if type_string == ":: source2_demo :: proto :: EDemoCommands" || type_string == "source2_demo :: proto :: EDemoCommands" || type_string == "EDemoCommands" {
+        quote! { msg_type }
+    } else if type_string == "i32" {
+        quote! { msg_type }
+    } else if type_string == "& [u8]" {
+        quote! { payload }
+    } else if type_string == "& str" {
+        quote! { table_name }
+    } else if type_string == "& mut Vec < :: source2_demo :: writer :: PacketMessage >" || type_string == "& mut Vec < source2_demo :: writer :: PacketMessage >" || type_string == "& mut Vec < PacketMessage >" {
+        quote! { messages }
+    } else if type_string == "& mut :: source2_demo :: writer :: StringTableEntryUpdate" || type_string == "& mut source2_demo :: writer :: StringTableEntryUpdate" || type_string == "& mut StringTableEntryUpdate" {
+        quote! { entry }
+    } else {
+        message_arg
+    }
+}
+
+fn packet_message_method_is_raw(method: &syn::ImplItemFn) -> bool {
+    method.sig.inputs.iter().skip(1).any(|input| {
+        let FnArg::Typed(pat_type) = input else {
+            return false;
+        };
+        let type_string = pat_type.ty.to_token_stream().to_string();
+        type_string == "i32" || type_string == "& [u8]"
+    })
+}
+
+fn packet_message_method_type(method: &syn::ImplItemFn) -> (Type, bool, bool) {
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = pat_type.ty.to_token_stream().to_string();
+        if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" || type_string == "u32" {
+            continue;
+        }
+        if let Type::Reference(reference) = pat_type.ty.as_ref() {
+            return (*reference.elem.clone(), true, reference.mutability.is_some());
+        }
+        return (*pat_type.ty.clone(), false, false);
+    }
+    panic!("Expected packet message argument")
+}
+
+fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, method: &syn::ImplItemFn, method_name: &Ident, arg_type: &Type, is_ref: bool, is_mut_ref: bool) {
     let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
     let message_arg = if is_ref {
         if is_mut_ref {
@@ -1079,11 +1385,7 @@ fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, metho
     } else {
         quote! { message }
     };
-    let method_args = if prefix_arg.is_empty() {
-        quote! { #message_arg }
-    } else {
-        quote! { #prefix_arg, #message_arg }
-    };
+    let method_args = writer_callback_method_args(method, message_arg);
 
     if is_ref {
         body.extend(quote! {
@@ -1229,6 +1531,15 @@ pub fn rewrite_svc_update_string_table(_attr: TokenStream, item: TokenStream) ->
 /// Marks a `#[rewriter]` method as an entity field replacer.
 #[proc_macro_attribute]
 pub fn replace_entity_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks a typed `#[rewriter]` method as an entity field replacer.
+///
+/// Supports exact string filters and simple string predicates:
+/// `exact`, `starts_with`, `ends_with`, `contains`, `any`, `all`, and `not`.
+#[proc_macro_attribute]
+pub fn rewrite_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 

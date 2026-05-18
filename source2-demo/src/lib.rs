@@ -2,6 +2,9 @@
 #![warn(missing_docs)]
 #![allow(clippy::too_many_arguments)]
 
+#[cfg(test)]
+extern crate self as source2_demo;
+
 mod display;
 mod entity;
 pub mod error;
@@ -33,7 +36,7 @@ pub mod writer {
     };
     pub use crate::string_table::StringTableEntryUpdate;
     pub use source2_demo_macros::{
-        replace_entity_field, rewrite_demo_message, rewrite_demo_string_tables,
+        replace_entity_field, rewrite_demo_message, rewrite_demo_string_tables, rewrite_field,
         rewrite_packet_message, rewrite_packet_messages, rewrite_string_table_entry,
         rewrite_svc_create_string_table, rewrite_svc_update_string_table, rewriter,
         should_rewrite_entity,
@@ -109,7 +112,7 @@ pub mod prelude {
 }
 
 // Re-export commonly used types at the crate root
-pub use crate::entity::field::FieldValue;
+pub use crate::entity::field::{FieldRewriteResult, FieldValue, IntoFieldValue};
 pub use crate::entity::*;
 pub use crate::event::*;
 pub use crate::parser::{Context, DemoRunner, Interests, Observer, ObserverResult, Parser};

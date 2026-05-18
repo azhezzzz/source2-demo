@@ -15,8 +15,9 @@ use crate::writer::{
     write_demo_message, write_demo_message_with_compression, write_var_u64_to_vec, BitsWriter,
     BitstreamWriter,
 };
-use crate::GameEvent;
+use crate::{Entity, GameEvent};
 use bitter::{BitReader, LittleEndianReader};
+use source2_demo_macros::{rewrite_field, rewrite_packet_message, rewriter};
 use std::io::Cursor;
 
 fn read_var_u64_from_bytes(bytes: &[u8]) -> u64 {
@@ -277,6 +278,26 @@ fn demo_writer_without_rewriters_preserves_demo_bytes() {
     assert_eq!(output.into_inner(), replay);
 }
 
+#[test]
+fn demo_writer_updates_parser_context_tick() {
+    let replay = replay_with_playback_ticks(
+        20,
+        &[
+            (EDemoCommands::DemSyncTick, 0, sync_payload()),
+            (EDemoCommands::DemPacket, 5, demo_packet_payload(&[])),
+            (EDemoCommands::DemStop, 10, Vec::new()),
+        ],
+    );
+    let parser = Parser::from_slice(&replay).unwrap();
+    let output = Cursor::new(Vec::new());
+    let mut writer = DemoWriter::new(parser, output);
+
+    writer.run().unwrap();
+    let (parser, _) = writer.into_parts();
+
+    assert_eq!(parser.context().tick(), 10);
+}
+
 struct DropOuterDemoPacket;
 
 impl DemoRewriter for DropOuterDemoPacket {
@@ -286,6 +307,7 @@ impl DemoRewriter for DropOuterDemoPacket {
 
     fn rewrite_demo_message(
         &mut self,
+        _ctx: &Context,
         _tick: u32,
         msg_type: EDemoCommands,
         _payload: &[u8],
@@ -710,6 +732,88 @@ fn packet_message_encodes_decodes_and_replaces_protobuf_payload() {
 }
 
 #[derive(Default)]
+struct TypedFieldRewriter;
+
+#[rewriter]
+impl TypedFieldRewriter {
+    #[rewrite_field(class = "", field = "m_iszPlayerName")]
+    fn player_name(&mut self, _ctx: &Context, value: &str) -> String {
+        format!("{value}_anon")
+    }
+
+    #[rewrite_field(class = "", field = any(starts_with("m_i"), contains("Score")))]
+    fn integer_field(&mut self, value: i32) -> Option<i32> {
+        Some(value + 1)
+    }
+
+    #[rewrite_field(class = "", field = not(ends_with("Keep")))]
+    fn bool_field(&mut self, field_name: &str, value: bool) -> Option<bool> {
+        if field_name.starts_with("m_b") {
+            Some(!value)
+        } else {
+            None
+        }
+    }
+
+    #[rewrite_field(class = "", field = "m_iState")]
+    fn stateful_field(&mut self, _entity: &Entity, value: i32) -> i32 {
+        value
+    }
+}
+
+#[test]
+fn rewrite_field_macro_supports_predicates_and_typed_values() {
+    let ctx = Context::default();
+    let entity = crate::Entity::default();
+    let mut rewriter = TypedFieldRewriter;
+
+    assert_eq!(
+        DemoRewriter::replace_entity_field(
+            &mut rewriter,
+            &ctx,
+            crate::EntityEvents::Updated,
+            &entity,
+            "m_iszPlayerName",
+            &crate::FieldValue::String("Player".to_string()),
+        ),
+        Some(crate::FieldValue::String("Player_anon".to_string()))
+    );
+    assert_eq!(
+        DemoRewriter::replace_entity_field(
+            &mut rewriter,
+            &ctx,
+            crate::EntityEvents::Updated,
+            &entity,
+            "m_iScore",
+            &crate::FieldValue::Signed32(10),
+        ),
+        Some(crate::FieldValue::Signed32(11))
+    );
+    assert_eq!(
+        DemoRewriter::replace_entity_field(
+            &mut rewriter,
+            &ctx,
+            crate::EntityEvents::Updated,
+            &entity,
+            "m_bVisible",
+            &crate::FieldValue::Boolean(true),
+        ),
+        Some(crate::FieldValue::Boolean(false))
+    );
+    assert_eq!(
+        DemoRewriter::replace_entity_field(
+            &mut rewriter,
+            &ctx,
+            crate::EntityEvents::Updated,
+            &entity,
+            "m_bKeep",
+            &crate::FieldValue::Boolean(true),
+        ),
+        None
+    );
+}
+
+#[derive(Default)]
 struct AppendPacketMessage;
 
 impl DemoRewriter for AppendPacketMessage {
@@ -719,6 +823,7 @@ impl DemoRewriter for AppendPacketMessage {
 
     fn rewrite_packet_messages(
         &mut self,
+        _ctx: &Context,
         _tick: u32,
         messages: &mut Vec<PacketMessage>,
     ) -> Result<(), ParserError> {
@@ -758,6 +863,7 @@ impl DemoRewriter for ReplaceAndDropPacketMessages {
 
     fn rewrite_packet_message(
         &mut self,
+        _ctx: &Context,
         _tick: u32,
         msg_type: i32,
         _payload: &[u8],
@@ -796,6 +902,7 @@ impl DemoRewriter for ReplacePacketList {
 
     fn rewrite_packet_messages(
         &mut self,
+        _ctx: &Context,
         _tick: u32,
         messages: &mut Vec<PacketMessage>,
     ) -> Result<(), ParserError> {
@@ -835,6 +942,7 @@ impl DemoRewriter for CountingPacketRewriter {
 
     fn rewrite_packet_messages(
         &mut self,
+        _ctx: &Context,
         _tick: u32,
         messages: &mut Vec<PacketMessage>,
     ) -> Result<(), ParserError> {
@@ -856,4 +964,35 @@ fn registered_rewriter_returns_rewriter_state_handle() {
     writer.rewrite_packet_data(0, &input, false).unwrap();
 
     assert_eq!(rewriter.borrow().packets, 1);
+}
+
+#[derive(Default)]
+struct ContextAwarePacketRewriter {
+    context_tick: u32,
+}
+
+#[rewriter]
+impl ContextAwarePacketRewriter {
+    #[rewrite_packet_message]
+    fn packet_with_context(
+        &mut self,
+        ctx: &Context,
+        _tick: u32,
+        _msg_type: i32,
+        _payload: &[u8],
+    ) -> Result<MessageRewrite, ParserError> {
+        self.context_tick = ctx.tick();
+        Ok(MessageRewrite::Keep)
+    }
+}
+
+#[test]
+fn writer_macro_packet_callback_can_receive_context() {
+    let mut ctx = Context::default();
+    ctx.tick = 77;
+    let mut rewriter = ContextAwarePacketRewriter::default();
+
+    DemoRewriter::rewrite_packet_message(&mut rewriter, &ctx, 77, 9, &[]).unwrap();
+
+    assert_eq!(rewriter.context_tick, 77);
 }

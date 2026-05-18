@@ -1088,13 +1088,20 @@ fn rewrite_field_body(attr: &syn::Attribute, method: &syn::ImplItemFn) -> syn::R
     })?;
 
     let class = class.ok_or_else(|| syn::Error::new_spanned(attr, "missing `class = ...`"))?;
-    let field = field.ok_or_else(|| syn::Error::new_spanned(attr, "missing `field = ...`"))?;
     let class_predicate = string_predicate(&quote! { entity.class().name() }, &class)?;
-    let field_predicate = string_predicate(&quote! { field_name }, &field)?;
+    let class_only = field.is_none();
+    let field_predicate = match field {
+        Some(field) => string_predicate(&quote! { field_name }, &field)?,
+        None => quote! { true },
+    };
+    if class_only {
+        ensure_rewrite_field_raw_value(method)?;
+    }
+    let value_predicate = rewrite_field_value_predicate(method)?;
     let args = rewrite_field_method_args(method)?;
 
     Ok(quote! {
-        if (#class_predicate) && (#field_predicate) {
+        if (#class_predicate) && (#field_predicate) && (#value_predicate) {
             let replacement = self.#method_name(#args);
             if let Some(value) = ::source2_demo::FieldRewriteResult::into_field_rewrite_result(replacement) {
                 return Some(value);
@@ -1298,6 +1305,22 @@ fn rewrite_field_value_arg_index(method: &syn::ImplItemFn) -> syn::Result<usize>
     Err(syn::Error::new_spanned(&method.sig, "#[rewrite_field] needs a value argument"))
 }
 
+fn ensure_rewrite_field_raw_value(method: &syn::ImplItemFn) -> syn::Result<()> {
+    let value_arg_index = rewrite_field_value_arg_index(method)?;
+    let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(value_arg_index) else {
+        return Ok(());
+    };
+    let type_string = pat_type.ty.to_token_stream().to_string();
+    if matches!(
+        type_string.as_str(),
+        "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue" | ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue"
+    ) {
+        Ok(())
+    } else {
+        Err(syn::Error::new_spanned(pat_type, "class-only #[rewrite_field] handlers must use FieldValue"))
+    }
+}
+
 fn rewrite_field_value_arg(ty: &Type) -> syn::Result<proc_macro2::TokenStream> {
     let type_string = ty.to_token_stream().to_string();
     match type_string.as_str() {
@@ -1307,6 +1330,24 @@ fn rewrite_field_value_arg(ty: &Type) -> syn::Result<proc_macro2::TokenStream> {
         "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue" => Ok(quote! { value }),
         ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue" => Ok(quote! { value.clone() }),
         _ => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<#ty>>::try_into(value).ok()? }),
+    }
+}
+
+fn rewrite_field_value_predicate(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
+    let value_arg_index = rewrite_field_value_arg_index(method)?;
+    let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(value_arg_index) else {
+        return Ok(quote! { true });
+    };
+    let ty = pat_type.ty.as_ref();
+    let type_string = ty.to_token_stream().to_string();
+    match type_string.as_str() {
+        "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue" | ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue" => Ok(quote! { true }),
+        "& str" | "String" | "& String" => Ok(quote! {
+            <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).is_ok()
+        }),
+        _ => Ok(quote! {
+            <&::source2_demo::FieldValue as ::std::convert::TryInto<#ty>>::try_into(value).is_ok()
+        }),
     }
 }
 

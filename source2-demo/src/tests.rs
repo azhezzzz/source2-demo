@@ -15,7 +15,7 @@ use crate::writer::{
     write_demo_message, write_demo_message_with_compression, write_var_u64_to_vec, BitsWriter,
     BitstreamWriter,
 };
-use crate::{Entity, GameEvent};
+use crate::{Entity, FieldValue, GameEvent};
 use bitter::{BitReader, LittleEndianReader};
 use source2_demo_macros::{rewrite_field, rewrite_packet_message, rewriter};
 use std::io::Cursor;
@@ -759,6 +759,16 @@ impl TypedFieldRewriter {
     fn stateful_field(&mut self, _entity: &Entity, value: i32) -> i32 {
         value
     }
+
+    #[rewrite_field(class = "")]
+    fn class_field(&mut self, field_name: &str, value: &FieldValue) -> Option<FieldValue> {
+        match (field_name, value) {
+            ("m_nClassOnly", FieldValue::Signed32(value)) => {
+                Some(FieldValue::Signed32(value + 100))
+            }
+            _ => None,
+        }
+    }
 }
 
 #[test]
@@ -810,6 +820,17 @@ fn rewrite_field_macro_supports_predicates_and_typed_values() {
             &crate::FieldValue::Boolean(true),
         ),
         None
+    );
+    assert_eq!(
+        DemoRewriter::replace_entity_field(
+            &mut rewriter,
+            &ctx,
+            crate::EntityEvents::Updated,
+            &entity,
+            "m_nClassOnly",
+            &crate::FieldValue::Signed32(3),
+        ),
+        Some(crate::FieldValue::Signed32(103))
     );
 }
 

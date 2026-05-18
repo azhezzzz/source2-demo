@@ -1,5 +1,5 @@
 use super::*;
-use crate::entity::field::{Decode, Encode, FieldPath, Skip};
+use crate::entity::field::{Decode, Encode, FieldPath, FieldState, FieldValue, Skip};
 use crate::proto::{CSvcMsgPacketEntities, Message};
 use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{
@@ -110,6 +110,7 @@ where
             class,
             ..Default::default()
         };
+        entity.state = self.entity_baseline_state(class_id, &entity.class.serializer);
 
         let changed = if self.should_rewrite_entity(EntityEvents::Created, &entity) {
             self.rewrite_fields(
@@ -135,7 +136,7 @@ where
         path_reader: &mut FieldPathCodec,
         index: usize,
     ) -> Result<bool, ParserError> {
-        let mut entity = self.parser.context.entities.entities_vec[index].clone();
+        let mut entity = std::mem::take(&mut self.parser.context.entities.entities_vec[index]);
         let changed = if self.should_rewrite_entity(EntityEvents::Updated, &entity) {
             self.rewrite_fields(
                 reader,
@@ -220,28 +221,77 @@ where
             writer,
         )?;
 
-        let mut changed = false;
+        struct DecodedField {
+            fp: FieldPath,
+            name: String,
+            value: FieldValue,
+            value_start: usize,
+            value_end: usize,
+        }
+
+        let mut decoded_fields = Vec::with_capacity(paths.len());
         for fp in paths {
             let name = entity.class.serializer.get_name_for_field_path(&fp);
             let decoder = entity.class.serializer.get_decoder_for_field_path(&fp);
             let value_start = bit_position(reader);
             let value = decoder.decode(reader);
             let value_end = bit_position(reader);
-            let replacement = self.replace_entity_field(event, entity, &name, &value);
+            entity.state.set(&fp, value.clone());
+            decoded_fields.push(DecodedField {
+                fp,
+                name,
+                value,
+                value_start,
+                value_end,
+            });
+        }
+
+        let mut changed = false;
+        for field in decoded_fields {
+            let decoder = entity
+                .class
+                .serializer
+                .get_decoder_for_field_path(&field.fp);
+            let replacement = self.replace_entity_field(event, entity, &field.name, &field.value);
 
             if let Some(next_value) = replacement {
                 decoder.encode(writer, &next_value)?;
+                entity.state.set(&field.fp, next_value);
                 changed = true;
             } else {
                 copy_original_bits(
                     reader.source_buffer,
-                    value_start,
-                    value_end - value_start,
+                    field.value_start,
+                    field.value_end - field.value_start,
                     writer,
                 )?;
             }
         }
 
         Ok(changed)
+    }
+
+    fn entity_baseline_state(
+        &mut self,
+        class_id: i32,
+        serializer: &crate::entity::field::Serializer,
+    ) -> FieldState {
+        self.parser
+            .context
+            .baselines
+            .states
+            .entry(class_id)
+            .or_insert_with(|| {
+                let mut state = FieldState::default();
+                if let Some(baseline) = self.parser.context.baselines.baselines.get(&class_id) {
+                    self.parser.field_reader.read_fields(
+                        &mut SliceReader::new(baseline.as_ref()),
+                        serializer,
+                        &mut state,
+                    );
+                }
+                state
+            })
+            .clone()
     }
 }

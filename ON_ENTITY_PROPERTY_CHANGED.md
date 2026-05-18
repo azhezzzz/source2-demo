@@ -6,17 +6,82 @@
 - 上游来源：`https://github.com/Rupas1k/source2-demo`
 - fork 内部分支对比：`azhezzzz/source2-demo:master...azhezzzz/source2-demo:on_entity_property_changed`
 - GitHub 分支页的上游对比口径：`Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
-- 当前上游 `master` 提交：`1ff430918006463520c2e80fa33a185bfe73dd4b`
+- 当前上游 `master` 提交：`43677da88b114b5ee8a0dd7fa3ae6208799ffdcb`
 - 当前 fork `master` 提交：`de4ab4263984cc9326d29bfcb17a001db366a78b`
-- 本地当前 `on_entity_property_changed` 分支头提交：`813a0da59f53341ecc848e7549c9e2333be481b1`
+- 本地当前 `on_entity_property_changed` 分支头提交：`d03be8059534db9ef2aeb1d4f4ae2808c2486164`
 
 这条分支是在上游项目 `Rupas1k/source2-demo` 的基础上维护的功能分支，用于给解析器补充“实体属性级别变更通知”能力，并保留后续同步上游时可继续 rebase / merge 的空间。
 
-从提交历史看，这条分支中包含一次上游同步：
+从提交历史看，这条分支中已经包含两次上游同步：
 
 - `0400de7 Merge branch 'Rupas1k:master' into on_entity_property_changed`
+- `d03be80 Merge upstream/master into on_entity_property_changed`
 
 说明该分支不是完全脱离上游单独演化，而是在持续吸收上游变更的基础上叠加本地功能。
+
+## 2026-05-18 最新状态
+
+以下内容优先级高于本文后面保留的历史分析；后面的旧小节主要用于记录之前的判断过程。
+
+### 当前同步结论
+
+- 已在 `2026-05-18` 将 `upstream/master` 合并进当前分支
+- 当前 compare 口径仍然是 `Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
+- 当前状态：`ahead_by = 11`
+- 当前状态：`behind_by = 0`
+- 当前分支已经吸收 `upstream/master` 到 `43677da88b114b5ee8a0dd7fa3ae6208799ffdcb`
+
+### 本次合并纳入的上游提交
+
+1. `93950fb` Add get_row method for StringTable
+2. `5009b21` fmt + protobufs
+3. `02591a9` Change player_name type from string to bytes in build.rs (#12)
+4. `736f515` Fix field path name getter for arrays
+5. `43677da` Implement add_observer method
+
+### 本次实际冲突
+
+- 实际冲突文件只有一个：`source2-demo/src/parser/observer.rs`
+
+冲突原因：
+
+- 当前分支在这里增加了 `on_entity_property_changed` 相关的过滤器、`FieldPath` 事件和运行时缓存
+- 上游在这里增加了 `Rc<RefCell<T>>` 的 `Observer` 实现，用于配合新的 `Parser::add_observer(...)`
+
+处理结果：
+
+- 两边改动都保留
+- 当前分支继续保留：
+  - `TRACK_ENTITY_PROPERTY`
+  - `on_entity_property_changed(...)`
+  - `PatternKind`
+  - `EntityPropertyPatternFilter`
+- 同时吸收上游新增能力：
+  - `Parser::add_observer(...)`
+  - `observers: Vec<Box<dyn Observer>>`
+  - `Rc<RefCell<T>>` 的 `Observer` 转发实现
+
+### merge 后的行为判断
+
+对 `on_entity_property_changed` 需求本身的判断：
+
+- 属性级回调语义没有变化
+- 实体创建时仍然按当前已有属性逐个通知
+- 实体更新时仍然只对本次变更字段通知
+- 实体删除时仍然不触发属性级回调
+- 回调看到的仍然是更新后的实体状态
+
+本次合并后新增的上游能力：
+
+- 可以通过 `Parser::add_observer(observer)` 注册带自定义初始状态的 observer
+- `register_observer::<T>()` 现在内部复用 `add_observer(T::default())`
+
+### 已完成验证
+
+- `cargo check`
+- `cargo test --lib`
+
+两者均已通过。
 
 ## 对比口径说明
 

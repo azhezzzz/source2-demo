@@ -201,6 +201,15 @@ impl Default for Entity {
 }
 
 impl Entity {
+    pub(crate) fn new(index: u32, serial: u32, class: Rc<Class>, state: FieldState) -> Self {
+        Entity {
+            index,
+            serial,
+            class,
+            state,
+        }
+    }
+
     /// Returns the entity's index in the entity list.
     ///
     /// The index is the position of this entity in the internal entity array.

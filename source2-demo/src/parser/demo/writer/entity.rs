@@ -104,13 +104,8 @@ where
             .get_by_id_rc(class_id as usize)
             .clone();
 
-        let mut entity = Entity {
-            index: index as u32,
-            serial,
-            class,
-            ..Default::default()
-        };
-        entity.state = self.entity_baseline_state(class_id, &entity.class.serializer);
+        let state = self.entity_baseline_state(class_id, &class.serializer);
+        let mut entity = Entity::new(index as u32, serial, class, state);
 
         let changed = if self.should_rewrite_entity(EntityEvents::Created, &entity) {
             self.rewrite_fields(

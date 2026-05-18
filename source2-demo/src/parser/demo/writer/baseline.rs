@@ -1,5 +1,5 @@
 use super::*;
-use crate::entity::field::{Decode, Encode, FieldPath};
+use crate::entity::field::{Decode, Encode, FieldPath, FieldValue};
 use crate::proto::{c_demo_string_tables::ItemsT, CDemoStringTables};
 use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{bit_position, copy_original_bits, copy_remaining_bits};
@@ -67,11 +67,7 @@ where
         else {
             return Ok(None);
         };
-        let entity = Entity {
-            index: 0,
-            class,
-            ..Default::default()
-        };
+        let mut entity = Entity::new(0, 0, class, Default::default());
 
         if !self.should_rewrite_entity(EntityEvents::Created, &entity) {
             return Ok(None);
@@ -96,24 +92,53 @@ where
         let paths_end = bit_position(&reader);
         copy_original_bits(data, paths_start, paths_end - paths_start, &mut writer)?;
 
-        let mut changed = false;
+        struct DecodedField {
+            fp: FieldPath,
+            name: String,
+            value: FieldValue,
+            value_start: usize,
+            value_end: usize,
+        }
+
+        let mut decoded_fields = Vec::with_capacity(paths.len());
         for fp in paths {
             let name = entity.class.serializer.get_name_for_field_path(&fp);
             let decoder = entity.class.serializer.get_decoder_for_field_path(&fp);
             let value_start = bit_position(&reader);
             let value = decoder.decode(&mut reader);
             let value_end = bit_position(&reader);
-            let replacement =
-                self.replace_entity_field(EntityEvents::Created, &entity, &name, &value);
+            entity.state.set(&fp, value.clone());
+            decoded_fields.push(DecodedField {
+                fp,
+                name,
+                value,
+                value_start,
+                value_end,
+            });
+        }
+
+        let mut changed = false;
+        for field in decoded_fields {
+            let decoder = entity
+                .class
+                .serializer
+                .get_decoder_for_field_path(&field.fp);
+            let replacement = self.replace_entity_field(
+                EntityEvents::Created,
+                &entity,
+                &field.name,
+                &field.value,
+            );
 
             if let Some(next_value) = replacement {
                 decoder.encode(&mut writer, &next_value)?;
+                entity.state.set(&field.fp, next_value);
                 changed = true;
             } else {
                 copy_original_bits(
                     reader.source_buffer,
-                    value_start,
-                    value_end - value_start,
+                    field.value_start,
+                    field.value_end - field.value_start,
                     &mut writer,
                 )?;
             }

@@ -170,7 +170,7 @@ fn extract_blocks(rust_code: &str) -> HashMap<String, String> {
         if line.contains("{") {
             brace_count += line.matches('{').count();
             if (line.contains("pub struct ") || line.contains("pub enum ") || line.contains("pub mod ")) && current_name.is_empty() {
-                let parts: Vec<&str> = line.trim().split_whitespace().collect();
+                let parts: Vec<&str> = line.split_whitespace().collect();
                 current_name = parts[2].to_string();
             }
         }

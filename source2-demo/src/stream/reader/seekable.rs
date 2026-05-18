@@ -136,10 +136,10 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
             }
 
             while bytes_read < amount {
-                if self.read_position >= self.bytes_in_buffer {
-                    if self.refill_internal_buffer().unwrap_or(0) == 0 {
-                        break;
-                    }
+                if self.read_position >= self.bytes_in_buffer
+                    && self.refill_internal_buffer().unwrap_or(0) == 0
+                {
+                    break;
                 }
 
                 let available = self.bytes_in_buffer - self.read_position;
@@ -383,8 +383,8 @@ impl<R: Read + Seek> BitsReader for SeekableReader<R> {
         let bytes = (n / 8) as usize;
         let mut tmp = vec![0; bytes];
 
-        for i in 0..bytes {
-            tmp[i] = self.read_bits(8) as u8;
+        for byte in tmp.iter_mut().take(bytes) {
+            *byte = self.read_bits(8) as u8;
         }
 
         if bits > 0 {

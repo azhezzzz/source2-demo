@@ -1241,7 +1241,7 @@ fn replace_entity_field_method_args(method: &syn::ImplItemFn) -> proc_macro2::To
         args.push(arg);
     }
 
-    Ok::<_, syn::Error>(quote! { #(#args),* }).unwrap()
+    quote! { #(#args),* }
 }
 
 fn should_rewrite_entity_method_args(method: &syn::ImplItemFn) -> proc_macro2::TokenStream {
@@ -1264,7 +1264,7 @@ fn should_rewrite_entity_method_args(method: &syn::ImplItemFn) -> proc_macro2::T
         args.push(arg);
     }
 
-    Ok::<_, syn::Error>(quote! { #(#args),* }).unwrap()
+    quote! { #(#args),* }
 }
 
 fn rewrite_field_value_arg_index(method: &syn::ImplItemFn) -> syn::Result<usize> {
@@ -1371,9 +1371,7 @@ fn writer_callback_arg(type_string: &str, message_arg: proc_macro2::TokenStream)
         quote! { ctx }
     } else if type_string == "u32" {
         quote! { tick }
-    } else if type_string == ":: source2_demo :: proto :: EDemoCommands" || type_string == "source2_demo :: proto :: EDemoCommands" || type_string == "EDemoCommands" {
-        quote! { msg_type }
-    } else if type_string == "i32" {
+    } else if type_string == "i32" || type_string == ":: source2_demo :: proto :: EDemoCommands" || type_string == "source2_demo :: proto :: EDemoCommands" || type_string == "EDemoCommands" {
         quote! { msg_type }
     } else if type_string == "& [u8]" {
         quote! { payload }

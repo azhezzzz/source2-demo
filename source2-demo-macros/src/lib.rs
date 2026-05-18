@@ -870,8 +870,14 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
                             }
                         });
                     } else {
-                        let (arg_type, is_ref, is_mut_ref) = packet_message_method_type(method);
-                        extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, method, &method_name, &arg_type, is_ref, is_mut_ref);
+                        match packet_message_method_type(method) {
+                            Ok((arg_type, is_ref, is_mut_ref)) => {
+                                extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, method, &method_name, &arg_type, is_ref, is_mut_ref);
+                            }
+                            Err(error) => {
+                                rewrite_packet_message_body.extend(error.to_compile_error());
+                            }
+                        }
                     }
                 }
                 "rewrite_packet_messages" => {
@@ -1175,13 +1181,60 @@ fn single_string_arg<'a>(expr: &Expr, args: &'a Punctuated<Expr, Token![,]>) -> 
     if args.len() != 1 {
         return Err(syn::Error::new_spanned(expr, "predicate needs exactly one argument"));
     }
-    let Expr::Lit(expr_lit) = args.first().unwrap() else {
+    let Some(arg) = args.first() else {
+        return Err(syn::Error::new_spanned(expr, "predicate needs exactly one argument"));
+    };
+    let Expr::Lit(expr_lit) = arg else {
         return Err(syn::Error::new_spanned(expr, "predicate argument must be a string literal"));
     };
     let Lit::Str(value) = &expr_lit.lit else {
         return Err(syn::Error::new_spanned(expr, "predicate argument must be a string literal"));
     };
     Ok(value)
+}
+
+fn stringify_type(ty: &Type) -> String {
+    ty.to_token_stream().to_string()
+}
+
+fn is_context_type(value: &str) -> bool {
+    matches!(value, "& :: source2_demo :: Context" | "& source2_demo :: Context" | "& Context")
+}
+
+fn is_entity_type(value: &str) -> bool {
+    matches!(value, "& :: source2_demo :: Entity" | "& source2_demo :: Entity" | "& Entity")
+}
+
+fn is_entity_events_type(value: &str) -> bool {
+    matches!(value, ":: source2_demo :: EntityEvents" | "source2_demo :: EntityEvents" | "EntityEvents")
+}
+
+fn is_field_value_ref_type(value: &str) -> bool {
+    matches!(value, "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue")
+}
+
+fn is_field_value_type(value: &str) -> bool {
+    matches!(value, ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue")
+}
+
+fn is_raw_field_value_type(value: &str) -> bool {
+    is_field_value_ref_type(value) || is_field_value_type(value)
+}
+
+fn is_demo_command_type(value: &str) -> bool {
+    matches!(value, ":: source2_demo :: proto :: EDemoCommands" | "source2_demo :: proto :: EDemoCommands" | "EDemoCommands")
+}
+
+fn is_packet_messages_type(value: &str) -> bool {
+    matches!(value, "& mut Vec < :: source2_demo :: writer :: PacketMessage >" | "& mut Vec < source2_demo :: writer :: PacketMessage >" | "& mut Vec < PacketMessage >")
+}
+
+fn is_string_table_entry_type(value: &str) -> bool {
+    matches!(value, "& mut :: source2_demo :: writer :: StringTableEntryUpdate" | "& mut source2_demo :: writer :: StringTableEntryUpdate" | "& mut StringTableEntryUpdate")
+}
+
+fn is_rewrite_field_value_type(value: &str) -> bool {
+    matches!(value, "& str" | "String" | "& String" | "bool" | "f32" | "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "[f32 ; 2]" | "[f32 ; 3]" | "[f32 ; 4]") || is_raw_field_value_type(value)
 }
 
 fn rewrite_field_method_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
@@ -1197,16 +1250,16 @@ fn rewrite_field_method_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro
             continue;
         }
 
-        let type_string = pat_type.ty.to_token_stream().to_string();
-        let arg = if type_string == ":: source2_demo :: EntityEvents" || type_string == "source2_demo :: EntityEvents" || type_string == "EntityEvents" {
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        let arg = if is_entity_events_type(&type_string) {
             quote! { event }
-        } else if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" {
+        } else if is_context_type(&type_string) {
             quote! { ctx }
-        } else if type_string == "& :: source2_demo :: Entity" || type_string == "& source2_demo :: Entity" || type_string == "& Entity" {
+        } else if is_entity_type(&type_string) {
             quote! { entity }
         } else if type_string == "& str" {
             quote! { field_name }
-        } else if type_string == "& :: source2_demo :: FieldValue" || type_string == "& source2_demo :: FieldValue" || type_string == "& FieldValue" {
+        } else if is_field_value_ref_type(&type_string) {
             quote! { value }
         } else {
             return Err(syn::Error::new_spanned(pat_type, "unsupported #[rewrite_field] argument"));
@@ -1224,16 +1277,16 @@ fn replace_entity_field_method_args(method: &syn::ImplItemFn) -> proc_macro2::To
         let FnArg::Typed(pat_type) = input else {
             continue;
         };
-        let type_string = pat_type.ty.to_token_stream().to_string();
-        let arg = if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" {
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        let arg = if is_context_type(&type_string) {
             quote! { ctx }
-        } else if type_string == ":: source2_demo :: EntityEvents" || type_string == "source2_demo :: EntityEvents" || type_string == "EntityEvents" {
+        } else if is_entity_events_type(&type_string) {
             quote! { event }
-        } else if type_string == "& :: source2_demo :: Entity" || type_string == "& source2_demo :: Entity" || type_string == "& Entity" {
+        } else if is_entity_type(&type_string) {
             quote! { entity }
         } else if type_string == "& str" {
             quote! { field_name }
-        } else if type_string == "& :: source2_demo :: FieldValue" || type_string == "& source2_demo :: FieldValue" || type_string == "& FieldValue" {
+        } else if is_field_value_ref_type(&type_string) {
             quote! { value }
         } else {
             quote! { compile_error!("unsupported #[replace_entity_field] argument") }
@@ -1251,12 +1304,12 @@ fn should_rewrite_entity_method_args(method: &syn::ImplItemFn) -> proc_macro2::T
         let FnArg::Typed(pat_type) = input else {
             continue;
         };
-        let type_string = pat_type.ty.to_token_stream().to_string();
-        let arg = if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" {
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        let arg = if is_context_type(&type_string) {
             quote! { ctx }
-        } else if type_string == ":: source2_demo :: EntityEvents" || type_string == "source2_demo :: EntityEvents" || type_string == "EntityEvents" {
+        } else if is_entity_events_type(&type_string) {
             quote! { event }
-        } else if type_string == "& :: source2_demo :: Entity" || type_string == "& source2_demo :: Entity" || type_string == "& Entity" {
+        } else if is_entity_type(&type_string) {
             quote! { entity }
         } else {
             quote! { compile_error!("unsupported #[should_rewrite_entity] argument") }
@@ -1272,32 +1325,8 @@ fn rewrite_field_value_arg_index(method: &syn::ImplItemFn) -> syn::Result<usize>
         let FnArg::Typed(pat_type) = input else {
             continue;
         };
-        let type_string = pat_type.ty.to_token_stream().to_string();
-        if matches!(
-            type_string.as_str(),
-            "& str"
-                | "String"
-                | "& String"
-                | "bool"
-                | "f32"
-                | "i8"
-                | "i16"
-                | "i32"
-                | "i64"
-                | "u8"
-                | "u16"
-                | "u32"
-                | "u64"
-                | "[f32 ; 2]"
-                | "[f32 ; 3]"
-                | "[f32 ; 4]"
-                | "& :: source2_demo :: FieldValue"
-                | "& source2_demo :: FieldValue"
-                | "& FieldValue"
-                | ":: source2_demo :: FieldValue"
-                | "source2_demo :: FieldValue"
-                | "FieldValue"
-        ) {
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        if is_rewrite_field_value_type(&type_string) {
             return Ok(index);
         }
     }
@@ -1310,11 +1339,8 @@ fn ensure_rewrite_field_raw_value(method: &syn::ImplItemFn) -> syn::Result<()> {
     let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(value_arg_index) else {
         return Ok(());
     };
-    let type_string = pat_type.ty.to_token_stream().to_string();
-    if matches!(
-        type_string.as_str(),
-        "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue" | ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue"
-    ) {
+    let type_string = stringify_type(pat_type.ty.as_ref());
+    if is_raw_field_value_type(&type_string) {
         Ok(())
     } else {
         Err(syn::Error::new_spanned(pat_type, "class-only #[rewrite_field] handlers must use FieldValue"))
@@ -1322,13 +1348,13 @@ fn ensure_rewrite_field_raw_value(method: &syn::ImplItemFn) -> syn::Result<()> {
 }
 
 fn rewrite_field_value_arg(ty: &Type) -> syn::Result<proc_macro2::TokenStream> {
-    let type_string = ty.to_token_stream().to_string();
+    let type_string = stringify_type(ty);
     match type_string.as_str() {
         "& str" => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()?.as_str() }),
         "String" => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()? }),
         "& String" => Ok(quote! { &<&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()? }),
-        "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue" => Ok(quote! { value }),
-        ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue" => Ok(quote! { value.clone() }),
+        value if is_field_value_ref_type(value) => Ok(quote! { value }),
+        value if is_field_value_type(value) => Ok(quote! { value.clone() }),
         _ => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<#ty>>::try_into(value).ok()? }),
     }
 }
@@ -1339,9 +1365,9 @@ fn rewrite_field_value_predicate(method: &syn::ImplItemFn) -> syn::Result<proc_m
         return Ok(quote! { true });
     };
     let ty = pat_type.ty.as_ref();
-    let type_string = ty.to_token_stream().to_string();
+    let type_string = stringify_type(ty);
     match type_string.as_str() {
-        "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue" | ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue" => Ok(quote! { true }),
+        value if is_raw_field_value_type(value) => Ok(quote! { true }),
         "& str" | "String" | "& String" => Ok(quote! {
             <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).is_ok()
         }),
@@ -1358,7 +1384,7 @@ fn writer_callback_method_args(method: &syn::ImplItemFn, message_arg: proc_macro
         let FnArg::Typed(pat_type) = input else {
             continue;
         };
-        let type_string = pat_type.ty.to_token_stream().to_string();
+        let type_string = stringify_type(pat_type.ty.as_ref());
         let arg = writer_callback_arg(&type_string, message_arg.clone());
         args.push(arg);
     }
@@ -1367,19 +1393,19 @@ fn writer_callback_method_args(method: &syn::ImplItemFn, message_arg: proc_macro
 }
 
 fn writer_callback_arg(type_string: &str, message_arg: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" {
+    if is_context_type(type_string) {
         quote! { ctx }
     } else if type_string == "u32" {
         quote! { tick }
-    } else if type_string == "i32" || type_string == ":: source2_demo :: proto :: EDemoCommands" || type_string == "source2_demo :: proto :: EDemoCommands" || type_string == "EDemoCommands" {
+    } else if type_string == "i32" || is_demo_command_type(type_string) {
         quote! { msg_type }
     } else if type_string == "& [u8]" {
         quote! { payload }
     } else if type_string == "& str" {
         quote! { table_name }
-    } else if type_string == "& mut Vec < :: source2_demo :: writer :: PacketMessage >" || type_string == "& mut Vec < source2_demo :: writer :: PacketMessage >" || type_string == "& mut Vec < PacketMessage >" {
+    } else if is_packet_messages_type(type_string) {
         quote! { messages }
-    } else if type_string == "& mut :: source2_demo :: writer :: StringTableEntryUpdate" || type_string == "& mut source2_demo :: writer :: StringTableEntryUpdate" || type_string == "& mut StringTableEntryUpdate" {
+    } else if is_string_table_entry_type(type_string) {
         quote! { entry }
     } else {
         message_arg
@@ -1387,30 +1413,38 @@ fn writer_callback_arg(type_string: &str, message_arg: proc_macro2::TokenStream)
 }
 
 fn packet_message_method_is_raw(method: &syn::ImplItemFn) -> bool {
-    method.sig.inputs.iter().skip(1).any(|input| {
-        let FnArg::Typed(pat_type) = input else {
-            return false;
-        };
-        let type_string = pat_type.ty.to_token_stream().to_string();
-        type_string == "i32" || type_string == "& [u8]"
-    })
+    packet_message_first_payload_arg(method).is_some_and(|type_string| type_string == "i32" || type_string == "& [u8]")
 }
 
-fn packet_message_method_type(method: &syn::ImplItemFn) -> (Type, bool, bool) {
+fn packet_message_method_type(method: &syn::ImplItemFn) -> syn::Result<(Type, bool, bool)> {
     for input in method.sig.inputs.iter().skip(1) {
         let FnArg::Typed(pat_type) = input else {
             continue;
         };
-        let type_string = pat_type.ty.to_token_stream().to_string();
-        if type_string == "& :: source2_demo :: Context" || type_string == "& source2_demo :: Context" || type_string == "& Context" || type_string == "u32" {
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        if is_context_type(&type_string) || type_string == "u32" {
             continue;
         }
         if let Type::Reference(reference) = pat_type.ty.as_ref() {
-            return (*reference.elem.clone(), true, reference.mutability.is_some());
+            return Ok((*reference.elem.clone(), true, reference.mutability.is_some()));
         }
-        return (*pat_type.ty.clone(), false, false);
+        return Ok((*pat_type.ty.clone(), false, false));
     }
-    panic!("Expected packet message argument")
+    Err(syn::Error::new_spanned(&method.sig, "#[rewrite_packet_message] needs a message argument"))
+}
+
+fn packet_message_first_payload_arg(method: &syn::ImplItemFn) -> Option<String> {
+    method.sig.inputs.iter().skip(1).find_map(|input| {
+        let FnArg::Typed(pat_type) = input else {
+            return None;
+        };
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        if is_context_type(&type_string) || type_string == "u32" {
+            None
+        } else {
+            Some(type_string)
+        }
+    })
 }
 
 fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, method: &syn::ImplItemFn, method_name: &Ident, arg_type: &Type, is_ref: bool, is_mut_ref: bool) {

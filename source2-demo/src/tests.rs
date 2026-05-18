@@ -973,6 +973,7 @@ fn registered_rewriter_returns_rewriter_state_handle() {
 #[derive(Default)]
 struct ContextAwarePacketRewriter {
     context_tick: u32,
+    typed_msg_type: i32,
 }
 
 #[rewriter]
@@ -988,6 +989,16 @@ impl ContextAwarePacketRewriter {
         self.context_tick = ctx.tick();
         Ok(MessageRewrite::Keep)
     }
+
+    #[rewrite_packet_message]
+    fn typed_packet_with_msg_type(
+        &mut self,
+        _message: CNetMsgTick,
+        msg_type: i32,
+    ) -> Result<MessageRewrite, ParserError> {
+        self.typed_msg_type = msg_type;
+        Ok(MessageRewrite::Keep)
+    }
 }
 
 #[test]
@@ -999,4 +1010,22 @@ fn writer_macro_packet_callback_can_receive_context() {
     DemoRewriter::rewrite_packet_message(&mut rewriter, &ctx, 77, 9, &[]).unwrap();
 
     assert_eq!(rewriter.context_tick, 77);
+}
+
+#[test]
+fn writer_macro_typed_packet_callback_can_receive_msg_type() {
+    let ctx = Context::default();
+    let mut rewriter = ContextAwarePacketRewriter::default();
+    let payload = CNetMsgTick::default().encode_to_vec();
+
+    DemoRewriter::rewrite_packet_message(
+        &mut rewriter,
+        &ctx,
+        77,
+        NetMessages::NetTick as i32,
+        &payload,
+    )
+    .unwrap();
+
+    assert_eq!(rewriter.typed_msg_type, NetMessages::NetTick as i32);
 }

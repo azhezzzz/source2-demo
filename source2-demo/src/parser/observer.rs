@@ -2,6 +2,8 @@ use crate::parser::Context;
 use crate::proto::*;
 use crate::{Entity, EntityEvents, FieldPath, GameEvent, StringTable};
 use regex::Regex;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::RwLock;
 
 #[cfg(feature = "dota")]
@@ -112,8 +114,6 @@ impl EntityPropertyPatternFilter {
         hit
     }
 }
-
-
 bitflags::bitflags! {
     /// Bitflags for declaring observer interests.
     ///
@@ -206,18 +206,17 @@ bitflags::bitflags! {
     }
 }
 
-
 /// Observer trait for handling demo file events.
 ///
-/// Implement this trait to receive callbacks as the parser processes the demo file.
-/// You can either implement it manually or use the `#[observer]` attribute macro
-/// for a more convenient approach.
+/// Implement this trait to receive callbacks as the parser processes the demo
+/// file. You can either implement it manually or use the `#[observer]`
+/// attribute macro for a more convenient approach.
 ///
 /// # Interest-based Filtering
 ///
-/// The [`interests`](Observer::interests) method allows you to declare which events
-/// your observer wants to receive. This is crucial for performance as it allows the
-/// parser to skip processing events that no observer cares about.
+/// The [`interests`](Observer::interests) method allows you to declare which
+/// events your observer wants to receive. This is crucial for performance as it
+/// allows the parser to skip processing events that no observer cares about.
 ///
 /// # Examples
 ///
@@ -264,7 +263,12 @@ bitflags::bitflags! {
 ///         Interests::ENABLE_ENTITY | Interests::TRACK_ENTITY
 ///     }
 ///
-///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///     fn on_entity(
+///         &mut self,
+///         ctx: &Context,
+///         event: EntityEvents,
+///         entity: &Entity,
+///     ) -> ObserverResult {
 ///         if event == EntityEvents::Created {
 ///             self.count += 1;
 ///         }
@@ -294,7 +298,12 @@ bitflags::bitflags! {
 ///         Ok(())
 ///     }
 ///
-///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+///     fn on_entity(
+///         &mut self,
+///         ctx: &Context,
+///         event: EntityEvents,
+///         entity: &Entity,
+///     ) -> ObserverResult {
 ///         // Process entities
 ///         Ok(())
 ///     }
@@ -405,7 +414,8 @@ pub trait Observer {
 
     /// Called when an entity is created, updated, or deleted.
     ///
-    /// Requires [`Interests::TRACK_ENTITY`] and [`Interests::ENABLE_ENTITY`] to be set.
+    /// Requires [`Interests::TRACK_ENTITY`] and [`Interests::ENABLE_ENTITY`] to
+    /// be set.
     #[cold]
     #[inline(never)]
     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
@@ -440,7 +450,8 @@ pub trait Observer {
 
     /// Called when a string table is updated.
     ///
-    /// Requires [`Interests::TRACK_STRINGTAB`] and [`Interests::ENABLE_STRINGTAB`] to be set.
+    /// Requires [`Interests::TRACK_STRINGTAB`] and
+    /// [`Interests::ENABLE_STRINGTAB`] to be set.
     #[cold]
     #[inline(never)]
     fn on_string_table(
@@ -468,8 +479,8 @@ pub trait Observer {
 
     /// Called when a combat log entry is received (Dota 2 only).
     ///
-    /// Combat log entries describe in-game events like damage, healing, kills, etc.
-    /// Only available with the `dota` feature enabled.
+    /// Combat log entries describe in-game events like damage, healing, kills,
+    /// etc. Only available with the `dota` feature enabled.
     ///
     /// Requires [`Interests::COMBAT_LOG`] to be set.
     #[cold]
@@ -481,7 +492,8 @@ pub trait Observer {
 
     /// Called when a Dota 2 user message is received.
     ///
-    /// Dota 2 specific user messages. Only available with the `dota` feature enabled.
+    /// Dota 2 specific user messages. Only available with the `dota` feature
+    /// enabled.
     ///
     /// Requires [`Interests::DOTA_UM`] to be set.
     #[cold]
@@ -498,7 +510,8 @@ pub trait Observer {
 
     /// Called when a Citadel/Deadlock game event is received.
     ///
-    /// Deadlock specific game events. Only available with the `deadlock` feature enabled.
+    /// Deadlock specific game events. Only available with the `deadlock`
+    /// feature enabled.
     ///
     /// Requires [`Interests::CITA_GE`] to be set.
     #[cold]
@@ -515,7 +528,8 @@ pub trait Observer {
 
     /// Called when a Citadel/Deadlock user message is received.
     ///
-    /// Deadlock specific user messages. Only available with the `deadlock` feature enabled.
+    /// Deadlock specific user messages. Only available with the `deadlock`
+    /// feature enabled.
     ///
     /// Requires [`Interests::CITA_UM`] to be set.
     #[cold]
@@ -532,7 +546,8 @@ pub trait Observer {
 
     /// Called when a Counter-Strike 2 user message is received.
     ///
-    /// CS2 specific user messages. Only available with the `cs2` feature enabled.
+    /// CS2 specific user messages. Only available with the `cs2` feature
+    /// enabled.
     ///
     /// Requires [`Interests::CS2_UM`] to be set.
     #[cold]
@@ -562,5 +577,144 @@ pub trait Observer {
         msg: &[u8],
     ) -> ObserverResult {
         Ok(())
+    }
+}
+
+impl<T> Observer for Rc<RefCell<T>>
+where
+    T: Observer,
+{
+    fn interests(&self) -> Interests {
+        self.borrow().interests()
+    }
+
+    fn on_demo_command(
+        &mut self,
+        ctx: &Context,
+        msg_type: EDemoCommands,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_demo_command(ctx, msg_type, msg)
+    }
+
+    fn on_net_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: NetMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_net_message(ctx, msg_type, msg)
+    }
+
+    fn on_svc_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: SvcMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_svc_message(ctx, msg_type, msg)
+    }
+
+    fn on_base_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: EBaseUserMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_base_user_message(ctx, msg_type, msg)
+    }
+
+    fn on_base_game_event(
+        &mut self,
+        ctx: &Context,
+        msg_type: EBaseGameEvents,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_base_game_event(ctx, msg_type, msg)
+    }
+
+    fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {
+        self.borrow_mut().on_tick_start(ctx)
+    }
+
+    fn on_tick_end(&mut self, ctx: &Context) -> ObserverResult {
+        self.borrow_mut().on_tick_end(ctx)
+    }
+
+    fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+        self.borrow_mut().on_entity(ctx, event, entity)
+    }
+
+    fn on_game_event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
+        self.borrow_mut().on_game_event(ctx, ge)
+    }
+
+    fn on_string_table(
+        &mut self,
+        ctx: &Context,
+        st: &StringTable,
+        modified: &[i32],
+    ) -> ObserverResult {
+        self.borrow_mut().on_string_table(ctx, st, modified)
+    }
+
+    fn on_stop(&mut self, ctx: &Context) -> ObserverResult {
+        self.borrow_mut().on_stop(ctx)
+    }
+
+    #[cfg(feature = "dota")]
+    fn on_combat_log(&mut self, ctx: &Context, cle: &CombatLogEntry) -> ObserverResult {
+        self.borrow_mut().on_combat_log(ctx, cle)
+    }
+
+    #[cfg(feature = "dota")]
+    fn on_dota_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: EDotaUserMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_dota_user_message(ctx, msg_type, msg)
+    }
+
+    #[cfg(feature = "deadlock")]
+    fn on_citadel_game_event(
+        &mut self,
+        ctx: &Context,
+        msg_type: ECitadelGameEvents,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_citadel_game_event(ctx, msg_type, msg)
+    }
+
+    #[cfg(feature = "deadlock")]
+    fn on_citadel_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: CitadelUserMessageIds,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut()
+            .on_citadel_user_message(ctx, msg_type, msg)
+    }
+
+    #[cfg(feature = "cs2")]
+    fn on_cs2_user_message(
+        &mut self,
+        ctx: &Context,
+        msg_type: ECstrike15UserMessages,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_cs2_user_message(ctx, msg_type, msg)
+    }
+
+    #[cfg(feature = "cs2")]
+    fn on_cs2_game_event(
+        &mut self,
+        ctx: &Context,
+        msg_type: ECsgoGameEvents,
+        msg: &[u8],
+    ) -> ObserverResult {
+        self.borrow_mut().on_cs2_game_event(ctx, msg_type, msg)
     }
 }

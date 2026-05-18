@@ -12,7 +12,7 @@ impl Chat {
         let userinfo = ctx.string_tables().get_by_name("userinfo")?;
         let info = CMsgPlayerInfo::decode(
             userinfo
-                .get_row_by_index(msg.player_slot() as usize)?
+                .get_row(msg.player_slot() as usize)?
                 .value()
                 .unwrap(),
         )?;

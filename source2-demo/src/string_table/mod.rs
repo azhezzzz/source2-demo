@@ -82,7 +82,7 @@ use std::rc::Rc;
 ///
 /// # fn example(ctx: &Context) -> anyhow::Result<()> {
 /// let userinfo = ctx.string_tables().get_by_name("userinfo")?;
-/// let row = userinfo.get_row_by_index(0)?;
+/// let row = userinfo.get_row(0)?;
 ///
 /// if let Some(data) = row.value() {
 ///     let player_info = CMsgPlayerInfo::decode(data)?;
@@ -154,6 +154,12 @@ impl StringTable {
         self.items.iter()
     }
 
+    /// See [`get_row`](StringTable::get_row) - this method is deprecated in favor of the more clearly named `get_row`.
+    #[deprecated]
+    pub fn get_row_by_index(&self, idx: usize) -> Result<&StringTableRow, StringTableError> {
+        self.get_row(idx)
+    }
+
     /// Gets a specific row by its index in the string table.
     ///
     /// Each string table is essentially a list of key-value pairs.
@@ -176,12 +182,13 @@ impl StringTable {
     /// let userinfo = ctx.string_tables().get_by_name("userinfo")?;
     ///
     /// // Get player info at slot 0
-    /// let row = userinfo.get_row_by_index(0)?;
+    /// let row = userinfo.get_row(0)?;
     /// println!("Slot 0 key: {}", row.key());
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_row_by_index(&self, idx: usize) -> Result<&StringTableRow, StringTableError> {
+    ///
+    pub fn get_row(&self, idx: usize) -> Result<&StringTableRow, StringTableError> {
         self.items
             .get(idx)
             .ok_or(StringTableError::RowNotFoundByIndex(

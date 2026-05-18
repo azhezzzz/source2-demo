@@ -44,7 +44,12 @@ impl Serializer {
             i += 1;
             match &current_field.model {
                 FieldModel::Array | FieldModel::ArrayVector(_) => {
+                    if i > fp.last {
+                        break;
+                    }
+
                     name += &format!(".{:04}", fp.path[i]);
+
                     break;
                 }
                 FieldModel::Vector(serializer) => {

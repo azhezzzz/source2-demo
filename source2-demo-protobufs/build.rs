@@ -42,9 +42,9 @@ fn main() -> std::io::Result<()> {
                 "./protos/dota/dota_commonmessages.proto",
                 "./protos/dota/dota_modifiers.proto",
                 "./protos/dota/dota_shared_enums.proto",
-                "./protos/dota/dota_usermessages.proto"],
-            &["./protos/dota", "./protos/common"
+                "./protos/dota/dota_usermessages.proto",
             ],
+            &["./protos/dota", "./protos/common"],
         )?;
 
         config.default_package_filename("citadel");
@@ -89,9 +89,7 @@ fn main() -> std::io::Result<()> {
 fn format_rust_file(filename: &str) -> std::io::Result<()> {
     use std::process::Command;
 
-    let output = Command::new("rustfmt")
-        .arg(filename)
-        .output()?;
+    let output = Command::new("rustfmt").arg(filename).output()?;
 
     if !output.status.success() {
         eprintln!("Warning: rustfmt failed for {}: {}", filename, String::from_utf8_lossy(&output.stderr));
@@ -133,7 +131,12 @@ fn clean_impl_blocks(rust_code: &str) -> String {
 }
 
 fn clean_comments(rust_code: &str) -> String {
-    rust_code.lines().filter(|line| !line.trim_start().starts_with("//")).map(|line| line.to_string()).collect::<Vec<String>>().join("\n")
+    rust_code
+        .lines()
+        .filter(|line| !line.trim_start().starts_with("//"))
+        .map(|line| line.to_string())
+        .collect::<Vec<String>>()
+        .join("\n")
 }
 
 fn clean_rust_file(filename: &str) -> std::io::Result<()> {
@@ -191,7 +194,11 @@ fn extract_blocks(rust_code: &str) -> HashMap<String, String> {
 }
 
 fn clean_matching_blocks(input_blocks: &HashMap<String, String>, common_blocks: &HashMap<String, String>) -> Vec<String> {
-    input_blocks.iter().sorted().filter_map(|(name, block)| if !common_blocks.contains_key(name) { Some(block.clone()) } else { None }).collect()
+    input_blocks
+        .iter()
+        .sorted()
+        .filter_map(|(name, block)| if !common_blocks.contains_key(name) { Some(block.clone()) } else { None })
+        .collect()
 }
 
 fn clean_blocks(input_file: &str, common_file: &str) -> std::io::Result<()> {
@@ -211,39 +218,55 @@ fn clean_blocks(input_file: &str, common_file: &str) -> std::io::Result<()> {
 
 fn fetch_protobufs_from_github() -> std::io::Result<()> {
     let proto_files = vec![
-        ("dota2", "common", vec![
-            "base_gcmessages.proto",
-            "demo.proto",
-            "gameevents.proto",
-            "gcsdk_gcmessages.proto",
-            "netmessages.proto",
-            "network_connection.proto",
-            "networkbasetypes.proto",
-            "source2_steam_stats.proto",
-            "steammessages.proto",
-            "steammessages_steamlearn.steamworkssdk.proto",
-            "steammessages_unified_base.steamworkssdk.proto",
-            "usermessages.proto",
-            "valveextensions.proto",
-        ]),
-        ("dota2", "dota", vec![
-            "dota_commonmessages.proto",
-            "dota_modifiers.proto",
-            "dota_shared_enums.proto",
-            "dota_usermessages.proto",
-        ]),
-        ("deadlock", "citadel", vec![
-            "citadel_gameevents.proto",
-            "citadel_gcmessages_common.proto",
-            "citadel_usermessages.proto",
-            "base_modifier.proto",
-        ]),
-        ("csgo", "cs2", vec![
-            "cs_gameevents.proto",
-            "cstrike15_gcmessages.proto",
-            "cstrike15_usermessages.proto",
-            "engine_gcmessages.proto",
-        ]),
+        (
+            "dota2",
+            "common",
+            vec![
+                "base_gcmessages.proto",
+                "demo.proto",
+                "gameevents.proto",
+                "gcsdk_gcmessages.proto",
+                "netmessages.proto",
+                "network_connection.proto",
+                "networkbasetypes.proto",
+                "source2_steam_stats.proto",
+                "steammessages.proto",
+                "steammessages_steamlearn.steamworkssdk.proto",
+                "steammessages_unified_base.steamworkssdk.proto",
+                "usermessages.proto",
+                "valveextensions.proto",
+            ],
+        ),
+        (
+            "dota2",
+            "dota",
+            vec![
+                "dota_commonmessages.proto",
+                "dota_modifiers.proto",
+                "dota_shared_enums.proto",
+                "dota_usermessages.proto",
+            ],
+        ),
+        (
+            "deadlock",
+            "citadel",
+            vec![
+                "citadel_gameevents.proto",
+                "citadel_gcmessages_common.proto",
+                "citadel_usermessages.proto",
+                "base_modifier.proto",
+            ],
+        ),
+        (
+            "csgo",
+            "cs2",
+            vec![
+                "cs_gameevents.proto",
+                "cstrike15_gcmessages.proto",
+                "cstrike15_usermessages.proto",
+                "engine_gcmessages.proto",
+            ],
+        ),
     ];
 
     for (github_dir, local_dir, files) in proto_files {
@@ -255,18 +278,18 @@ fn fetch_protobufs_from_github() -> std::io::Result<()> {
 
             match ureq::get(&url).call() {
                 Ok(mut response) => {
-                    let content = response.body_mut().read_to_string().map_err(|e| {
-                        std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Failed to read response: {}", e))
-                    })?;
+                    let content = response
+                        .body_mut()
+                        .read_to_string()
+                        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Failed to read response: {}", e)))?
+                        .replace("optional string player_name = 2;", "optional bytes player_name = 2;");
 
                     let file_path = format!("{}/{}", proto_dir, file);
                     fs::write(&file_path, content)?;
                 }
                 Err(e) => {
                     eprintln!("Failed to fetch {}: {}", file, e);
-                    return Err(std::io::Error::other(
-                        format!("Failed to fetch {}: {}", file, e),
-                    ));
+                    return Err(std::io::Error::other(format!("Failed to fetch {}: {}", file, e)));
                 }
             }
         }
@@ -274,4 +297,3 @@ fn fetch_protobufs_from_github() -> std::io::Result<()> {
 
     Ok(())
 }
-

@@ -47,7 +47,7 @@ use crate::HashMap;
 /// let userinfo = ctx.string_tables().get_by_name("userinfo")?;
 ///
 /// // Read player info for slot 0
-/// let player_row = userinfo.get_row_by_index(0)?;
+/// let player_row = userinfo.get_row(0)?;
 /// if let Some(data) = player_row.value() {
 ///     let player_info = CMsgPlayerInfo::decode(data)?;
 ///     println!("Player: {}", player_info.name());

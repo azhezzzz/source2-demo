@@ -82,7 +82,7 @@ where
     pub(crate) reader: R,
     pub(crate) field_reader: FieldReader,
 
-    pub(crate) observers: Vec<Rc<RefCell<dyn Observer + 'a>>>,
+    pub(crate) observers: Vec<Box<dyn Observer + 'a>>,
     pub(crate) observer_masks: Vec<Interests>,
     pub(crate) global_mask: Interests,
 
@@ -367,12 +367,23 @@ where
     where
         T: Observer + Default + 'a,
     {
-        let rc = Rc::new(RefCell::new(T::default()));
+        self.add_observer(T::default())
+    }
+
+    /// Adds an already constructed observer and returns a handle to its state.
+    ///
+    /// Use this when the observer needs custom constructor state. Observers run
+    /// in registration order.
+    pub fn add_observer<T>(&mut self, observer: T) -> Rc<RefCell<T>>
+    where
+        T: Observer + 'a,
+    {
+        let rc = Rc::new(RefCell::new(observer));
         let mask = rc.borrow().interests();
         self.global_mask |= mask;
         self.observer_masks.push(mask);
-        self.observers.push(rc.clone());
-        rc.clone()
+        self.observers.push(Box::new(rc.clone()));
+        rc
     }
 
     #[inline]

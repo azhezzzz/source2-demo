@@ -430,200 +430,204 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
 
                 let method_name = method.sig.ident.clone();
-                let mut args = vec![];
-
-                if let Some((arg_type, _)) = get_arg_type(method, 1) {
-                    if arg_type.to_token_stream().to_string() == "Context" {
-                        args.push(quote! { ctx })
-                    }
-                }
 
                 if let Some(ident) = attr.path().get_ident() {
                     match ident.to_string().as_str() {
                         "on_tick_start" => {
                             has_tick_start = true;
-                            on_tick_start_body.extend(quote! {
-                                self.#method_name(#(#args),*)?;
-                            })
+                            match observer_context_args(method, "#[on_tick_start]") {
+                                Ok(args) => on_tick_start_body.extend(quote! {
+                                    self.#method_name(#args)?;
+                                }),
+                                Err(error) => errors.extend(error.to_compile_error()),
+                            }
                         }
                         "on_tick_end" => {
                             has_tick_end = true;
-                            on_tick_end_body.extend(quote! {
-                                self.#method_name(#(#args),*)?;
-                            })
+                            match observer_context_args(method, "#[on_tick_end]") {
+                                Ok(args) => on_tick_end_body.extend(quote! {
+                                    self.#method_name(#args)?;
+                                }),
+                                Err(error) => errors.extend(error.to_compile_error()),
+                            }
                         }
                         "on_stop" => {
                             has_stop = true;
-                            on_stop_body.extend(quote! {
-                                self.#method_name(#(#args),*)?;
-                            });
+                            match observer_context_args(method, "#[on_stop]") {
+                                Ok(args) => on_stop_body.extend(quote! {
+                                    self.#method_name(#args)?;
+                                }),
+                                Err(error) => errors.extend(error.to_compile_error()),
+                            }
                         }
                         #[cfg(feature = "dota")]
-                        "on_combat_log" => {
-                            args.push(quote! { cle });
-
-                            on_combat_log_body.extend(quote! {
-                                self.#method_name(#(#args),*)?;
-                            })
-                        }
+                        "on_combat_log" => match observer_combat_log_args(method) {
+                            Ok(args) => on_combat_log_body.extend(quote! {
+                                self.#method_name(#args)?;
+                            }),
+                            Err(error) => errors.extend(error.to_compile_error()),
+                        },
                         "on_entity" => {
                             has_entity_track = true;
-
-                            if let Some((arg_type, is_ref)) = get_arg_type(method, args.len() + 1) {
-                                if arg_type.to_token_stream().to_string() == "EntityEvents" {
-                                    if is_ref {
-                                        args.push(quote! { &event });
-                                    } else {
-                                        args.push(quote! { event });
-                                    }
-                                }
-                            }
-
-                            args.push(quote! { entity });
-
-                            on_entity_body.extend(if let Ok(entity_class) = attr.parse_args::<syn::LitStr>() {
-                                quote! {
-                                    if entity.class().name() == #entity_class {
-                                        self.#method_name(#(#args),*)?;
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    self.#method_name(#(#args),*)?;
-                                }
-                            });
-                        }
-                        "on_game_event" => {
-                            args.push(quote! { ge });
-                            on_game_event_body.extend(if let Ok(event_name) = attr.parse_args::<syn::LitStr>() {
-                                quote! {
-                                    if ge.name() == #event_name {
-                                        self.#method_name(#(#args),*)?;
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    self.#method_name(#(#args),*)?;
-                                }
-                            });
-                        }
-                        "on_string_table" => {
-                            has_string_table_track = true;
-                            args.push(quote! { table });
-                            args.push(quote! { modified });
-                            on_string_table_body.extend(if let Ok(table_name) = attr.parse_args::<syn::LitStr>() {
-                                quote! {
-                                    if table.name() == #table_name {
-                                        self.#method_name(#(#args),*)?;
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    self.#method_name(#(#args),*)?;
-                                }
-                            });
-                        }
-                        "on_message" => {
-                            let Some((arg_type, is_ref)) = get_arg_type(method, args.len() + 1) else {
-                                errors.extend(syn::Error::new_spanned(&method.sig, "#[on_message] needs a protobuf message argument").to_compile_error());
-                                continue;
-                            };
-                            let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
-                            let type_string = enum_type.to_token_stream().to_string();
-                            let root = type_string.split("::").collect::<Vec<_>>()[0].trim();
-
-                            args.push(if is_ref {
-                                quote! { &message }
-                            } else {
-                                quote! { message }
-                            });
-
-                            macro_rules! extend {
-                                ($body: ident) => {
-                                    $body.extend(quote! {
-                                        if msg_type == #enum_type {
-                                            if let Ok(message) = #arg_type::decode(msg) {
-                                                self.#method_name(#(#args),*)?;
+                            match observer_entity_args(method) {
+                                Ok(args) => {
+                                    on_entity_body.extend(if let Ok(entity_class) = attr.parse_args::<syn::LitStr>() {
+                                        quote! {
+                                            if entity.class().name() == #entity_class {
+                                                self.#method_name(#args)?;
                                             }
                                         }
-                                    })
-                                };
-                            }
-
-                            let known_message_root = match root {
-                                "EDemoCommands" => {
-                                    has_demo = true;
-                                    true
+                                    } else {
+                                        quote! {
+                                            self.#method_name(#args)?;
+                                        }
+                                    });
                                 }
-                                "EBaseUserMessages" => {
-                                    has_base_um = true;
-                                    true
-                                }
-                                "EBaseGameEvents" => {
-                                    has_base_ge = true;
-                                    true
-                                }
-                                "SvcMessages" => {
-                                    has_svc = true;
-                                    true
-                                }
-                                "NetMessages" => {
-                                    has_net = true;
-                                    true
-                                }
-                                #[cfg(feature = "dota")]
-                                "EDotaUserMessages" => {
-                                    has_dota_um = true;
-                                    true
-                                }
-                                #[cfg(feature = "citadel")]
-                                "CitadelUserMessageIds" => {
-                                    has_cita_um = true;
-                                    true
-                                }
-                                #[cfg(feature = "citadel")]
-                                "ECitadelGameEvents" => {
-                                    has_cita_ge = true;
-                                    true
-                                }
-                                #[cfg(feature = "cs2")]
-                                "ECstrike15UserMessages" => {
-                                    has_cs2_um = true;
-                                    true
-                                }
-                                #[cfg(feature = "cs2")]
-                                "ECsgoGameEvents" => {
-                                    has_cs2_ge = true;
-                                    true
-                                }
-                                _ => false,
-                            };
-                            if !known_message_root {
-                                errors.extend(syn::Error::new_spanned(&arg_type, "unknown #[on_message] protobuf type; use a generated Source 2 protobuf message type").to_compile_error());
-                                continue;
-                            }
-
-                            match root {
-                                "EDemoCommands" => extend!(on_demo_command_body),
-                                "EBaseUserMessages" => extend!(on_base_user_message_body),
-                                "EBaseGameEvents" => extend!(on_base_game_event_body),
-                                "SvcMessages" => extend!(on_svc_message_body),
-                                "NetMessages" => extend!(on_net_message_body),
-
-                                #[cfg(feature = "dota")]
-                                "EDotaUserMessages" => extend!(on_dota_user_message_body),
-                                #[cfg(feature = "citadel")]
-                                "CitadelUserMessageIds" => extend!(on_citadel_user_message_body),
-                                #[cfg(feature = "citadel")]
-                                "ECitadelGameEvents" => extend!(on_citadel_game_event_body),
-                                #[cfg(feature = "cs2")]
-                                "ECstrike15UserMessages" => extend!(on_cs2_user_message_body),
-                                #[cfg(feature = "cs2")]
-                                "ECsgoGameEvents" => extend!(on_cs2_game_event_body),
-
-                                _ => {}
+                                Err(error) => errors.extend(error.to_compile_error()),
                             }
                         }
+                        "on_game_event" => match observer_game_event_args(method) {
+                            Ok(args) => {
+                                on_game_event_body.extend(if let Ok(event_name) = attr.parse_args::<syn::LitStr>() {
+                                    quote! {
+                                        if ge.name() == #event_name {
+                                            self.#method_name(#args)?;
+                                        }
+                                    }
+                                } else {
+                                    quote! {
+                                        self.#method_name(#args)?;
+                                    }
+                                });
+                            }
+                            Err(error) => errors.extend(error.to_compile_error()),
+                        },
+                        "on_string_table" => {
+                            has_string_table_track = true;
+                            match observer_string_table_args(method) {
+                                Ok(args) => {
+                                    on_string_table_body.extend(if let Ok(table_name) = attr.parse_args::<syn::LitStr>() {
+                                        quote! {
+                                            if table.name() == #table_name {
+                                                self.#method_name(#args)?;
+                                            }
+                                        }
+                                    } else {
+                                        quote! {
+                                            self.#method_name(#args)?;
+                                        }
+                                    });
+                                }
+                                Err(error) => errors.extend(error.to_compile_error()),
+                            }
+                        }
+                        "on_message" => match observer_message_args(method) {
+                            Ok((arg_type, is_ref, args)) => {
+                                let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
+                                let type_string = enum_type.to_token_stream().to_string();
+                                let root = type_string.split("::").collect::<Vec<_>>()[0].trim();
+
+                                let message_arg = if is_ref {
+                                    quote! { &message }
+                                } else {
+                                    quote! { message }
+                                };
+                                let args = args
+                                    .into_iter()
+                                    .map(|arg| match arg {
+                                        ObserverArg::Context => quote! { ctx },
+                                        ObserverArg::Message => message_arg.clone(),
+                                    })
+                                    .collect::<Vec<_>>();
+
+                                macro_rules! extend {
+                                    ($body: ident) => {
+                                        $body.extend(quote! {
+                                            if msg_type == #enum_type {
+                                                if let Ok(message) = #arg_type::decode(msg) {
+                                                    self.#method_name(#(#args),*)?;
+                                                }
+                                            }
+                                        })
+                                    };
+                                }
+
+                                let known_message_root = match root {
+                                    "EDemoCommands" => {
+                                        has_demo = true;
+                                        true
+                                    }
+                                    "EBaseUserMessages" => {
+                                        has_base_um = true;
+                                        true
+                                    }
+                                    "EBaseGameEvents" => {
+                                        has_base_ge = true;
+                                        true
+                                    }
+                                    "SvcMessages" => {
+                                        has_svc = true;
+                                        true
+                                    }
+                                    "NetMessages" => {
+                                        has_net = true;
+                                        true
+                                    }
+                                    #[cfg(feature = "dota")]
+                                    "EDotaUserMessages" => {
+                                        has_dota_um = true;
+                                        true
+                                    }
+                                    #[cfg(feature = "citadel")]
+                                    "CitadelUserMessageIds" => {
+                                        has_cita_um = true;
+                                        true
+                                    }
+                                    #[cfg(feature = "citadel")]
+                                    "ECitadelGameEvents" => {
+                                        has_cita_ge = true;
+                                        true
+                                    }
+                                    #[cfg(feature = "cs2")]
+                                    "ECstrike15UserMessages" => {
+                                        has_cs2_um = true;
+                                        true
+                                    }
+                                    #[cfg(feature = "cs2")]
+                                    "ECsgoGameEvents" => {
+                                        has_cs2_ge = true;
+                                        true
+                                    }
+                                    _ => false,
+                                };
+                                if !known_message_root {
+                                    errors.extend(syn::Error::new_spanned(&arg_type, "unknown #[on_message] protobuf type; use a generated Source 2 protobuf message type").to_compile_error());
+                                    continue;
+                                }
+
+                                match root {
+                                    "EDemoCommands" => extend!(on_demo_command_body),
+                                    "EBaseUserMessages" => extend!(on_base_user_message_body),
+                                    "EBaseGameEvents" => extend!(on_base_game_event_body),
+                                    "SvcMessages" => extend!(on_svc_message_body),
+                                    "NetMessages" => extend!(on_net_message_body),
+
+                                    #[cfg(feature = "dota")]
+                                    "EDotaUserMessages" => extend!(on_dota_user_message_body),
+                                    #[cfg(feature = "citadel")]
+                                    "CitadelUserMessageIds" => extend!(on_citadel_user_message_body),
+                                    #[cfg(feature = "citadel")]
+                                    "ECitadelGameEvents" => extend!(on_citadel_game_event_body),
+                                    #[cfg(feature = "cs2")]
+                                    "ECstrike15UserMessages" => extend!(on_cs2_user_message_body),
+                                    #[cfg(feature = "cs2")]
+                                    "ECsgoGameEvents" => extend!(on_cs2_game_event_body),
+
+                                    _ => {}
+                                }
+                            }
+                            Err(error) => errors.extend(error.to_compile_error()),
+                        },
                         _ => {}
                     }
                 }
@@ -1109,15 +1113,144 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(ret)
 }
 
-fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> Option<(Type, bool)> {
-    if let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(n) {
-        if let Type::Reference(x) = pat_type.ty.as_ref() {
-            Some((*x.elem.clone(), true))
+enum ObserverArg {
+    Context,
+    Message,
+}
+
+fn observer_context_args(method: &syn::ImplItemFn, attr_name: &str) -> syn::Result<proc_macro2::TokenStream> {
+    let mut args = Vec::new();
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        if is_context_type(&type_string) {
+            args.push(quote! { ctx });
         } else {
-            Some((*pat_type.ty.clone(), false))
+            return Err(syn::Error::new_spanned(pat_type, format!("{attr_name} supports only `&Context`")));
         }
+    }
+    Ok(quote! { #(#args),* })
+}
+
+fn observer_entity_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
+    let mut args = Vec::new();
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        let arg = if is_context_type(&type_string) {
+            quote! { ctx }
+        } else if is_entity_events_type(&type_string) {
+            quote! { event }
+        } else if is_entity_events_ref_type(&type_string) {
+            quote! { &event }
+        } else if is_entity_type(&type_string) {
+            quote! { entity }
+        } else {
+            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_entity] argument"));
+        };
+        args.push(arg);
+    }
+    Ok(quote! { #(#args),* })
+}
+
+fn observer_game_event_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
+    let mut args = Vec::new();
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        let arg = if is_context_type(&type_string) {
+            quote! { ctx }
+        } else if is_game_event_type(&type_string) {
+            quote! { ge }
+        } else {
+            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_game_event] argument"));
+        };
+        args.push(arg);
+    }
+    Ok(quote! { #(#args),* })
+}
+
+fn observer_string_table_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
+    let mut args = Vec::new();
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        let arg = if is_context_type(&type_string) {
+            quote! { ctx }
+        } else if is_string_table_type(&type_string) {
+            quote! { table }
+        } else if is_modified_indices_type(&type_string) {
+            quote! { modified }
+        } else {
+            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_string_table] argument"));
+        };
+        args.push(arg);
+    }
+    Ok(quote! { #(#args),* })
+}
+
+#[cfg(feature = "dota")]
+fn observer_combat_log_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
+    let mut args = Vec::new();
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        let arg = if is_context_type(&type_string) {
+            quote! { ctx }
+        } else if is_combat_log_type(&type_string) {
+            quote! { cle }
+        } else {
+            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_combat_log] argument"));
+        };
+        args.push(arg);
+    }
+    Ok(quote! { #(#args),* })
+}
+
+fn observer_message_args(method: &syn::ImplItemFn) -> syn::Result<(Type, bool, Vec<ObserverArg>)> {
+    let mut message = None;
+    let mut args = Vec::new();
+
+    for input in method.sig.inputs.iter().skip(1) {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let type_string = stringify_type(pat_type.ty.as_ref());
+        if is_context_type(&type_string) {
+            args.push(ObserverArg::Context);
+            continue;
+        }
+
+        if message.is_some() {
+            return Err(syn::Error::new_spanned(pat_type, "#[on_message] supports only `&Context` and one protobuf message argument"));
+        }
+
+        let (arg_type, is_ref) = referenced_or_owned_type(pat_type.ty.as_ref());
+        message = Some((arg_type, is_ref));
+        args.push(ObserverArg::Message);
+    }
+
+    let Some((arg_type, is_ref)) = message else {
+        return Err(syn::Error::new_spanned(&method.sig, "#[on_message] needs a protobuf message argument"));
+    };
+    Ok((arg_type, is_ref, args))
+}
+
+fn referenced_or_owned_type(ty: &Type) -> (Type, bool) {
+    if let Type::Reference(reference) = ty {
+        (*reference.elem.clone(), true)
     } else {
-        None
+        (ty.clone(), false)
     }
 }
 
@@ -1257,6 +1390,27 @@ fn is_entity_type(value: &str) -> bool {
 
 fn is_entity_events_type(value: &str) -> bool {
     matches!(value, ":: source2_demo :: EntityEvents" | "source2_demo :: EntityEvents" | "EntityEvents")
+}
+
+fn is_entity_events_ref_type(value: &str) -> bool {
+    matches!(value, "& :: source2_demo :: EntityEvents" | "& source2_demo :: EntityEvents" | "& EntityEvents")
+}
+
+fn is_game_event_type(value: &str) -> bool {
+    matches!(value, "& :: source2_demo :: GameEvent" | "& source2_demo :: GameEvent" | "& GameEvent")
+}
+
+fn is_string_table_type(value: &str) -> bool {
+    matches!(value, "& :: source2_demo :: StringTable" | "& source2_demo :: StringTable" | "& StringTable")
+}
+
+fn is_modified_indices_type(value: &str) -> bool {
+    value == "& [i32]"
+}
+
+#[cfg(feature = "dota")]
+fn is_combat_log_type(value: &str) -> bool {
+    matches!(value, "& :: source2_demo :: CombatLogEntry" | "& source2_demo :: CombatLogEntry" | "& CombatLogEntry")
 }
 
 fn is_field_value_ref_type(value: &str) -> bool {

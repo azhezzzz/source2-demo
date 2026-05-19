@@ -170,11 +170,7 @@ where
         }
 
         for fp in paths {
-            entity
-                .class
-                .serializer
-                .get_decoder_for_field_path(&fp)
-                .skip(reader);
+            entity.class.serializer.get_decoder(&fp).skip(reader);
         }
 
         let fields_end = bit_position(reader);
@@ -226,8 +222,8 @@ where
 
         let mut decoded_fields = Vec::with_capacity(paths.len());
         for fp in paths {
-            let name = entity.class.serializer.get_name_for_field_path(&fp);
-            let decoder = entity.class.serializer.get_decoder_for_field_path(&fp);
+            let name = entity.class.serializer.get_name(&fp);
+            let decoder = entity.class.serializer.get_decoder(&fp);
             let value_start = bit_position(reader);
             let value = decoder.decode(reader);
             let value_end = bit_position(reader);
@@ -243,10 +239,7 @@ where
 
         let mut changed = false;
         for field in decoded_fields {
-            let decoder = entity
-                .class
-                .serializer
-                .get_decoder_for_field_path(&field.fp);
+            let decoder = entity.class.serializer.get_decoder(&field.fp);
             let replacement = self.replace_entity_field(event, entity, &field.name, &field.value);
 
             if let Some(next_value) = replacement {

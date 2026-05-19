@@ -40,6 +40,6 @@ impl FieldReader {
 
         self.paths_buf[..i]
             .iter_mut()
-            .for_each(|fp| state.set(fp, serializer.get_decoder_for_field_path(fp).decode(reader)))
+            .for_each(|fp| state.set(fp, serializer.get_decoder(fp).decode(reader)))
     }
 }

@@ -89,7 +89,7 @@ where
                         field_type.base.as_ref(),
                         "CUtlVector" | "CNetworkUtlVectorBase" | "CUtlVectorEmbeddedNetworkVar"
                     ) {
-                        FieldModel::ArrayVector(FieldDecoder::from_field(
+                        FieldModel::ValueVector(FieldDecoder::from_field(
                             field_type.generic.as_ref().unwrap(),
                             properties,
                         ))
@@ -103,7 +103,7 @@ where
                         FieldModel::Value | FieldModel::Array => {
                             FieldDecoder::from_field(&field_type, properties)
                         }
-                        FieldModel::Vector(_) | FieldModel::ArrayVector(_) => {
+                        FieldModel::Vector(_) | FieldModel::ValueVector(_) => {
                             FieldDecoder::Unsigned32
                         }
                         FieldModel::Pointer(_) => FieldDecoder::Boolean,

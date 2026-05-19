@@ -5,7 +5,7 @@ use std::rc::Rc;
 pub(crate) enum FieldModel {
     Value,
     Array,
-    ArrayVector(FieldDecoder),
+    ValueVector(FieldDecoder),
     Vector(Rc<Serializer>),
     Pointer(Rc<Serializer>),
 }

@@ -522,37 +522,70 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                             }
                         }
                         "on_message" => match observer_message_args(method) {
-                            Ok((arg_type, is_ref, args)) => {
-                                let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
-                                let type_string = enum_type.to_token_stream().to_string();
-                                let root = type_string.split("::").collect::<Vec<_>>()[0].trim();
-
-                                let message_arg = if is_ref {
-                                    quote! { &message }
-                                } else {
-                                    quote! { message }
+                            Ok((kind, args)) => {
+                                let (root, call) = match kind {
+                                    ObserverMessageKind::Decoded { arg_type, is_ref } => {
+                                        let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
+                                        let type_string = enum_type.to_token_stream().to_string();
+                                        let root = type_string.split("::").collect::<Vec<_>>()[0].trim().to_string();
+                                        let message_arg = if is_ref {
+                                            quote! { &message }
+                                        } else {
+                                            quote! { message }
+                                        };
+                                        let args = args
+                                            .into_iter()
+                                            .map(|arg| match arg {
+                                                ObserverArg::Context => quote! { ctx },
+                                                ObserverArg::Message => message_arg.clone(),
+                                                ObserverArg::MessageType => quote! { compile_error!("internal macro error: unexpected message type arg") },
+                                                ObserverArg::Payload => quote! { compile_error!("internal macro error: unexpected payload arg") },
+                                            })
+                                            .collect::<Vec<_>>();
+                                        (
+                                            root,
+                                            quote! {
+                                                if msg_type == #enum_type {
+                                                    if let Ok(message) = #arg_type::decode(msg) {
+                                                        self.#method_name(#(#args),*)?;
+                                                    }
+                                                }
+                                            },
+                                        )
+                                    }
+                                    ObserverMessageKind::Raw { enum_type, is_ref } => {
+                                        let type_string = enum_type.to_token_stream().to_string();
+                                        let root = canonical_message_type(&type_string).unwrap_or(type_string);
+                                        let message_type_arg = if is_ref {
+                                            quote! { &msg_type }
+                                        } else {
+                                            quote! { msg_type }
+                                        };
+                                        let args = args
+                                            .into_iter()
+                                            .map(|arg| match arg {
+                                                ObserverArg::Context => quote! { ctx },
+                                                ObserverArg::MessageType => message_type_arg.clone(),
+                                                ObserverArg::Payload => quote! { msg },
+                                                ObserverArg::Message => quote! { compile_error!("internal macro error: unexpected protobuf message arg") },
+                                            })
+                                            .collect::<Vec<_>>();
+                                        (
+                                            root,
+                                            quote! {
+                                                self.#method_name(#(#args),*)?;
+                                            },
+                                        )
+                                    }
                                 };
-                                let args = args
-                                    .into_iter()
-                                    .map(|arg| match arg {
-                                        ObserverArg::Context => quote! { ctx },
-                                        ObserverArg::Message => message_arg.clone(),
-                                    })
-                                    .collect::<Vec<_>>();
 
                                 macro_rules! extend {
                                     ($body: ident) => {
-                                        $body.extend(quote! {
-                                            if msg_type == #enum_type {
-                                                if let Ok(message) = #arg_type::decode(msg) {
-                                                    self.#method_name(#(#args),*)?;
-                                                }
-                                            }
-                                        })
+                                        $body.extend(call.clone())
                                     };
                                 }
 
-                                let known_message_root = match root {
+                                let known_message_root = match root.as_str() {
                                     "EDemoCommands" => {
                                         has_demo = true;
                                         true
@@ -601,11 +634,11 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                                     _ => false,
                                 };
                                 if !known_message_root {
-                                    errors.extend(syn::Error::new_spanned(&arg_type, "unknown #[on_message] protobuf type; use a generated Source 2 protobuf message type").to_compile_error());
+                                    errors.extend(syn::Error::new_spanned(&method.sig, "unknown #[on_message] message type").to_compile_error());
                                     continue;
                                 }
 
-                                match root {
+                                match root.as_str() {
                                     "EDemoCommands" => extend!(on_demo_command_body),
                                     "EBaseUserMessages" => extend!(on_base_user_message_body),
                                     "EBaseGameEvents" => extend!(on_base_game_event_body),
@@ -1116,6 +1149,13 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 enum ObserverArg {
     Context,
     Message,
+    MessageType,
+    Payload,
+}
+
+enum ObserverMessageKind {
+    Decoded { arg_type: Type, is_ref: bool },
+    Raw { enum_type: Type, is_ref: bool },
 }
 
 fn observer_context_args(method: &syn::ImplItemFn, attr_name: &str) -> syn::Result<proc_macro2::TokenStream> {
@@ -1217,8 +1257,10 @@ fn observer_combat_log_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2
     Ok(quote! { #(#args),* })
 }
 
-fn observer_message_args(method: &syn::ImplItemFn) -> syn::Result<(Type, bool, Vec<ObserverArg>)> {
+fn observer_message_args(method: &syn::ImplItemFn) -> syn::Result<(ObserverMessageKind, Vec<ObserverArg>)> {
     let mut message = None;
+    let mut message_type = None;
+    let mut payload = false;
     let mut args = Vec::new();
 
     for input in method.sig.inputs.iter().skip(1) {
@@ -1231,6 +1273,25 @@ fn observer_message_args(method: &syn::ImplItemFn) -> syn::Result<(Type, bool, V
             continue;
         }
 
+        if is_message_type(&type_string) || is_message_type_ref(&type_string) {
+            if message_type.is_some() {
+                return Err(syn::Error::new_spanned(pat_type, "#[on_message] supports only one message type argument"));
+            }
+            let (arg_type, is_ref) = referenced_or_owned_type(pat_type.ty.as_ref());
+            message_type = Some((arg_type, is_ref));
+            args.push(ObserverArg::MessageType);
+            continue;
+        }
+
+        if is_payload_type(&type_string) {
+            if payload {
+                return Err(syn::Error::new_spanned(pat_type, "#[on_message] supports only one raw payload argument"));
+            }
+            payload = true;
+            args.push(ObserverArg::Payload);
+            continue;
+        }
+
         if message.is_some() {
             return Err(syn::Error::new_spanned(pat_type, "#[on_message] supports only `&Context` and one protobuf message argument"));
         }
@@ -1240,10 +1301,14 @@ fn observer_message_args(method: &syn::ImplItemFn) -> syn::Result<(Type, bool, V
         args.push(ObserverArg::Message);
     }
 
-    let Some((arg_type, is_ref)) = message else {
-        return Err(syn::Error::new_spanned(&method.sig, "#[on_message] needs a protobuf message argument"));
-    };
-    Ok((arg_type, is_ref, args))
+    match (message, message_type, payload) {
+        (Some((arg_type, is_ref)), None, false) => Ok((ObserverMessageKind::Decoded { arg_type, is_ref }, args)),
+        (None, Some((enum_type, is_ref)), true) => Ok((ObserverMessageKind::Raw { enum_type, is_ref }, args)),
+        (Some(_), Some(_), _) => Err(syn::Error::new_spanned(&method.sig, "#[on_message] cannot mix protobuf and raw message arguments")),
+        (Some(_), None, true) => Err(syn::Error::new_spanned(&method.sig, "#[on_message] raw payload handlers need a message type argument")),
+        (None, Some(_), false) => Err(syn::Error::new_spanned(&method.sig, "#[on_message] raw handlers need a `&[u8]` payload argument")),
+        (None, None, _) => Err(syn::Error::new_spanned(&method.sig, "#[on_message] needs a protobuf message argument or raw message type plus `&[u8]`")),
+    }
 }
 
 fn referenced_or_owned_type(ty: &Type) -> (Type, bool) {
@@ -1427,6 +1492,108 @@ fn is_raw_field_value_type(value: &str) -> bool {
 
 fn is_demo_command_type(value: &str) -> bool {
     matches!(value, ":: source2_demo :: proto :: EDemoCommands" | "source2_demo :: proto :: EDemoCommands" | "EDemoCommands")
+}
+
+fn is_message_type(value: &str) -> bool {
+    matches!(
+        value,
+        ":: source2_demo :: proto :: EDemoCommands"
+            | "source2_demo :: proto :: EDemoCommands"
+            | "EDemoCommands"
+            | ":: source2_demo :: proto :: EBaseUserMessages"
+            | "source2_demo :: proto :: EBaseUserMessages"
+            | "EBaseUserMessages"
+            | ":: source2_demo :: proto :: EBaseGameEvents"
+            | "source2_demo :: proto :: EBaseGameEvents"
+            | "EBaseGameEvents"
+            | ":: source2_demo :: proto :: SvcMessages"
+            | "source2_demo :: proto :: SvcMessages"
+            | "SvcMessages"
+            | ":: source2_demo :: proto :: NetMessages"
+            | "source2_demo :: proto :: NetMessages"
+            | "NetMessages"
+            | ":: source2_demo :: proto :: EDotaUserMessages"
+            | "source2_demo :: proto :: EDotaUserMessages"
+            | "EDotaUserMessages"
+            | ":: source2_demo :: proto :: CitadelUserMessageIds"
+            | "source2_demo :: proto :: CitadelUserMessageIds"
+            | "CitadelUserMessageIds"
+            | ":: source2_demo :: proto :: ECitadelGameEvents"
+            | "source2_demo :: proto :: ECitadelGameEvents"
+            | "ECitadelGameEvents"
+            | ":: source2_demo :: proto :: ECstrike15UserMessages"
+            | "source2_demo :: proto :: ECstrike15UserMessages"
+            | "ECstrike15UserMessages"
+            | ":: source2_demo :: proto :: ECsgoGameEvents"
+            | "source2_demo :: proto :: ECsgoGameEvents"
+            | "ECsgoGameEvents"
+    )
+}
+
+fn is_message_type_ref(value: &str) -> bool {
+    matches!(
+        value,
+        "& :: source2_demo :: proto :: EDemoCommands"
+            | "& source2_demo :: proto :: EDemoCommands"
+            | "& EDemoCommands"
+            | "& :: source2_demo :: proto :: EBaseUserMessages"
+            | "& source2_demo :: proto :: EBaseUserMessages"
+            | "& EBaseUserMessages"
+            | "& :: source2_demo :: proto :: EBaseGameEvents"
+            | "& source2_demo :: proto :: EBaseGameEvents"
+            | "& EBaseGameEvents"
+            | "& :: source2_demo :: proto :: SvcMessages"
+            | "& source2_demo :: proto :: SvcMessages"
+            | "& SvcMessages"
+            | "& :: source2_demo :: proto :: NetMessages"
+            | "& source2_demo :: proto :: NetMessages"
+            | "& NetMessages"
+            | "& :: source2_demo :: proto :: EDotaUserMessages"
+            | "& source2_demo :: proto :: EDotaUserMessages"
+            | "& EDotaUserMessages"
+            | "& :: source2_demo :: proto :: CitadelUserMessageIds"
+            | "& source2_demo :: proto :: CitadelUserMessageIds"
+            | "& CitadelUserMessageIds"
+            | "& :: source2_demo :: proto :: ECitadelGameEvents"
+            | "& source2_demo :: proto :: ECitadelGameEvents"
+            | "& ECitadelGameEvents"
+            | "& :: source2_demo :: proto :: ECstrike15UserMessages"
+            | "& source2_demo :: proto :: ECstrike15UserMessages"
+            | "& ECstrike15UserMessages"
+            | "& :: source2_demo :: proto :: ECsgoGameEvents"
+            | "& source2_demo :: proto :: ECsgoGameEvents"
+            | "& ECsgoGameEvents"
+    )
+}
+
+fn canonical_message_type(value: &str) -> Option<String> {
+    if matches!(value, ":: source2_demo :: proto :: EDemoCommands" | "source2_demo :: proto :: EDemoCommands" | "EDemoCommands") {
+        Some("EDemoCommands".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: EBaseUserMessages" | "source2_demo :: proto :: EBaseUserMessages" | "EBaseUserMessages") {
+        Some("EBaseUserMessages".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: EBaseGameEvents" | "source2_demo :: proto :: EBaseGameEvents" | "EBaseGameEvents") {
+        Some("EBaseGameEvents".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: SvcMessages" | "source2_demo :: proto :: SvcMessages" | "SvcMessages") {
+        Some("SvcMessages".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: NetMessages" | "source2_demo :: proto :: NetMessages" | "NetMessages") {
+        Some("NetMessages".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: EDotaUserMessages" | "source2_demo :: proto :: EDotaUserMessages" | "EDotaUserMessages") {
+        Some("EDotaUserMessages".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: CitadelUserMessageIds" | "source2_demo :: proto :: CitadelUserMessageIds" | "CitadelUserMessageIds") {
+        Some("CitadelUserMessageIds".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: ECitadelGameEvents" | "source2_demo :: proto :: ECitadelGameEvents" | "ECitadelGameEvents") {
+        Some("ECitadelGameEvents".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: ECstrike15UserMessages" | "source2_demo :: proto :: ECstrike15UserMessages" | "ECstrike15UserMessages") {
+        Some("ECstrike15UserMessages".to_string())
+    } else if matches!(value, ":: source2_demo :: proto :: ECsgoGameEvents" | "source2_demo :: proto :: ECsgoGameEvents" | "ECsgoGameEvents") {
+        Some("ECsgoGameEvents".to_string())
+    } else {
+        None
+    }
+}
+
+fn is_payload_type(value: &str) -> bool {
+    value == "& [u8]"
 }
 
 fn is_packet_messages_type(value: &str) -> bool {

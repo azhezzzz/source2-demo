@@ -17,9 +17,11 @@ use crate::writer::{
     write_demo_message, write_demo_message_with_compression, write_var_u64_to_vec, BitsWriter,
     BitstreamWriter,
 };
-use crate::{Entity, FieldValue, GameEvent};
+#[cfg(feature = "dota")]
+use crate::CombatLogEntry;
+use crate::{Entity, EntityEvents, FieldValue, GameEvent, StringTable};
 use bitter::{BitReader, LittleEndianReader};
-use source2_demo_macros::{rewrite_field, rewrite_packet_message, rewriter};
+use source2_demo_macros::{observer, on_message, rewrite_field, rewrite_packet_message, rewriter};
 use std::io::Cursor;
 
 fn read_var_u64_from_bytes(bytes: &[u8]) -> u64 {
@@ -578,6 +580,56 @@ fn parser_dispatches_packet_net_svc_base_and_dota_messages() {
     assert_eq!(
         observer.dota_user_messages,
         vec![(EDotaUserMessages::DotaUmChatMessage, dota_chat.len())]
+    );
+}
+
+#[derive(Default)]
+struct RawMessageMacroObserver {
+    svc_messages: Vec<(SvcMessages, usize)>,
+}
+
+#[observer]
+impl RawMessageMacroObserver {
+    #[on_message]
+    fn raw_svc(&mut self, _ctx: &Context, msg_type: SvcMessages, payload: &[u8]) -> ObserverResult {
+        self.svc_messages.push((msg_type, payload.len()));
+        Ok(())
+    }
+}
+
+#[test]
+fn observer_macro_can_receive_raw_message_payloads() {
+    let mut server_info = CSvcMsgServerInfo::default();
+    server_info.max_classes = Some(128);
+    server_info.game_dir = Some("unknown7777/game".to_string());
+    let server_info = server_info.encode_to_vec();
+    let mut net_tick = CNetMsgTick::default();
+    net_tick.tick = Some(42);
+    let net_tick = net_tick.encode_to_vec();
+
+    let packet_messages = vec![
+        (SvcMessages::SvcServerInfo as i32, server_info.as_slice()),
+        (NetMessages::NetTick as i32, net_tick.as_slice()),
+    ];
+    let replay = replay_with_playback_ticks(
+        20,
+        &[
+            (EDemoCommands::DemSyncTick, 0, sync_payload()),
+            (
+                EDemoCommands::DemPacket,
+                5,
+                demo_packet_payload(&packet_messages),
+            ),
+        ],
+    );
+    let mut parser = Parser::from_slice(&replay).unwrap();
+    let observer = parser.register_observer::<RawMessageMacroObserver>();
+
+    parser.run_to_end().unwrap();
+
+    assert_eq!(
+        observer.borrow().svc_messages,
+        vec![(SvcMessages::SvcServerInfo, server_info.len())]
     );
 }
 

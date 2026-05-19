@@ -78,6 +78,13 @@ pub enum ParserError {
     #[error("Wrong CDemoFileInfo offset")]
     ReplayEncodingError,
 
+    /// Missing rewrite state for a string table
+    #[error("Missing rewrite state for string table {table_id}")]
+    MissingStringTableRewriteState {
+        /// String table id that lacked rewrite state.
+        table_id: usize,
+    },
+
     /// File is not a valid Source 2 demo
     #[error("Supports only Source 2 replays")]
     WrongMagic,

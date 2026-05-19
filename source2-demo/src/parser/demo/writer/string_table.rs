@@ -58,14 +58,7 @@ where
             if rewrite_baselines {
                 self.rewrite_instance_baseline_entry_update(entry, None)?;
             }
-            for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
-                rewriter
-                    .interests()
-                    .contains(RewriteInterests::STRING_TABLE_ENTRIES)
-            }) {
-                let ctx = &self.parser.context;
-                rewriter.rewrite_string_table_entry(ctx, tick, &table_name, entry)?;
-            }
+            self.rewrite_string_table_entry_with_rewriters(tick, &table_name, entry)?;
             Ok(())
         });
 
@@ -107,9 +100,7 @@ where
         }
 
         let Some(mut state) = self.string_table_rewrite_states[table_id].take() else {
-            return Err(ParserError::IoError(format!(
-                "missing rewrite state for string table {table_id}"
-            )));
+            return Err(ParserError::MissingStringTableRewriteState { table_id });
         };
 
         let changed = rewrite_update_string_table(msg, &mut state, |entry| {
@@ -120,14 +111,7 @@ where
                     .map(String::as_str);
                 self.rewrite_instance_baseline_entry_update(entry, fallback_key)?;
             }
-            for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
-                rewriter
-                    .interests()
-                    .contains(RewriteInterests::STRING_TABLE_ENTRIES)
-            }) {
-                let ctx = &self.parser.context;
-                rewriter.rewrite_string_table_entry(ctx, tick, &table_name, entry)?;
-            }
+            self.rewrite_string_table_entry_with_rewriters(tick, &table_name, entry)?;
             Ok(())
         });
 
@@ -148,26 +132,10 @@ where
         for table in msg.tables.iter_mut() {
             let table_name = table.table_name().to_string();
             changed |= rewrite_demo_string_table_items(&mut table.items, |entry| {
-                for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
-                    rewriter
-                        .interests()
-                        .contains(RewriteInterests::STRING_TABLE_ENTRIES)
-                }) {
-                    let ctx = &self.parser.context;
-                    rewriter.rewrite_string_table_entry(ctx, tick, &table_name, entry)?;
-                }
-                Ok(())
+                self.rewrite_string_table_entry_with_rewriters(tick, &table_name, entry)
             })?;
             changed |= rewrite_demo_string_table_items(&mut table.items_clientside, |entry| {
-                for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
-                    rewriter
-                        .interests()
-                        .contains(RewriteInterests::STRING_TABLE_ENTRIES)
-                }) {
-                    let ctx = &self.parser.context;
-                    rewriter.rewrite_string_table_entry(ctx, tick, &table_name, entry)?;
-                }
-                Ok(())
+                self.rewrite_string_table_entry_with_rewriters(tick, &table_name, entry)
             })?;
         }
         Ok(changed)
@@ -201,6 +169,23 @@ where
         };
         if let Some(rewritten) = self.rewrite_instance_baseline_data(class_id, data)? {
             entry.set_value(rewritten);
+        }
+        Ok(())
+    }
+
+    fn rewrite_string_table_entry_with_rewriters(
+        &mut self,
+        tick: u32,
+        table_name: &str,
+        entry: &mut StringTableEntryUpdate,
+    ) -> Result<(), ParserError> {
+        for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
+            rewriter
+                .interests()
+                .contains(RewriteInterests::STRING_TABLE_ENTRIES)
+        }) {
+            let ctx = &self.parser.context;
+            rewriter.rewrite_string_table_entry(ctx, tick, table_name, entry)?;
         }
         Ok(())
     }

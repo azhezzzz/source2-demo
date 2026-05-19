@@ -40,6 +40,9 @@ pub enum MessageRewrite {
     /// Leave the message unchanged.
     Keep,
     /// Encode and replace the message payload from the mutated message.
+    ///
+    /// This is only honored by callbacks that provide a decoded message.
+    /// Raw payload callbacks should return `Replace` with explicit bytes.
     Rewrite,
     /// Replace the message payload with the provided bytes.
     Replace(Vec<u8>),

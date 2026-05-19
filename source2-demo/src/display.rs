@@ -114,10 +114,10 @@ impl Display for Entity {
         for fp in self
             .class
             .serializer
-            .get_field_paths(&mut FieldPath::default(), &self.state)
+            .get_paths(&mut FieldPath::default(), &self.state)
         {
-            let field_type = self.class.serializer.get_type_for_field_path(&fp);
-            let name = self.class.serializer.get_name_for_field_path(&fp);
+            let field_type = self.class.serializer.get_type(&fp);
+            let name = self.class.serializer.get_name(&fp);
             let value = self.state.get_value(&fp);
             if let Some(v) = value {
                 table.add_row(row![fp, name, field_type.to_string(), format!("{:?}", v)]);

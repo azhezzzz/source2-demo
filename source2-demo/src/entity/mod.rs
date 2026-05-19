@@ -265,7 +265,7 @@ impl Entity {
     /// in favor of the more clearly named `get_property`.
     #[deprecated]
     pub fn get_property_by_name(&self, name: &str) -> Result<&FieldValue, EntityError> {
-        self.get_property_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)
+        self.get_property_by_path(&self.class.serializer.get_path(name)?)
     }
 
     /// Gets the value of an entity property by its name.
@@ -389,16 +389,13 @@ impl Entity {
     /// [`property!`]: crate::property
     /// [`try_property!`]: crate::try_property
     pub fn get_property(&self, name: &str) -> Result<&FieldValue, EntityError> {
-        self.get_property_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)
+        self.get_property_by_path(&self.class.serializer.get_path(name)?)
     }
 
-    pub(crate) fn get_property_by_field_path(
-        &self,
-        fp: &FieldPath,
-    ) -> Result<&FieldValue, EntityError> {
+    pub(crate) fn get_property_by_path(&self, fp: &FieldPath) -> Result<&FieldValue, EntityError> {
         self.state.get_value(fp).ok_or_else(|| {
             EntityError::PropertyNameNotFound(
-                self.class.serializer.get_name_for_field_path(fp),
+                self.class.serializer.get_name(fp),
                 self.class.name().to_string(),
                 format!("{}", fp),
             )
@@ -443,19 +440,16 @@ impl Entity {
         name: &str,
     ) -> Result<impl Iterator<Item = Option<&FieldValue>>, EntityError> {
         Ok(self
-            .get_state_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)?
+            .get_state(&self.class.serializer.get_path(name)?)?
             .vec
             .iter()
             .map(|fs| fs.value.as_ref()))
     }
 
-    pub(crate) fn get_state_by_field_path(
-        &self,
-        fp: &FieldPath,
-    ) -> Result<&FieldState, EntityError> {
-        self.state.get_field_state(fp).ok_or_else(|| {
+    pub(crate) fn get_state(&self, fp: &FieldPath) -> Result<&FieldState, EntityError> {
+        self.state.get_state(fp).ok_or_else(|| {
             EntityError::PropertyNameNotFound(
-                self.class.serializer.get_name_for_field_path(fp),
+                self.class.serializer.get_name(fp),
                 self.class.name().to_string(),
                 format!("{}", fp),
             )

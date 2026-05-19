@@ -525,7 +525,13 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                             Ok((kind, args)) => {
                                 let (root, call) = match kind {
                                     ObserverMessageKind::Decoded { arg_type, is_ref } => {
-                                        let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
+                                        let enum_type = match get_enum_from_struct(arg_type.to_token_stream().to_string().as_str()) {
+                                            Ok(enum_type) => enum_type,
+                                            Err(error) => {
+                                                errors.extend(syn::Error::new_spanned(&arg_type, error.to_string()).to_compile_error());
+                                                continue;
+                                            }
+                                        };
                                         let type_string = enum_type.to_token_stream().to_string();
                                         let root = type_string.split("::").collect::<Vec<_>>()[0].trim().to_string();
                                         let message_arg = if is_ref {
@@ -956,7 +962,9 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     } else {
                         match packet_message_method_type(method) {
                             Ok((arg_type, is_ref, is_mut_ref)) => {
-                                extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, method, &method_name, &arg_type, is_ref, is_mut_ref);
+                                if let Err(error) = extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, method, &method_name, &arg_type, is_ref, is_mut_ref) {
+                                    rewrite_packet_message_body.extend(error.to_compile_error());
+                                }
                             }
                             Err(error) => {
                                 rewrite_packet_message_body.extend(error.to_compile_error());
@@ -1818,8 +1826,8 @@ fn packet_message_first_payload_arg(method: &syn::ImplItemFn) -> Option<String> 
     })
 }
 
-fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, method: &syn::ImplItemFn, method_name: &Ident, arg_type: &Type, is_ref: bool, is_mut_ref: bool) {
-    let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
+fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, method: &syn::ImplItemFn, method_name: &Ident, arg_type: &Type, is_ref: bool, is_mut_ref: bool) -> syn::Result<()> {
+    let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str()).map_err(|error| syn::Error::new_spanned(arg_type, error.to_string()))?;
     let message_arg = if is_ref {
         if is_mut_ref {
             quote! { &mut message }
@@ -1858,6 +1866,7 @@ fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, metho
             }
         });
     }
+    Ok(())
 }
 
 /// Marks a method as a protobuf message handler.

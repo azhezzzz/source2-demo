@@ -476,6 +476,6 @@ pub fn get_enum_from_struct(struct_name: &str) -> proc_macro2::TokenStream {
         "CCsUsrMsgSendPlayerLoadout" => quote! { ECstrike15UserMessages::CsUmSendPlayerLoadout },
         "CCsUsrMsgWeaponMagDrop" => quote! { ECstrike15UserMessages::CsUmWeaponMagDrop },
 
-        _ => panic!("Unknown message type: {}", struct_name),
+        _ => quote! { compile_error!("unknown protobuf message type") },
     }
 }

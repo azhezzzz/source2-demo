@@ -306,17 +306,24 @@ use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, Expr, FnArg,
 /// certain interests are set.
 pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut mode_all = false;
+    let mut errors = quote!();
 
     if !attr.is_empty() {
         let parser = Punctuated::<Ident, Token![,]>::parse_terminated;
-        if let Ok(idents) = parser.parse(attr.clone()) {
-            for id in idents {
-                if id == "manual" {
-                    mode_all = false;
+        match parser.parse(attr.clone()) {
+            Ok(idents) => {
+                for id in idents {
+                    if id == "manual" {
+                        mode_all = false;
+                    } else if id == "all" {
+                        mode_all = true;
+                    } else {
+                        errors.extend(syn::Error::new_spanned(id, "expected `manual` or `all`").to_compile_error());
+                    }
                 }
-                if id == "all" {
-                    mode_all = true;
-                }
+            }
+            Err(error) => {
+                errors.extend(error.to_compile_error());
             }
         }
     }
@@ -425,9 +432,10 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                 let method_name = method.sig.ident.clone();
                 let mut args = vec![];
 
-                let (arg_type, _) = get_arg_type(method, 1);
-                if arg_type.to_token_stream().to_string() == "Context" {
-                    args.push(quote! { ctx })
+                if let Some((arg_type, _)) = get_arg_type(method, 1) {
+                    if arg_type.to_token_stream().to_string() == "Context" {
+                        args.push(quote! { ctx })
+                    }
                 }
 
                 if let Some(ident) = attr.path().get_ident() {
@@ -460,13 +468,14 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                         }
                         "on_entity" => {
                             has_entity_track = true;
-                            let (arg_type, is_ref) = get_arg_type(method, args.len() + 1);
 
-                            if arg_type.to_token_stream().to_string() == "EntityEvents" {
-                                if is_ref {
-                                    args.push(quote! { &event });
-                                } else {
-                                    args.push(quote! { event });
+                            if let Some((arg_type, is_ref)) = get_arg_type(method, args.len() + 1) {
+                                if arg_type.to_token_stream().to_string() == "EntityEvents" {
+                                    if is_ref {
+                                        args.push(quote! { &event });
+                                    } else {
+                                        args.push(quote! { event });
+                                    }
                                 }
                             }
 
@@ -515,7 +524,10 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                             });
                         }
                         "on_message" => {
-                            let (arg_type, is_ref) = get_arg_type(method, args.len() + 1);
+                            let Some((arg_type, is_ref)) = get_arg_type(method, args.len() + 1) else {
+                                errors.extend(syn::Error::new_spanned(&method.sig, "#[on_message] needs a protobuf message argument").to_compile_error());
+                                continue;
+                            };
                             let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
                             let type_string = enum_type.to_token_stream().to_string();
                             let root = type_string.split("::").collect::<Vec<_>>()[0].trim();
@@ -538,23 +550,57 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                                 };
                             }
 
-                            match root {
-                                "EDemoCommands" => has_demo = true,
-                                "EBaseUserMessages" => has_base_um = true,
-                                "EBaseGameEvents" => has_base_ge = true,
-                                "SvcMessages" => has_svc = true,
-                                "NetMessages" => has_net = true,
+                            let known_message_root = match root {
+                                "EDemoCommands" => {
+                                    has_demo = true;
+                                    true
+                                }
+                                "EBaseUserMessages" => {
+                                    has_base_um = true;
+                                    true
+                                }
+                                "EBaseGameEvents" => {
+                                    has_base_ge = true;
+                                    true
+                                }
+                                "SvcMessages" => {
+                                    has_svc = true;
+                                    true
+                                }
+                                "NetMessages" => {
+                                    has_net = true;
+                                    true
+                                }
                                 #[cfg(feature = "dota")]
-                                "EDotaUserMessages" => has_dota_um = true,
+                                "EDotaUserMessages" => {
+                                    has_dota_um = true;
+                                    true
+                                }
                                 #[cfg(feature = "citadel")]
-                                "CitadelUserMessageIds" => has_cita_um = true,
+                                "CitadelUserMessageIds" => {
+                                    has_cita_um = true;
+                                    true
+                                }
                                 #[cfg(feature = "citadel")]
-                                "ECitadelGameEvents" => has_cita_ge = true,
+                                "ECitadelGameEvents" => {
+                                    has_cita_ge = true;
+                                    true
+                                }
                                 #[cfg(feature = "cs2")]
-                                "ECstrike15UserMessages" => has_cs2_um = true,
+                                "ECstrike15UserMessages" => {
+                                    has_cs2_um = true;
+                                    true
+                                }
                                 #[cfg(feature = "cs2")]
-                                "ECsgoGameEvents" => has_cs2_ge = true,
-                                _ => {}
+                                "ECsgoGameEvents" => {
+                                    has_cs2_ge = true;
+                                    true
+                                }
+                                _ => false,
+                            };
+                            if !known_message_root {
+                                errors.extend(syn::Error::new_spanned(&arg_type, "unknown #[on_message] protobuf type; use a generated Source 2 protobuf message type").to_compile_error());
+                                continue;
                             }
 
                             match root {
@@ -575,7 +621,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                                 #[cfg(feature = "cs2")]
                                 "ECsgoGameEvents" => extend!(on_cs2_game_event_body),
 
-                                x => unreachable!("{}", x),
+                                _ => {}
                             }
                         }
                         _ => {}
@@ -800,6 +846,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
             #obs_body
         }
         #input
+        #errors
     };
 
     TokenStream::from(ret)
@@ -1062,15 +1109,15 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(ret)
 }
 
-fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
+fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> Option<(Type, bool)> {
     if let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(n) {
         if let Type::Reference(x) = pat_type.ty.as_ref() {
-            (*x.elem.clone(), true)
+            Some((*x.elem.clone(), true))
         } else {
-            (*pat_type.ty.clone(), false)
+            Some((*pat_type.ty.clone(), false))
         }
     } else {
-        panic!("Expected argument")
+        None
     }
 }
 
@@ -1167,7 +1214,10 @@ fn string_predicate(target: &proc_macro2::TokenStream, expr: &Expr) -> syn::Resu
                     if call.args.len() != 1 {
                         return Err(syn::Error::new_spanned(expr, "`not` needs exactly one argument"));
                     }
-                    let predicate = string_predicate(target, call.args.first().unwrap())?;
+                    let Some(arg) = call.args.first() else {
+                        return Err(syn::Error::new_spanned(expr, "`not` needs exactly one argument"));
+                    };
+                    let predicate = string_predicate(target, arg)?;
                     Ok(quote! { !(#predicate) })
                 }
                 _ => Err(syn::Error::new_spanned(ident, "unknown predicate; expected exact, starts_with, ends_with, contains, any, all, or not")),

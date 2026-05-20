@@ -21,6 +21,27 @@
 4. `Entity::field_paths()` 与 `FieldReader::field_paths(count)`
    用于枚举创建时的全部字段路径，以及更新时本次 packet 的变更字段路径。
 
+### 当前改动原则
+
+- 优先通过“新增”实现能力，尽量避免直接修改上游现有源码
+- 纯新增文件可以保留，例如文档、脚本、辅助说明
+- 只有在当前主流程确实必须时，才修改 `source2-demo` 现有源码
+- 如果必须修改现有源码，优先选择改动面最小、侵入性最低的实现
+
+### 当前优化方向
+
+- 继续优先减少对 `source2-demo` 现有源码的直接修改
+- 优先从主仓库侧收缩依赖，而不是先继续扩展底层能力
+- 当前最值得优先验证的方向：
+  - 检查 `LastTickEntities` 是否还能保留；如果主流程和 Node 侧都不再消费它，应优先删除
+  - 如果 `LastTickEntities` 可以删除，继续评估是否能移除主仓库对 `Entity::field_paths()` 的依赖
+  - 在不改变当前 `changedFields: { fieldName: value }` 导出协议前，暂时保留 `Class::field_name_for_path(...)`
+  - 只有当主仓库不再依赖字段名导出时，才继续评估是否能移除 `field_name_for_path(...)`
+
+更完整的后续方向见：
+
+- `OPTIMIZATION_DIRECTIONS.md`
+
 ### 当前语义
 
 - 实体创建时：一次回调返回当前实体上所有已填充字段路径

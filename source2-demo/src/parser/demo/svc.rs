@@ -217,17 +217,15 @@ where
             .serializer
             .get_field_paths(&mut FieldPath::default(), &self.context.entities.entities_vec[index].state);
 
-        for field_path in field_paths.iter() {
-            try_observers!(
-                self,
-                TRACK_ENTITY_PROPERTY,
-                on_entity_property_changed(
-                    &self.context,
-                    &self.context.entities.entities_vec[index],
-                    field_path
-                )
-            )?;
-        }
+        try_observers!(
+            self,
+            TRACK_ENTITY_PROPERTY,
+            on_entity_properties_changed(
+                &self.context,
+                &self.context.entities.entities_vec[index],
+                &field_paths
+            )
+        )?;
 
         Ok(())
     }
@@ -250,18 +248,15 @@ where
         )?;
 
         let changed_field_paths = self.field_reader.field_paths(changed_count).to_vec();
-
-        for field_path in changed_field_paths.iter() {
-            try_observers!(
-                self,
-                TRACK_ENTITY_PROPERTY,
-                on_entity_property_changed(
-                    &self.context,
-                    &self.context.entities.entities_vec[index],
-                    field_path
-                )
-            )?;
-        }
+        try_observers!(
+            self,
+            TRACK_ENTITY_PROPERTY,
+            on_entity_properties_changed(
+                &self.context,
+                &self.context.entities.entities_vec[index],
+                &changed_field_paths
+            )
+        )?;
 
         Ok(())
     }

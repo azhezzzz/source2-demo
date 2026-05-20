@@ -1,8 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
 #![allow(clippy::too_many_arguments)]
-
-
 mod display;
 mod entity;
 pub mod error;
@@ -75,11 +73,6 @@ pub mod prelude {
     pub use crate::proto::ECsgoGameEvents;
 }
 
-#[doc(hidden)]
-pub mod __private {
-    pub use crate::parser::{EntityPropertyPatternFilter, PatternKind};
-}
-
 // Re-export commonly used types at the crate root
 pub use crate::entity::field::FieldValue;
 pub use crate::entity::*;
@@ -101,8 +94,6 @@ hashbrown::HashMap<K, V, rustc_hash::FxBuildHasher>;
 /// compared to the standard library's `HashSet`.
 pub type HashSet<T> =
 hashbrown::HashSet<T, rustc_hash::FxBuildHasher>;
-
-
 #[cfg(feature = "dota")]
 pub use crate::event::CombatLogEntry;
 

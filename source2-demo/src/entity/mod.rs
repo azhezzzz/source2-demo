@@ -384,7 +384,7 @@ impl Entity {
 
     /// Gets the value of an entity property by its decoded field path.
     ///
-    /// This is primarily useful inside `on_entity_property_changed` callbacks,
+    /// This is primarily useful inside `on_entity_properties_changed` callbacks,
     /// where the parser already provides the updated [`FieldPath`].
     pub fn get_property_by_field_path(&self, fp: &FieldPath) -> Result<&FieldValue, EntityError> {
         self.state.get_value(fp).ok_or_else(|| {

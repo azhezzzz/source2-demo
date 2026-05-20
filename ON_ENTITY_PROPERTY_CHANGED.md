@@ -1,5 +1,45 @@
 # `on_entity_property_changed` 分支改动整理
 
+## 2026-05-20 最新状态
+
+- 当前目标已收敛为：相对 `origin/master` 只保留当前仓库主流程必需的最小功能增量
+- 已删除旧的单字段 `on_entity_property_changed` observer 能力
+- 已删除 `class_pattern` / `property_pattern` 过滤语法及其 `regex` 依赖
+- 当前仅保留一个批量字段回调：`on_entity_properties_changed`
+
+### 当前最小功能增量
+
+相对 `origin/master`，当前分支只额外提供这 4 项能力：
+
+1. `Interests::TRACK_ENTITY_PROPERTY`
+   用于声明调用方需要实体属性级回调。
+2. `#[on_entity_properties_changed]`
+   用于注册批量字段变化 observer。
+   当前只支持无参写法：`#[on_entity_properties_changed]`
+3. `Entity::get_property_by_field_path(&FieldPath)`
+   在已知字段路径时读取当前字段值。
+4. `Entity::field_paths()` 与 `FieldReader::field_paths(count)`
+   用于枚举创建时的全部字段路径，以及更新时本次 packet 的变更字段路径。
+
+### 当前语义
+
+- 实体创建时：一次回调返回当前实体上所有已填充字段路径
+- 实体更新时：一次回调返回本次 packet 中全部变更字段路径
+- 实体删除时：不触发属性级回调
+
+### 与 `origin/master` 相比的最小改动文件
+
+- `source2-demo/src/parser/observer.rs`
+- `source2-demo/src/parser/demo/svc.rs`
+- `source2-demo-macros/src/lib.rs`
+- `source2-demo/src/entity/mod.rs`
+- `source2-demo/src/entity/class.rs`
+- `source2-demo/src/entity/field/mod.rs`
+- `source2-demo/src/entity/field/path.rs`
+- `source2-demo/src/reader/field/mod.rs`
+
+下面保留的历史分析主要记录这条分支过去的单字段实现、上游同步过程和比较口径；如果与本节冲突，以本节为准。
+
 ## Fork 来源
 
 - 当前仓库：`https://github.com/azhezzzz/source2-demo`

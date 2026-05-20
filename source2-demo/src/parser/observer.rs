@@ -1,119 +1,14 @@
 use crate::parser::Context;
 use crate::proto::*;
 use crate::{Entity, EntityEvents, FieldPath, GameEvent, StringTable};
-use regex::Regex;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::RwLock;
 
 #[cfg(feature = "dota")]
 use crate::event::CombatLogEntry;
 
 /// Result type for observers ([`anyhow::Result`])
 pub type ObserverResult = anyhow::Result<()>;
-
-#[doc(hidden)]
-pub enum PatternKind {
-    Exact,
-    Regex,
-}
-
-enum Matcher {
-    Any,
-    Exact(Box<str>),
-    Regex(Regex),
-}
-
-impl Matcher {
-    fn new(pattern: Option<(&str, PatternKind)>) -> Self {
-        match pattern {
-            None => Matcher::Any,
-            Some((pattern, PatternKind::Exact)) => Matcher::Exact(pattern.into()),
-            Some((pattern, PatternKind::Regex)) if pattern == ".*" => Matcher::Any,
-            Some((pattern, PatternKind::Regex)) => Matcher::Regex(
-                Regex::new(pattern).unwrap_or_else(|err| {
-                    panic!("invalid entity property filter regex `{pattern}`: {err}")
-                }),
-            ),
-        }
-    }
-
-    #[inline]
-    fn matches(&self, value: &str) -> bool {
-        match self {
-            Matcher::Any => true,
-            Matcher::Exact(expected) => expected.as_ref() == value,
-            Matcher::Regex(regex) => regex.is_match(value),
-        }
-    }
-}
-
-/// Shared property-change filter with per-class and per-(class, field_path) caches.
-#[doc(hidden)]
-pub struct EntityPropertyPatternFilter {
-    class_matcher: Matcher,
-    property_matcher: Matcher,
-    class_matches: RwLock<crate::HashMap<Box<str>, bool>>,
-    property_matches: RwLock<crate::HashMap<Box<str>, crate::HashMap<FieldPath, bool>>>,
-}
-
-impl EntityPropertyPatternFilter {
-    pub fn new(
-        class_pattern: Option<(&str, PatternKind)>,
-        property_pattern: Option<(&str, PatternKind)>,
-    ) -> Self {
-        Self {
-            class_matcher: Matcher::new(class_pattern),
-            property_matcher: Matcher::new(property_pattern),
-            class_matches: RwLock::new(crate::HashMap::default()),
-            property_matches: RwLock::new(crate::HashMap::default()),
-        }
-    }
-
-    pub fn matches(&self, entity: &Entity, field_path: &FieldPath) -> bool {
-        let class_name = entity.class().name();
-
-        {
-            let class_matches = self.class_matches.read().unwrap();
-            if let Some(&hit) = class_matches.get(class_name) {
-                if !hit {
-                    return false;
-                }
-            } else {
-                drop(class_matches);
-                let hit = self.class_matcher.matches(class_name);
-                let mut class_matches = self.class_matches.write().unwrap();
-                class_matches.insert(class_name.into(), hit);
-                if !hit {
-                    return false;
-                }
-            }
-        }
-
-        if matches!(self.property_matcher, Matcher::Any) {
-            return true;
-        }
-
-        if let Some(&hit) = self
-            .property_matches
-            .read()
-            .unwrap()
-            .get(class_name)
-            .and_then(|field_paths| field_paths.get(field_path))
-        {
-            return hit;
-        }
-
-        let property_name = entity.class().field_name_for_path(field_path);
-        let hit = self.property_matcher.matches(&property_name);
-        let mut property_matches = self.property_matches.write().unwrap();
-        property_matches
-            .entry(class_name.into())
-            .or_default()
-            .insert(*field_path, hit);
-        hit
-    }
-}
 bitflags::bitflags! {
     /// Bitflags for declaring observer interests.
     ///
@@ -169,7 +64,7 @@ bitflags::bitflags! {
         const ENABLE_ENTITY     = 1 << 7;
         /// Interest in entity create/update/delete events
         const TRACK_ENTITY     = 1 << 8;
-        /// Interest in per-property entity change events
+        /// Interest in batched entity property change events
         const TRACK_ENTITY_PROPERTY = 1 << 18;
         /// Enable string table tracking
         const ENABLE_STRINGTAB  = 1 << 9;
@@ -422,19 +317,20 @@ pub trait Observer {
         Ok(())
     }
 
-    /// Called for each entity property that is present on creation or changed by an update.
+    /// Called with all entity properties that are present on creation or changed by an update.
     ///
-    /// Created entities trigger one callback per existing property. Updated entities
-    /// trigger one callback per changed property. Deleted entities do not trigger this callback.
+    /// Created entities trigger one callback containing all existing properties. Updated
+    /// entities trigger one callback containing all changed properties. Deleted entities do not
+    /// trigger this callback.
     ///
     /// Requires [`Interests::TRACK_ENTITY_PROPERTY`] and [`Interests::ENABLE_ENTITY`] to be set.
     #[cold]
     #[inline(never)]
-    fn on_entity_property_changed(
+    fn on_entity_properties_changed(
         &mut self,
         ctx: &Context,
         entity: &Entity,
-        field_path: &FieldPath,
+        field_paths: &[FieldPath],
     ) -> ObserverResult {
         Ok(())
     }
@@ -645,14 +541,14 @@ where
         self.borrow_mut().on_entity(ctx, event, entity)
     }
 
-    fn on_entity_property_changed(
+    fn on_entity_properties_changed(
         &mut self,
         ctx: &Context,
         entity: &Entity,
-        field_path: &FieldPath,
+        field_paths: &[FieldPath],
     ) -> ObserverResult {
         self.borrow_mut()
-            .on_entity_property_changed(ctx, entity, field_path)
+            .on_entity_properties_changed(ctx, entity, field_paths)
     }
 
     fn on_game_event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {

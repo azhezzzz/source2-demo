@@ -1,6 +1,6 @@
 use quote::quote;
 
-pub fn get_enum_from_struct(struct_name: &str) -> syn::Result<proc_macro2::TokenStream> {
+pub(crate) fn get_enum_from_struct(struct_name: &str) -> syn::Result<proc_macro2::TokenStream> {
     Ok(match struct_name {
         // EDemoCommands
         "CDemoFileHeader" => quote! { EDemoCommands::DemFileHeader },
@@ -477,7 +477,10 @@ pub fn get_enum_from_struct(struct_name: &str) -> syn::Result<proc_macro2::Token
         "CCsUsrMsgWeaponMagDrop" => quote! { ECstrike15UserMessages::CsUmWeaponMagDrop },
 
         _ => {
-            return Err(syn::Error::new(proc_macro2::Span::call_site(), format!("unknown protobuf message type `{struct_name}`")));
+            return Err(syn::Error::new(
+                proc_macro2::Span::call_site(),
+                format!("unknown protobuf message type `{struct_name}`"),
+            ));
         }
     })
 }

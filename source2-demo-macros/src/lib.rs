@@ -37,10 +37,11 @@
 //!
 //! ### `#[rewriter]` - Demo writer implementation macro
 //!
-//! Automatically implements the `DemoRewriter` trait. Packet message handlers can
-//! either receive the raw packet payload or a decoded protobuf message. The
-//! protobuf form infers the packet id from the message type, just like
-//! `#[on_message]`.
+//! Automatically implements the `DemoRewriter` trait for replay rewriting.
+//! Use it when you want to drop, replace, or mutate demo messages while the
+//! writer emits a new replay. Packet message handlers can receive either the raw
+//! packet payload or a decoded protobuf message. The protobuf form infers the
+//! packet id from the message type, just like `#[on_message]`.
 //!
 //! ```no_run
 //! # use source2_demo::error::ParserError;
@@ -143,12 +144,12 @@
 //! - **Game-Specific Handlers**: Use `#[on_dota_user_message]`, `#[on_citadel_user_message]`,
 //!   etc. for game-specific message types
 
+mod observer_impl;
 mod protobuf_map;
+mod rewriter_impl;
+mod type_utils;
 
-use crate::protobuf_map::get_enum_from_struct;
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
-use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, Expr, FnArg, Ident, ItemImpl, Lit, Token, Type};
 
 #[allow(unused_mut)]
 #[proc_macro_attribute]
@@ -306,1575 +307,62 @@ use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, Expr, FnArg,
 /// You can also use trait attributes like `#[uses_entities]` to manually ensure
 /// certain interests are set.
 pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let mut mode_all = false;
-    let mut errors = quote!();
-
-    if !attr.is_empty() {
-        let parser = Punctuated::<Ident, Token![,]>::parse_terminated;
-        match parser.parse(attr.clone()) {
-            Ok(idents) => {
-                for id in idents {
-                    if id == "manual" {
-                        mode_all = false;
-                    } else if id == "all" {
-                        mode_all = true;
-                    } else {
-                        errors.extend(syn::Error::new_spanned(id, "expected `manual` or `all`").to_compile_error());
-                    }
-                }
-            }
-            Err(error) => {
-                errors.extend(error.to_compile_error());
-            }
-        }
-    }
-
-    let input = parse_macro_input!(item as ItemImpl);
-    let struct_name = &input.self_ty;
-
-    let mut interests = quote!(::source2_demo::Interests::empty());
-    macro_rules! add_flag {
-        ($flag:ident) => {
-            interests = quote!(#interests | ::source2_demo::Interests::$flag);
-        };
-    }
-
-    for a in &input.attrs {
-        if a.path().is_ident("uses_entities") {
-            add_flag!(ENTITY_STATE);
-        }
-        if a.path().is_ident("uses_string_tables") {
-            add_flag!(STRING_TABLE_STATE);
-        }
-        if a.path().is_ident("uses_game_events") {
-            add_flag!(BASE_GAME_EVENT);
-        }
-        #[cfg(feature = "dota")]
-        if a.path().is_ident("uses_combat_log") {
-            add_flag!(STRING_TABLE_STATE);
-            add_flag!(COMBAT_LOG_ENTRIES);
-        }
-    }
-
-    let mut has_demo = false;
-    let mut has_net = false;
-    let mut has_svc = false;
-    let mut has_base_um = false;
-    let mut has_base_ge = false;
-    let mut has_tick_start = false;
-    let mut has_tick_end = false;
-    let mut has_entity = false;
-    let mut has_entity_track = false;
-    let mut has_string_table = false;
-    let mut has_string_table_track = false;
-    let mut has_stop = false;
-
-    #[cfg(feature = "dota")]
-    let mut has_dota_um = false;
-    #[cfg(feature = "dota")]
-    let mut has_combat_log = false;
-
-    #[cfg(feature = "citadel")]
-    let mut has_cita_um = false;
-    #[cfg(feature = "citadel")]
-    let mut has_cita_ge = false;
-
-    #[cfg(feature = "cs2")]
-    let mut has_cs2_um = false;
-    #[cfg(feature = "cs2")]
-    let mut has_cs2_ge = false;
-
-    #[cfg(feature = "dota")]
-    let mut on_combat_log_body = quote!();
-    #[cfg(feature = "dota")]
-    let mut on_dota_user_message_body = quote!();
-
-    #[cfg(feature = "citadel")]
-    let mut on_citadel_user_message_body = quote!();
-    #[cfg(feature = "citadel")]
-    let mut on_citadel_game_event_body = quote!();
-
-    #[cfg(feature = "cs2")]
-    let mut on_cs2_user_message_body = quote!();
-    #[cfg(feature = "cs2")]
-    let mut on_cs2_game_event_body = quote!();
-
-    let mut on_svc_message_body = quote!();
-    let mut on_net_message_body = quote!();
-    let mut on_base_game_event_body = quote!();
-    let mut on_demo_command_body = quote!();
-    let mut on_base_user_message_body = quote!();
-    let mut on_tick_start_body = quote!();
-    let mut on_tick_end_body = quote!();
-    let mut on_entity_body = quote!();
-    let mut on_game_event_body = quote!();
-    let mut on_string_table_body = quote!();
-    let mut on_stop_body = quote!();
-
-    for item in &input.items {
-        if let syn::ImplItem::Fn(method) = item {
-            for attr in &method.attrs {
-                for a in &method.attrs {
-                    if a.path().is_ident("uses_entities") {
-                        add_flag!(ENTITY_STATE);
-                    }
-                    if a.path().is_ident("uses_string_tables") {
-                        add_flag!(STRING_TABLE_STATE);
-                    }
-                    if a.path().is_ident("uses_game_events") {
-                        add_flag!(BASE_GAME_EVENT);
-                    }
-                    #[cfg(feature = "dota")]
-                    if a.path().is_ident("uses_combat_log") {
-                        add_flag!(STRING_TABLE_STATE);
-                        add_flag!(COMBAT_LOG_ENTRIES);
-                    }
-                }
-
-                let method_name = method.sig.ident.clone();
-
-                if let Some(ident) = attr.path().get_ident() {
-                    match ident.to_string().as_str() {
-                        "on_tick_start" => {
-                            has_tick_start = true;
-                            match observer_context_args(method, "#[on_tick_start]") {
-                                Ok(args) => on_tick_start_body.extend(quote! {
-                                    self.#method_name(#args)?;
-                                }),
-                                Err(error) => errors.extend(error.to_compile_error()),
-                            }
-                        }
-                        "on_tick_end" => {
-                            has_tick_end = true;
-                            match observer_context_args(method, "#[on_tick_end]") {
-                                Ok(args) => on_tick_end_body.extend(quote! {
-                                    self.#method_name(#args)?;
-                                }),
-                                Err(error) => errors.extend(error.to_compile_error()),
-                            }
-                        }
-                        "on_stop" => {
-                            has_stop = true;
-                            match observer_context_args(method, "#[on_stop]") {
-                                Ok(args) => on_stop_body.extend(quote! {
-                                    self.#method_name(#args)?;
-                                }),
-                                Err(error) => errors.extend(error.to_compile_error()),
-                            }
-                        }
-                        #[cfg(feature = "dota")]
-                        "on_combat_log" => match observer_combat_log_args(method) {
-                            Ok(args) => {
-                                has_combat_log = true;
-                                has_string_table = true;
-                                on_combat_log_body.extend(quote! {
-                                    self.#method_name(#args)?;
-                                });
-                            }
-                            Err(error) => errors.extend(error.to_compile_error()),
-                        },
-                        "on_entity" => {
-                            has_entity = true;
-                            has_entity_track = true;
-                            match observer_entity_args(method) {
-                                Ok(args) => {
-                                    on_entity_body.extend(if let Ok(entity_class) = attr.parse_args::<syn::LitStr>() {
-                                        quote! {
-                                            if entity.class().name() == #entity_class {
-                                                self.#method_name(#args)?;
-                                            }
-                                        }
-                                    } else {
-                                        quote! {
-                                            self.#method_name(#args)?;
-                                        }
-                                    });
-                                }
-                                Err(error) => errors.extend(error.to_compile_error()),
-                            }
-                        }
-                        "on_game_event" => match observer_game_event_args(method) {
-                            Ok(args) => {
-                                on_game_event_body.extend(if let Ok(event_name) = attr.parse_args::<syn::LitStr>() {
-                                    quote! {
-                                        if ge.name() == #event_name {
-                                            self.#method_name(#args)?;
-                                        }
-                                    }
-                                } else {
-                                    quote! {
-                                        self.#method_name(#args)?;
-                                    }
-                                });
-                            }
-                            Err(error) => errors.extend(error.to_compile_error()),
-                        },
-                        "on_string_table" => {
-                            has_string_table = true;
-                            has_string_table_track = true;
-                            match observer_string_table_args(method) {
-                                Ok(args) => {
-                                    on_string_table_body.extend(if let Ok(table_name) = attr.parse_args::<syn::LitStr>() {
-                                        quote! {
-                                            if table.name() == #table_name {
-                                                self.#method_name(#args)?;
-                                            }
-                                        }
-                                    } else {
-                                        quote! {
-                                            self.#method_name(#args)?;
-                                        }
-                                    });
-                                }
-                                Err(error) => errors.extend(error.to_compile_error()),
-                            }
-                        }
-                        "on_message" => match observer_message_args(method) {
-                            Ok((kind, args)) => {
-                                let (root, call) = match kind {
-                                    ObserverMessageKind::Decoded { arg_type, is_ref } => {
-                                        let enum_type = match get_enum_from_struct(arg_type.to_token_stream().to_string().as_str()) {
-                                            Ok(enum_type) => enum_type,
-                                            Err(error) => {
-                                                errors.extend(syn::Error::new_spanned(&arg_type, error.to_string()).to_compile_error());
-                                                continue;
-                                            }
-                                        };
-                                        let type_string = enum_type.to_token_stream().to_string();
-                                        let root = type_string.split("::").collect::<Vec<_>>()[0].trim().to_string();
-                                        let message_arg = if is_ref {
-                                            quote! { &message }
-                                        } else {
-                                            quote! { message }
-                                        };
-                                        let args = args
-                                            .into_iter()
-                                            .map(|arg| match arg {
-                                                ObserverArg::Context => quote! { ctx },
-                                                ObserverArg::Message => message_arg.clone(),
-                                                ObserverArg::MessageType => quote! { compile_error!("internal macro error: unexpected message type arg") },
-                                                ObserverArg::Payload => quote! { compile_error!("internal macro error: unexpected payload arg") },
-                                            })
-                                            .collect::<Vec<_>>();
-                                        (
-                                            root,
-                                            quote! {
-                                                if msg_type == #enum_type {
-                                                    if let Ok(message) = #arg_type::decode(msg) {
-                                                        self.#method_name(#(#args),*)?;
-                                                    }
-                                                }
-                                            },
-                                        )
-                                    }
-                                    ObserverMessageKind::Raw { enum_type, is_ref } => {
-                                        let type_string = enum_type.to_token_stream().to_string();
-                                        let root = canonical_message_type(&type_string).unwrap_or(type_string);
-                                        let message_type_arg = if is_ref {
-                                            quote! { &msg_type }
-                                        } else {
-                                            quote! { msg_type }
-                                        };
-                                        let args = args
-                                            .into_iter()
-                                            .map(|arg| match arg {
-                                                ObserverArg::Context => quote! { ctx },
-                                                ObserverArg::MessageType => message_type_arg.clone(),
-                                                ObserverArg::Payload => quote! { msg },
-                                                ObserverArg::Message => quote! { compile_error!("internal macro error: unexpected protobuf message arg") },
-                                            })
-                                            .collect::<Vec<_>>();
-                                        (
-                                            root,
-                                            quote! {
-                                                self.#method_name(#(#args),*)?;
-                                            },
-                                        )
-                                    }
-                                };
-
-                                macro_rules! extend {
-                                    ($body: ident) => {
-                                        $body.extend(call.clone())
-                                    };
-                                }
-
-                                let known_message_root = match root.as_str() {
-                                    "EDemoCommands" => {
-                                        has_demo = true;
-                                        true
-                                    }
-                                    "EBaseUserMessages" => {
-                                        has_base_um = true;
-                                        true
-                                    }
-                                    "EBaseGameEvents" => {
-                                        has_base_ge = true;
-                                        true
-                                    }
-                                    "SvcMessages" => {
-                                        has_svc = true;
-                                        true
-                                    }
-                                    "NetMessages" => {
-                                        has_net = true;
-                                        true
-                                    }
-                                    #[cfg(feature = "dota")]
-                                    "EDotaUserMessages" => {
-                                        has_dota_um = true;
-                                        true
-                                    }
-                                    #[cfg(feature = "citadel")]
-                                    "CitadelUserMessageIds" => {
-                                        has_cita_um = true;
-                                        true
-                                    }
-                                    #[cfg(feature = "citadel")]
-                                    "ECitadelGameEvents" => {
-                                        has_cita_ge = true;
-                                        true
-                                    }
-                                    #[cfg(feature = "cs2")]
-                                    "ECstrike15UserMessages" => {
-                                        has_cs2_um = true;
-                                        true
-                                    }
-                                    #[cfg(feature = "cs2")]
-                                    "ECsgoGameEvents" => {
-                                        has_cs2_ge = true;
-                                        true
-                                    }
-                                    _ => false,
-                                };
-                                if !known_message_root {
-                                    errors.extend(syn::Error::new_spanned(&method.sig, "unknown #[on_message] message type").to_compile_error());
-                                    continue;
-                                }
-
-                                match root.as_str() {
-                                    "EDemoCommands" => extend!(on_demo_command_body),
-                                    "EBaseUserMessages" => extend!(on_base_user_message_body),
-                                    "EBaseGameEvents" => extend!(on_base_game_event_body),
-                                    "SvcMessages" => extend!(on_svc_message_body),
-                                    "NetMessages" => extend!(on_net_message_body),
-
-                                    #[cfg(feature = "dota")]
-                                    "EDotaUserMessages" => extend!(on_dota_user_message_body),
-                                    #[cfg(feature = "citadel")]
-                                    "CitadelUserMessageIds" => extend!(on_citadel_user_message_body),
-                                    #[cfg(feature = "citadel")]
-                                    "ECitadelGameEvents" => extend!(on_citadel_game_event_body),
-                                    #[cfg(feature = "cs2")]
-                                    "ECstrike15UserMessages" => extend!(on_cs2_user_message_body),
-                                    #[cfg(feature = "cs2")]
-                                    "ECsgoGameEvents" => extend!(on_cs2_game_event_body),
-
-                                    _ => {}
-                                }
-                            }
-                            Err(error) => errors.extend(error.to_compile_error()),
-                        },
-                        _ => {}
-                    }
-                }
-            }
-        }
-    }
-
-    let mut obs_body = quote! {
-        fn on_base_user_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: EBaseUserMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_base_user_message_body
-            Ok(())
-        }
-
-        fn on_svc_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: SvcMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_svc_message_body
-            Ok(())
-        }
-
-        fn on_net_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: NetMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_net_message_body
-            Ok(())
-        }
-
-        fn on_base_game_event(
-            &mut self,
-            ctx: &Context,
-            msg_type: EBaseGameEvents,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_base_game_event_body
-            Ok(())
-        }
-
-        fn on_demo_command(
-            &mut self,
-            ctx: &Context,
-            msg_type: EDemoCommands,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_demo_command_body
-            Ok(())
-        }
-
-        fn on_tick_start(
-            &mut self,
-            ctx: &Context,
-        ) -> ObserverResult {
-            #on_tick_start_body
-            Ok(())
-        }
-
-        fn on_tick_end(
-            &mut self,
-            ctx: &Context,
-        ) -> ObserverResult {
-            #on_tick_end_body
-            Ok(())
-        }
-
-        fn on_entity(
-            &mut self,
-            ctx: &Context,
-            event: EntityEvents,
-            entity: &Entity,
-        ) -> ObserverResult {
-            #on_entity_body
-            Ok(())
-        }
-
-        fn on_game_event(
-            &mut self,
-            ctx: &Context,
-            ge: &GameEvent
-        ) -> ObserverResult {
-            #on_game_event_body
-            Ok(())
-        }
-
-        fn on_string_table(
-            &mut self,
-            ctx: &Context,
-            table: &StringTable,
-            modified: &[i32]
-        ) -> ObserverResult {
-            #on_string_table_body
-            Ok(())
-        }
-
-        fn on_stop(
-            &mut self,
-            ctx: &Context,
-        ) -> ObserverResult {
-            #on_stop_body
-            Ok(())
-        }
-    };
-
-    #[cfg(feature = "dota")]
-    obs_body.extend(quote! {
-        fn on_combat_log(
-            &mut self,
-            ctx: &Context,
-            cle: &CombatLogEntry
-        ) -> ObserverResult {
-            #on_combat_log_body
-            Ok(())
-        }
-
-        fn on_dota_user_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: EDotaUserMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_dota_user_message_body
-            Ok(())
-        }
-    });
-
-    #[cfg(feature = "citadel")]
-    obs_body.extend(quote! {
-        fn on_citadel_user_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: CitadelUserMessageIds,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_citadel_user_message_body
-            Ok(())
-        }
-
-        fn on_citadel_game_event(
-            &mut self,
-            ctx: &Context,
-            msg_type: ECitadelGameEvents,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_citadel_game_event_body
-            Ok(())
-        }
-    });
-
-    #[cfg(feature = "cs2")]
-    obs_body.extend(quote! {
-        fn on_cs2_user_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: ECstrike15UserMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_cs2_user_message_body
-            Ok(())
-        }
-
-        fn on_cs2_game_event(
-            &mut self,
-            ctx: &Context,
-            msg_type: ECsgoGameEvents,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_cs2_game_event_body
-            Ok(())
-        }
-    });
-
-    macro_rules! add_if { ($cond:expr, $flag:ident) => {
-        if $cond { interests = quote!(#interests | ::source2_demo::Interests::$flag); }
-    }}
-
-    if mode_all {
-        interests = quote!(::source2_demo::Interests::all());
-    }
-
-    add_if!(has_demo, DEMO_MESSAGE);
-    add_if!(has_net, NET_MESSAGE);
-    add_if!(has_svc, SVC_MESSAGE);
-    add_if!(has_base_um, BASE_USER_MESSAGE);
-    add_if!(has_base_ge, BASE_GAME_EVENT);
-    add_if!(has_tick_start, TICK_START);
-    add_if!(has_tick_end, TICK_END);
-    add_if!(has_entity, ENTITY_STATE);
-    add_if!(has_entity_track, ENTITY_EVENTS);
-    add_if!(has_string_table, STRING_TABLE_STATE);
-    add_if!(has_string_table_track, STRING_TABLE_ENTRIES);
-    add_if!(has_stop, REPLAY_END);
-
-    #[cfg(feature = "dota")]
-    add_if!(has_dota_um, DOTA_USER_MESSAGE);
-    #[cfg(feature = "dota")]
-    add_if!(has_combat_log, COMBAT_LOG_ENTRIES);
-
-    #[cfg(feature = "citadel")]
-    add_if!(has_cita_um, CITADEL_USER_MESSAGE);
-    #[cfg(feature = "citadel")]
-    add_if!(has_cita_ge, CITADEL_GAME_EVENT);
-
-    #[cfg(feature = "cs2")]
-    add_if!(has_cs2_um, CS2_USER_MESSAGE);
-    #[cfg(feature = "cs2")]
-    add_if!(has_cs2_ge, CS2_GAME_EVENT);
-
-    let ret = quote! {
-        impl Observer for #struct_name {
-            fn interests(&self) -> ::source2_demo::Interests { #interests }
-            #obs_body
-        }
-        #input
-        #errors
-    };
-
-    TokenStream::from(ret)
+    observer_impl::expand_observer(attr, item)
 }
 
 /// Implements the `DemoRewriter` trait for your struct.
 ///
 /// Apply this to an inherent `impl` block and mark methods with writer callback
-/// attributes such as `#[rewrite_packet_message]`,
-/// `#[rewrite_string_table_entry]`, `#[rewrite_field]`,
-/// `#[replace_entity_field]`, and
-/// `#[should_rewrite_entity]`.
+/// attributes. The macro builds the `RewriteInterests` mask from those methods
+/// so the writer only decodes the parts of the replay your rewrite needs.
 ///
-/// Handler methods should use the same return type as the corresponding
-/// `DemoRewriter` callback.
+/// # Callback Types
+///
+/// - `#[rewrite_demo_message]` sees outer `EDemoCommands` payloads before
+///   packet-level decoding.
+/// - `#[rewrite_packet_message]` sees messages inside demo packets. It can take
+///   raw `(msg_type, payload)` arguments or a decoded protobuf message.
+/// - `#[rewrite_packet_messages]` can mutate the final decoded packet message
+///   list after individual packet-message callbacks run.
+/// - `#[rewrite_demo_string_tables]`, `#[rewrite_string_table_entry]`,
+///   `#[rewrite_svc_create_string_table]`, and
+///   `#[rewrite_svc_update_string_table]` target string-table data at different
+///   levels of decoding.
+/// - `#[rewrite_field]` and `#[replace_entity_field]` replace decoded entity
+///   field values, while `#[should_rewrite_entity]` filters which entities enter
+///   that path.
+///
+/// # Return Values
+///
+/// Message callbacks return `Result<MessageRewrite, ParserError>`.
+/// `Keep` leaves the current payload alone, `Drop` removes it, `Replace(bytes)`
+/// writes explicit bytes, and `Rewrite` re-encodes a mutable decoded protobuf
+/// argument when that callback supports it. List, entry, and filter callbacks
+/// use the return type of the matching `DemoRewriter` method.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::error::ParserError;
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::CDotaUserMsgChatMessage;
+/// # use source2_demo::writer::*;
+/// struct RemoveChat;
+///
+/// #[rewriter]
+/// impl RemoveChat {
+///     #[rewrite_packet_message]
+///     fn remove_chat(
+///         &mut self,
+///         _msg: CDotaUserMsgChatMessage,
+///     ) -> Result<MessageRewrite, ParserError> {
+///         Ok(MessageRewrite::Drop)
+///     }
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(item as ItemImpl);
-    let struct_name = &input.self_ty;
-
-    let mut interests = quote!(::source2_demo::writer::RewriteInterests::empty());
-    macro_rules! add_flag {
-        ($flag:ident) => {
-            interests = quote!(#interests | ::source2_demo::writer::RewriteInterests::$flag);
-        };
-    }
-
-    let mut rewrite_demo_message_body = quote!();
-    let mut rewrite_packet_message_body = quote!();
-    let mut rewrite_packet_messages_body = quote!();
-    let mut rewrite_demo_string_tables_body = quote!();
-    let mut rewrite_string_table_entry_body = quote!();
-    let mut rewrite_svc_create_string_table_body = quote!();
-    let mut rewrite_svc_update_string_table_body = quote!();
-    let mut replace_entity_field_body = quote!();
-    let mut should_rewrite_entity_body = quote!();
-
-    for item in &input.items {
-        let syn::ImplItem::Fn(method) = item else {
-            continue;
-        };
-
-        let method_name = method.sig.ident.clone();
-        for attr in &method.attrs {
-            let Some(ident) = attr.path().get_ident() else {
-                continue;
-            };
-
-            match ident.to_string().as_str() {
-                "rewrite_demo_message" => {
-                    add_flag!(DEMO_MESSAGE);
-                    let args = writer_callback_method_args(method, quote! {});
-                    rewrite_demo_message_body.extend(quote! {
-                        match self.#method_name(#args)? {
-                            ::source2_demo::writer::MessageRewrite::Keep => {}
-                            rewrite => return Ok(rewrite),
-                        }
-                    });
-                }
-                "rewrite_packet_message" => {
-                    add_flag!(PACKET_MESSAGE);
-                    if packet_message_method_is_raw(method) {
-                        let args = writer_callback_method_args(method, quote! {});
-                        rewrite_packet_message_body.extend(quote! {
-                            match self.#method_name(#args)? {
-                                ::source2_demo::writer::MessageRewrite::Keep => {}
-                                rewrite => return Ok(rewrite),
-                            }
-                        });
-                    } else {
-                        match packet_message_method_type(method) {
-                            Ok((arg_type, is_ref, is_mut_ref)) => {
-                                if let Err(error) = extend_rewrite_packet_message_body(&mut rewrite_packet_message_body, method, &method_name, &arg_type, is_ref, is_mut_ref) {
-                                    rewrite_packet_message_body.extend(error.to_compile_error());
-                                }
-                            }
-                            Err(error) => {
-                                rewrite_packet_message_body.extend(error.to_compile_error());
-                            }
-                        }
-                    }
-                }
-                "rewrite_packet_messages" => {
-                    add_flag!(PACKET_MESSAGES);
-                    let args = writer_callback_method_args(method, quote! {});
-                    rewrite_packet_messages_body.extend(quote! {
-                        self.#method_name(#args)?;
-                    });
-                }
-                "rewrite_demo_string_tables" => {
-                    add_flag!(DEMO_STRING_TABLES);
-                    let args = writer_callback_method_args(method, quote! { message });
-                    rewrite_demo_string_tables_body.extend(quote! {
-                        match self.#method_name(#args)? {
-                            ::source2_demo::writer::MessageRewrite::Keep => {}
-                            rewrite => return Ok(rewrite),
-                        }
-                    });
-                }
-                "rewrite_string_table_entry" => {
-                    add_flag!(STRING_TABLE_ENTRIES);
-                    let args = writer_callback_method_args(method, quote! {});
-                    rewrite_string_table_entry_body.extend(quote! {
-                        self.#method_name(#args)?;
-                    });
-                }
-                "rewrite_svc_create_string_table" => {
-                    add_flag!(SVC_CREATE_STRING_TABLE);
-                    let args = writer_callback_method_args(method, quote! { message });
-                    rewrite_svc_create_string_table_body.extend(quote! {
-                        match self.#method_name(#args)? {
-                            ::source2_demo::writer::MessageRewrite::Keep => {}
-                            rewrite => return Ok(rewrite),
-                        }
-                    });
-                }
-                "rewrite_svc_update_string_table" => {
-                    add_flag!(SVC_UPDATE_STRING_TABLE);
-                    let args = writer_callback_method_args(method, quote! { message });
-                    rewrite_svc_update_string_table_body.extend(quote! {
-                        match self.#method_name(#args)? {
-                            ::source2_demo::writer::MessageRewrite::Keep => {}
-                            rewrite => return Ok(rewrite),
-                        }
-                    });
-                }
-                "replace_entity_field" => {
-                    add_flag!(ENTITY_FIELDS);
-                    let args = replace_entity_field_method_args(method);
-                    replace_entity_field_body.extend(quote! {
-                        if let Some(value) = self.#method_name(#args) {
-                            return Some(value);
-                        }
-                    });
-                }
-                "rewrite_field" => {
-                    add_flag!(ENTITY_FIELDS);
-                    match rewrite_field_body(attr, method) {
-                        Ok(tokens) => replace_entity_field_body.extend(tokens),
-                        Err(error) => replace_entity_field_body.extend(error.to_compile_error()),
-                    }
-                }
-                "should_rewrite_entity" => {
-                    add_flag!(ENTITY_FIELDS);
-                    let args = should_rewrite_entity_method_args(method);
-                    should_rewrite_entity_body.extend(quote! {
-                        if !self.#method_name(#args) {
-                            return false;
-                        }
-                    });
-                }
-                _ => {}
-            }
-        }
-    }
-
-    let ret = quote! {
-        impl ::source2_demo::writer::DemoRewriter for #struct_name {
-            fn interests(&self) -> ::source2_demo::writer::RewriteInterests {
-                #interests
-            }
-
-            fn rewrite_demo_message(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                tick: u32,
-                msg_type: ::source2_demo::proto::EDemoCommands,
-                payload: &[u8],
-            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
-                #rewrite_demo_message_body
-                Ok(::source2_demo::writer::MessageRewrite::Keep)
-            }
-
-            fn rewrite_packet_message(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                tick: u32,
-                msg_type: i32,
-                payload: &[u8],
-            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
-                #rewrite_packet_message_body
-                Ok(::source2_demo::writer::MessageRewrite::Keep)
-            }
-
-            fn rewrite_packet_messages(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                tick: u32,
-                messages: &mut Vec<::source2_demo::writer::PacketMessage>,
-            ) -> Result<(), ::source2_demo::error::ParserError> {
-                #rewrite_packet_messages_body
-                Ok(())
-            }
-
-            fn rewrite_demo_string_tables(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                tick: u32,
-                message: &mut ::source2_demo::proto::CDemoStringTables,
-            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
-                #rewrite_demo_string_tables_body
-                Ok(::source2_demo::writer::MessageRewrite::Keep)
-            }
-
-            fn rewrite_string_table_entry(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                tick: u32,
-                table_name: &str,
-                entry: &mut ::source2_demo::writer::StringTableEntryUpdate,
-            ) -> Result<(), ::source2_demo::error::ParserError> {
-                #rewrite_string_table_entry_body
-                Ok(())
-            }
-
-            fn rewrite_svc_create_string_table(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                tick: u32,
-                message: &mut ::source2_demo::proto::CSvcMsgCreateStringTable,
-            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
-                #rewrite_svc_create_string_table_body
-                Ok(::source2_demo::writer::MessageRewrite::Keep)
-            }
-
-            fn rewrite_svc_update_string_table(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                tick: u32,
-                message: &mut ::source2_demo::proto::CSvcMsgUpdateStringTable,
-            ) -> Result<::source2_demo::writer::MessageRewrite, ::source2_demo::error::ParserError> {
-                #rewrite_svc_update_string_table_body
-                Ok(::source2_demo::writer::MessageRewrite::Keep)
-            }
-
-            fn replace_entity_field(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                event: ::source2_demo::EntityEvents,
-                entity: &::source2_demo::Entity,
-                field_name: &str,
-                value: &::source2_demo::FieldValue,
-            ) -> Option<::source2_demo::FieldValue> {
-                #replace_entity_field_body
-                None
-            }
-
-            fn should_rewrite_entity(
-                &mut self,
-                ctx: &::source2_demo::Context,
-                event: ::source2_demo::EntityEvents,
-                entity: &::source2_demo::Entity,
-            ) -> bool {
-                #should_rewrite_entity_body
-                true
-            }
-
-        }
-        #input
-    };
-
-    TokenStream::from(ret)
-}
-
-enum ObserverArg {
-    Context,
-    Message,
-    MessageType,
-    Payload,
-}
-
-enum ObserverMessageKind {
-    Decoded { arg_type: Type, is_ref: bool },
-    Raw { enum_type: Type, is_ref: bool },
-}
-
-fn observer_context_args(method: &syn::ImplItemFn, attr_name: &str) -> syn::Result<proc_macro2::TokenStream> {
-    let mut args = Vec::new();
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        if is_context_type(&type_string) {
-            args.push(quote! { ctx });
-        } else {
-            return Err(syn::Error::new_spanned(pat_type, format!("{attr_name} supports only `&Context`")));
-        }
-    }
-    Ok(quote! { #(#args),* })
-}
-
-fn observer_entity_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
-    let mut args = Vec::new();
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        let arg = if is_context_type(&type_string) {
-            quote! { ctx }
-        } else if is_entity_events_type(&type_string) {
-            quote! { event }
-        } else if is_entity_events_ref_type(&type_string) {
-            quote! { &event }
-        } else if is_entity_type(&type_string) {
-            quote! { entity }
-        } else {
-            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_entity] argument"));
-        };
-        args.push(arg);
-    }
-    Ok(quote! { #(#args),* })
-}
-
-fn observer_game_event_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
-    let mut args = Vec::new();
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        let arg = if is_context_type(&type_string) {
-            quote! { ctx }
-        } else if is_game_event_type(&type_string) {
-            quote! { ge }
-        } else {
-            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_game_event] argument"));
-        };
-        args.push(arg);
-    }
-    Ok(quote! { #(#args),* })
-}
-
-fn observer_string_table_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
-    let mut args = Vec::new();
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        let arg = if is_context_type(&type_string) {
-            quote! { ctx }
-        } else if is_string_table_type(&type_string) {
-            quote! { table }
-        } else if is_modified_indices_type(&type_string) {
-            quote! { modified }
-        } else {
-            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_string_table] argument"));
-        };
-        args.push(arg);
-    }
-    Ok(quote! { #(#args),* })
-}
-
-#[cfg(feature = "dota")]
-fn observer_combat_log_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
-    let mut args = Vec::new();
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        let arg = if is_context_type(&type_string) {
-            quote! { ctx }
-        } else if is_combat_log_type(&type_string) {
-            quote! { cle }
-        } else {
-            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_combat_log] argument"));
-        };
-        args.push(arg);
-    }
-    Ok(quote! { #(#args),* })
-}
-
-fn observer_message_args(method: &syn::ImplItemFn) -> syn::Result<(ObserverMessageKind, Vec<ObserverArg>)> {
-    let mut message = None;
-    let mut message_type = None;
-    let mut payload = false;
-    let mut args = Vec::new();
-
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        if is_context_type(&type_string) {
-            args.push(ObserverArg::Context);
-            continue;
-        }
-
-        if is_message_type(&type_string) || is_message_type_ref(&type_string) {
-            if message_type.is_some() {
-                return Err(syn::Error::new_spanned(pat_type, "#[on_message] supports only one message type argument"));
-            }
-            let (arg_type, is_ref) = referenced_or_owned_type(pat_type.ty.as_ref());
-            message_type = Some((arg_type, is_ref));
-            args.push(ObserverArg::MessageType);
-            continue;
-        }
-
-        if is_payload_type(&type_string) {
-            if payload {
-                return Err(syn::Error::new_spanned(pat_type, "#[on_message] supports only one raw payload argument"));
-            }
-            payload = true;
-            args.push(ObserverArg::Payload);
-            continue;
-        }
-
-        if message.is_some() {
-            return Err(syn::Error::new_spanned(pat_type, "#[on_message] supports only `&Context` and one protobuf message argument"));
-        }
-
-        let (arg_type, is_ref) = referenced_or_owned_type(pat_type.ty.as_ref());
-        message = Some((arg_type, is_ref));
-        args.push(ObserverArg::Message);
-    }
-
-    match (message, message_type, payload) {
-        (Some((arg_type, is_ref)), None, false) => Ok((ObserverMessageKind::Decoded { arg_type, is_ref }, args)),
-        (None, Some((enum_type, is_ref)), true) => Ok((ObserverMessageKind::Raw { enum_type, is_ref }, args)),
-        (Some(_), Some(_), _) => Err(syn::Error::new_spanned(&method.sig, "#[on_message] cannot mix protobuf and raw message arguments")),
-        (Some(_), None, true) => Err(syn::Error::new_spanned(&method.sig, "#[on_message] raw payload handlers need a message type argument")),
-        (None, Some(_), false) => Err(syn::Error::new_spanned(&method.sig, "#[on_message] raw handlers need a `&[u8]` payload argument")),
-        (None, None, _) => Err(syn::Error::new_spanned(&method.sig, "#[on_message] needs a protobuf message argument or raw message type plus `&[u8]`")),
-    }
-}
-
-fn referenced_or_owned_type(ty: &Type) -> (Type, bool) {
-    if let Type::Reference(reference) = ty {
-        (*reference.elem.clone(), true)
-    } else {
-        (ty.clone(), false)
-    }
-}
-
-fn rewrite_field_body(attr: &syn::Attribute, method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
-    let method_name = &method.sig.ident;
-    let mut class = None;
-    let mut field = None;
-
-    attr.parse_nested_meta(|meta| {
-        if meta.path.is_ident("class") {
-            let value = meta.value()?;
-            class = Some(value.parse::<Expr>()?);
-            Ok(())
-        } else if meta.path.is_ident("field") {
-            let value = meta.value()?;
-            field = Some(value.parse::<Expr>()?);
-            Ok(())
-        } else {
-            Err(meta.error("expected `class = ...` or `field = ...`"))
-        }
-    })?;
-
-    let class = class.ok_or_else(|| syn::Error::new_spanned(attr, "missing `class = ...`"))?;
-    let class_predicate = string_predicate(&quote! { entity.class().name() }, &class)?;
-    let class_only = field.is_none();
-    let field_predicate = match field {
-        Some(field) => string_predicate(&quote! { field_name }, &field)?,
-        None => quote! { true },
-    };
-    if class_only {
-        ensure_rewrite_field_raw_value(method)?;
-    }
-    let value_predicate = rewrite_field_value_predicate(method)?;
-    let args = rewrite_field_method_args(method)?;
-
-    Ok(quote! {
-        if (#class_predicate) && (#field_predicate) && (#value_predicate) {
-            let replacement = self.#method_name(#args);
-            if let Some(value) = ::source2_demo::FieldRewriteResult::into_field_rewrite_result(replacement) {
-                return Some(value);
-            }
-        }
-    })
-}
-
-fn string_predicate(target: &proc_macro2::TokenStream, expr: &Expr) -> syn::Result<proc_macro2::TokenStream> {
-    match expr {
-        Expr::Lit(expr_lit) => {
-            let Lit::Str(value) = &expr_lit.lit else {
-                return Err(syn::Error::new_spanned(expr, "expected string literal"));
-            };
-            Ok(quote! { #target == #value })
-        }
-        Expr::Call(call) => {
-            let Expr::Path(path) = call.func.as_ref() else {
-                return Err(syn::Error::new_spanned(&call.func, "expected predicate name"));
-            };
-            let Some(ident) = path.path.get_ident() else {
-                return Err(syn::Error::new_spanned(&path.path, "expected predicate name"));
-            };
-            let name = ident.to_string();
-            match name.as_str() {
-                "exact" => {
-                    let value = single_string_arg(expr, &call.args)?;
-                    Ok(quote! { #target == #value })
-                }
-                "starts_with" => {
-                    let value = single_string_arg(expr, &call.args)?;
-                    Ok(quote! { #target.starts_with(#value) })
-                }
-                "ends_with" => {
-                    let value = single_string_arg(expr, &call.args)?;
-                    Ok(quote! { #target.ends_with(#value) })
-                }
-                "contains" => {
-                    let value = single_string_arg(expr, &call.args)?;
-                    Ok(quote! { #target.contains(#value) })
-                }
-                "any" => {
-                    if call.args.is_empty() {
-                        return Err(syn::Error::new_spanned(expr, "`any` needs at least one argument"));
-                    }
-                    let predicates = call.args.iter().map(|arg| string_predicate(target, arg)).collect::<syn::Result<Vec<_>>>()?;
-                    Ok(quote! { false #( || (#predicates) )* })
-                }
-                "all" => {
-                    if call.args.is_empty() {
-                        return Err(syn::Error::new_spanned(expr, "`all` needs at least one argument"));
-                    }
-                    let predicates = call.args.iter().map(|arg| string_predicate(target, arg)).collect::<syn::Result<Vec<_>>>()?;
-                    Ok(quote! { true #( && (#predicates) )* })
-                }
-                "not" => {
-                    if call.args.len() != 1 {
-                        return Err(syn::Error::new_spanned(expr, "`not` needs exactly one argument"));
-                    }
-                    let Some(arg) = call.args.first() else {
-                        return Err(syn::Error::new_spanned(expr, "`not` needs exactly one argument"));
-                    };
-                    let predicate = string_predicate(target, arg)?;
-                    Ok(quote! { !(#predicate) })
-                }
-                _ => Err(syn::Error::new_spanned(ident, "unknown predicate; expected exact, starts_with, ends_with, contains, any, all, or not")),
-            }
-        }
-        _ => Err(syn::Error::new_spanned(expr, "expected string literal or predicate call")),
-    }
-}
-
-fn single_string_arg<'a>(expr: &Expr, args: &'a Punctuated<Expr, Token![,]>) -> syn::Result<&'a syn::LitStr> {
-    if args.len() != 1 {
-        return Err(syn::Error::new_spanned(expr, "predicate needs exactly one argument"));
-    }
-    let Some(arg) = args.first() else {
-        return Err(syn::Error::new_spanned(expr, "predicate needs exactly one argument"));
-    };
-    let Expr::Lit(expr_lit) = arg else {
-        return Err(syn::Error::new_spanned(expr, "predicate argument must be a string literal"));
-    };
-    let Lit::Str(value) = &expr_lit.lit else {
-        return Err(syn::Error::new_spanned(expr, "predicate argument must be a string literal"));
-    };
-    Ok(value)
-}
-
-fn stringify_type(ty: &Type) -> String {
-    ty.to_token_stream().to_string()
-}
-
-fn is_context_type(value: &str) -> bool {
-    matches!(value, "& :: source2_demo :: Context" | "& source2_demo :: Context" | "& Context")
-}
-
-fn is_entity_type(value: &str) -> bool {
-    matches!(value, "& :: source2_demo :: Entity" | "& source2_demo :: Entity" | "& Entity")
-}
-
-fn is_entity_events_type(value: &str) -> bool {
-    matches!(value, ":: source2_demo :: EntityEvents" | "source2_demo :: EntityEvents" | "EntityEvents")
-}
-
-fn is_entity_events_ref_type(value: &str) -> bool {
-    matches!(value, "& :: source2_demo :: EntityEvents" | "& source2_demo :: EntityEvents" | "& EntityEvents")
-}
-
-fn is_game_event_type(value: &str) -> bool {
-    matches!(value, "& :: source2_demo :: GameEvent" | "& source2_demo :: GameEvent" | "& GameEvent")
-}
-
-fn is_string_table_type(value: &str) -> bool {
-    matches!(value, "& :: source2_demo :: StringTable" | "& source2_demo :: StringTable" | "& StringTable")
-}
-
-fn is_modified_indices_type(value: &str) -> bool {
-    value == "& [i32]"
-}
-
-#[cfg(feature = "dota")]
-fn is_combat_log_type(value: &str) -> bool {
-    matches!(value, "& :: source2_demo :: CombatLogEntry" | "& source2_demo :: CombatLogEntry" | "& CombatLogEntry")
-}
-
-fn is_field_value_ref_type(value: &str) -> bool {
-    matches!(value, "& :: source2_demo :: FieldValue" | "& source2_demo :: FieldValue" | "& FieldValue")
-}
-
-fn is_field_value_type(value: &str) -> bool {
-    matches!(value, ":: source2_demo :: FieldValue" | "source2_demo :: FieldValue" | "FieldValue")
-}
-
-fn is_raw_field_value_type(value: &str) -> bool {
-    is_field_value_ref_type(value) || is_field_value_type(value)
-}
-
-fn is_demo_command_type(value: &str) -> bool {
-    matches!(value, ":: source2_demo :: proto :: EDemoCommands" | "source2_demo :: proto :: EDemoCommands" | "EDemoCommands")
-}
-
-fn is_message_type(value: &str) -> bool {
-    matches!(
-        value,
-        ":: source2_demo :: proto :: EDemoCommands"
-            | "source2_demo :: proto :: EDemoCommands"
-            | "EDemoCommands"
-            | ":: source2_demo :: proto :: EBaseUserMessages"
-            | "source2_demo :: proto :: EBaseUserMessages"
-            | "EBaseUserMessages"
-            | ":: source2_demo :: proto :: EBaseGameEvents"
-            | "source2_demo :: proto :: EBaseGameEvents"
-            | "EBaseGameEvents"
-            | ":: source2_demo :: proto :: SvcMessages"
-            | "source2_demo :: proto :: SvcMessages"
-            | "SvcMessages"
-            | ":: source2_demo :: proto :: NetMessages"
-            | "source2_demo :: proto :: NetMessages"
-            | "NetMessages"
-            | ":: source2_demo :: proto :: EDotaUserMessages"
-            | "source2_demo :: proto :: EDotaUserMessages"
-            | "EDotaUserMessages"
-            | ":: source2_demo :: proto :: CitadelUserMessageIds"
-            | "source2_demo :: proto :: CitadelUserMessageIds"
-            | "CitadelUserMessageIds"
-            | ":: source2_demo :: proto :: ECitadelGameEvents"
-            | "source2_demo :: proto :: ECitadelGameEvents"
-            | "ECitadelGameEvents"
-            | ":: source2_demo :: proto :: ECstrike15UserMessages"
-            | "source2_demo :: proto :: ECstrike15UserMessages"
-            | "ECstrike15UserMessages"
-            | ":: source2_demo :: proto :: ECsgoGameEvents"
-            | "source2_demo :: proto :: ECsgoGameEvents"
-            | "ECsgoGameEvents"
-    )
-}
-
-fn is_message_type_ref(value: &str) -> bool {
-    matches!(
-        value,
-        "& :: source2_demo :: proto :: EDemoCommands"
-            | "& source2_demo :: proto :: EDemoCommands"
-            | "& EDemoCommands"
-            | "& :: source2_demo :: proto :: EBaseUserMessages"
-            | "& source2_demo :: proto :: EBaseUserMessages"
-            | "& EBaseUserMessages"
-            | "& :: source2_demo :: proto :: EBaseGameEvents"
-            | "& source2_demo :: proto :: EBaseGameEvents"
-            | "& EBaseGameEvents"
-            | "& :: source2_demo :: proto :: SvcMessages"
-            | "& source2_demo :: proto :: SvcMessages"
-            | "& SvcMessages"
-            | "& :: source2_demo :: proto :: NetMessages"
-            | "& source2_demo :: proto :: NetMessages"
-            | "& NetMessages"
-            | "& :: source2_demo :: proto :: EDotaUserMessages"
-            | "& source2_demo :: proto :: EDotaUserMessages"
-            | "& EDotaUserMessages"
-            | "& :: source2_demo :: proto :: CitadelUserMessageIds"
-            | "& source2_demo :: proto :: CitadelUserMessageIds"
-            | "& CitadelUserMessageIds"
-            | "& :: source2_demo :: proto :: ECitadelGameEvents"
-            | "& source2_demo :: proto :: ECitadelGameEvents"
-            | "& ECitadelGameEvents"
-            | "& :: source2_demo :: proto :: ECstrike15UserMessages"
-            | "& source2_demo :: proto :: ECstrike15UserMessages"
-            | "& ECstrike15UserMessages"
-            | "& :: source2_demo :: proto :: ECsgoGameEvents"
-            | "& source2_demo :: proto :: ECsgoGameEvents"
-            | "& ECsgoGameEvents"
-    )
-}
-
-fn canonical_message_type(value: &str) -> Option<String> {
-    if matches!(value, ":: source2_demo :: proto :: EDemoCommands" | "source2_demo :: proto :: EDemoCommands" | "EDemoCommands") {
-        Some("EDemoCommands".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: EBaseUserMessages" | "source2_demo :: proto :: EBaseUserMessages" | "EBaseUserMessages") {
-        Some("EBaseUserMessages".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: EBaseGameEvents" | "source2_demo :: proto :: EBaseGameEvents" | "EBaseGameEvents") {
-        Some("EBaseGameEvents".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: SvcMessages" | "source2_demo :: proto :: SvcMessages" | "SvcMessages") {
-        Some("SvcMessages".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: NetMessages" | "source2_demo :: proto :: NetMessages" | "NetMessages") {
-        Some("NetMessages".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: EDotaUserMessages" | "source2_demo :: proto :: EDotaUserMessages" | "EDotaUserMessages") {
-        Some("EDotaUserMessages".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: CitadelUserMessageIds" | "source2_demo :: proto :: CitadelUserMessageIds" | "CitadelUserMessageIds") {
-        Some("CitadelUserMessageIds".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: ECitadelGameEvents" | "source2_demo :: proto :: ECitadelGameEvents" | "ECitadelGameEvents") {
-        Some("ECitadelGameEvents".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: ECstrike15UserMessages" | "source2_demo :: proto :: ECstrike15UserMessages" | "ECstrike15UserMessages") {
-        Some("ECstrike15UserMessages".to_string())
-    } else if matches!(value, ":: source2_demo :: proto :: ECsgoGameEvents" | "source2_demo :: proto :: ECsgoGameEvents" | "ECsgoGameEvents") {
-        Some("ECsgoGameEvents".to_string())
-    } else {
-        None
-    }
-}
-
-fn is_payload_type(value: &str) -> bool {
-    value == "& [u8]"
-}
-
-fn is_packet_messages_type(value: &str) -> bool {
-    matches!(value, "& mut Vec < :: source2_demo :: writer :: PacketMessage >" | "& mut Vec < source2_demo :: writer :: PacketMessage >" | "& mut Vec < PacketMessage >")
-}
-
-fn is_string_table_entry_type(value: &str) -> bool {
-    matches!(value, "& mut :: source2_demo :: writer :: StringTableEntryUpdate" | "& mut source2_demo :: writer :: StringTableEntryUpdate" | "& mut StringTableEntryUpdate")
-}
-
-fn is_rewrite_field_value_type(value: &str) -> bool {
-    matches!(value, "& str" | "String" | "& String" | "bool" | "f32" | "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "[f32 ; 2]" | "[f32 ; 3]" | "[f32 ; 4]") || is_raw_field_value_type(value)
-}
-
-fn rewrite_field_method_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
-    let value_arg_index = rewrite_field_value_arg_index(method)?;
-    let mut args = Vec::new();
-
-    for (index, input) in method.sig.inputs.iter().enumerate().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        if index == value_arg_index {
-            args.push(rewrite_field_value_arg(pat_type.ty.as_ref())?);
-            continue;
-        }
-
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        let arg = if is_entity_events_type(&type_string) {
-            quote! { event }
-        } else if is_context_type(&type_string) {
-            quote! { ctx }
-        } else if is_entity_type(&type_string) {
-            quote! { entity }
-        } else if type_string == "& str" {
-            quote! { field_name }
-        } else if is_field_value_ref_type(&type_string) {
-            quote! { value }
-        } else {
-            return Err(syn::Error::new_spanned(pat_type, "unsupported #[rewrite_field] argument"));
-        };
-        args.push(arg);
-    }
-
-    Ok(quote! { #(#args),* })
-}
-
-fn replace_entity_field_method_args(method: &syn::ImplItemFn) -> proc_macro2::TokenStream {
-    let mut args = Vec::new();
-
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        let arg = if is_context_type(&type_string) {
-            quote! { ctx }
-        } else if is_entity_events_type(&type_string) {
-            quote! { event }
-        } else if is_entity_type(&type_string) {
-            quote! { entity }
-        } else if type_string == "& str" {
-            quote! { field_name }
-        } else if is_field_value_ref_type(&type_string) {
-            quote! { value }
-        } else {
-            quote! { compile_error!("unsupported #[replace_entity_field] argument") }
-        };
-        args.push(arg);
-    }
-
-    quote! { #(#args),* }
-}
-
-fn should_rewrite_entity_method_args(method: &syn::ImplItemFn) -> proc_macro2::TokenStream {
-    let mut args = Vec::new();
-
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        let arg = if is_context_type(&type_string) {
-            quote! { ctx }
-        } else if is_entity_events_type(&type_string) {
-            quote! { event }
-        } else if is_entity_type(&type_string) {
-            quote! { entity }
-        } else {
-            quote! { compile_error!("unsupported #[should_rewrite_entity] argument") }
-        };
-        args.push(arg);
-    }
-
-    quote! { #(#args),* }
-}
-
-fn rewrite_field_value_arg_index(method: &syn::ImplItemFn) -> syn::Result<usize> {
-    for (index, input) in method.sig.inputs.iter().enumerate().skip(1).rev() {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        if is_rewrite_field_value_type(&type_string) {
-            return Ok(index);
-        }
-    }
-
-    Err(syn::Error::new_spanned(&method.sig, "#[rewrite_field] needs a value argument"))
-}
-
-fn ensure_rewrite_field_raw_value(method: &syn::ImplItemFn) -> syn::Result<()> {
-    let value_arg_index = rewrite_field_value_arg_index(method)?;
-    let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(value_arg_index) else {
-        return Ok(());
-    };
-    let type_string = stringify_type(pat_type.ty.as_ref());
-    if is_raw_field_value_type(&type_string) {
-        Ok(())
-    } else {
-        Err(syn::Error::new_spanned(pat_type, "class-only #[rewrite_field] handlers must use FieldValue"))
-    }
-}
-
-fn rewrite_field_value_arg(ty: &Type) -> syn::Result<proc_macro2::TokenStream> {
-    let type_string = stringify_type(ty);
-    match type_string.as_str() {
-        "& str" => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()?.as_str() }),
-        "String" => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()? }),
-        "& String" => Ok(quote! { &<&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).ok()? }),
-        value if is_field_value_ref_type(value) => Ok(quote! { value }),
-        value if is_field_value_type(value) => Ok(quote! { value.clone() }),
-        _ => Ok(quote! { <&::source2_demo::FieldValue as ::std::convert::TryInto<#ty>>::try_into(value).ok()? }),
-    }
-}
-
-fn rewrite_field_value_predicate(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
-    let value_arg_index = rewrite_field_value_arg_index(method)?;
-    let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(value_arg_index) else {
-        return Ok(quote! { true });
-    };
-    let ty = pat_type.ty.as_ref();
-    let type_string = stringify_type(ty);
-    match type_string.as_str() {
-        value if is_raw_field_value_type(value) => Ok(quote! { true }),
-        "& str" | "String" | "& String" => Ok(quote! {
-            <&::source2_demo::FieldValue as ::std::convert::TryInto<String>>::try_into(value).is_ok()
-        }),
-        _ => Ok(quote! {
-            <&::source2_demo::FieldValue as ::std::convert::TryInto<#ty>>::try_into(value).is_ok()
-        }),
-    }
-}
-
-fn writer_callback_method_args(method: &syn::ImplItemFn, message_arg: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    let mut args = Vec::new();
-
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        let arg = writer_callback_arg(&type_string, message_arg.clone());
-        args.push(arg);
-    }
-
-    quote! { #(#args),* }
-}
-
-fn writer_callback_arg(type_string: &str, message_arg: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    if is_context_type(type_string) {
-        quote! { ctx }
-    } else if type_string == "u32" {
-        quote! { tick }
-    } else if type_string == "i32" || is_demo_command_type(type_string) {
-        quote! { msg_type }
-    } else if type_string == "& [u8]" {
-        quote! { payload }
-    } else if type_string == "& str" {
-        quote! { table_name }
-    } else if is_packet_messages_type(type_string) {
-        quote! { messages }
-    } else if is_string_table_entry_type(type_string) {
-        quote! { entry }
-    } else {
-        message_arg
-    }
-}
-
-fn packet_message_method_is_raw(method: &syn::ImplItemFn) -> bool {
-    packet_message_first_payload_arg(method).is_some_and(|type_string| type_string == "i32" || type_string == "& [u8]")
-}
-
-fn packet_message_method_type(method: &syn::ImplItemFn) -> syn::Result<(Type, bool, bool)> {
-    for input in method.sig.inputs.iter().skip(1) {
-        let FnArg::Typed(pat_type) = input else {
-            continue;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        if is_context_type(&type_string) || type_string == "u32" {
-            continue;
-        }
-        if let Type::Reference(reference) = pat_type.ty.as_ref() {
-            return Ok((*reference.elem.clone(), true, reference.mutability.is_some()));
-        }
-        return Ok((*pat_type.ty.clone(), false, false));
-    }
-    Err(syn::Error::new_spanned(&method.sig, "#[rewrite_packet_message] needs a message argument"))
-}
-
-fn packet_message_first_payload_arg(method: &syn::ImplItemFn) -> Option<String> {
-    method.sig.inputs.iter().skip(1).find_map(|input| {
-        let FnArg::Typed(pat_type) = input else {
-            return None;
-        };
-        let type_string = stringify_type(pat_type.ty.as_ref());
-        if is_context_type(&type_string) || type_string == "u32" {
-            None
-        } else {
-            Some(type_string)
-        }
-    })
-}
-
-fn extend_rewrite_packet_message_body(body: &mut proc_macro2::TokenStream, method: &syn::ImplItemFn, method_name: &Ident, arg_type: &Type, is_ref: bool, is_mut_ref: bool) -> syn::Result<()> {
-    let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str()).map_err(|error| syn::Error::new_spanned(arg_type, error.to_string()))?;
-    let message_arg = if is_ref {
-        if is_mut_ref {
-            quote! { &mut message }
-        } else {
-            quote! { &message }
-        }
-    } else {
-        quote! { message }
-    };
-    let method_args = writer_callback_method_args(method, message_arg);
-
-    if is_ref {
-        body.extend(quote! {
-            if msg_type == #enum_type as i32 {
-                let mut message = <#arg_type as ::source2_demo::proto::Message>::decode(payload)?;
-                match self.#method_name(#method_args)? {
-                    ::source2_demo::writer::MessageRewrite::Keep => {}
-                    ::source2_demo::writer::MessageRewrite::Rewrite => {
-                        return Ok(::source2_demo::writer::MessageRewrite::Replace(
-                            ::source2_demo::proto::Message::encode_to_vec(&message),
-                        ));
-                    }
-                    rewrite => return Ok(rewrite),
-                }
-            }
-        });
-    } else {
-        body.extend(quote! {
-            if msg_type == #enum_type as i32 {
-                let message = <#arg_type as ::source2_demo::proto::Message>::decode(payload)?;
-                match self.#method_name(#method_args)? {
-                    ::source2_demo::writer::MessageRewrite::Keep
-                    | ::source2_demo::writer::MessageRewrite::Rewrite => {}
-                    rewrite => return Ok(rewrite),
-                }
-            }
-        });
-    }
-    Ok(())
+    rewriter_impl::expand_rewriter(item)
 }
 
 /// Marks a method as a protobuf message handler.
@@ -1947,64 +435,108 @@ pub fn on_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as an outer demo message rewriter.
+/// Rewrites an outer demo command payload.
+///
+/// Use this for callbacks that operate before packet-level decoding, such as
+/// dropping or replacing whole `EDemoCommands` messages. Raw handlers can
+/// receive `ctx: &Context`, `tick: u32`, `msg_type: EDemoCommands`, and
+/// `payload: &[u8]`, in any supported callback-argument order.
 #[proc_macro_attribute]
 pub fn rewrite_demo_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as a packet message rewriter.
+/// Rewrites an individual message inside a demo packet.
+///
+/// A raw handler can receive packet metadata and payload bytes. A typed handler
+/// can receive a protobuf message; the macro infers the packet message id from
+/// that protobuf type. Mutable protobuf arguments may return
+/// `MessageRewrite::Rewrite` to re-encode the modified message.
 #[proc_macro_attribute]
 pub fn rewrite_packet_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as a packet message list rewriter.
+/// Mutates the decoded packet message list after per-message rewrites.
+///
+/// Use this when the rewrite needs packet-wide context, such as appending a new
+/// `PacketMessage`, removing several messages together, or reordering messages
+/// within one packet.
 #[proc_macro_attribute]
 pub fn rewrite_packet_messages(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as a demo string table rewriter.
+/// Rewrites a decoded `CDemoStringTables` outer demo message.
+///
+/// This callback sees the full demo string-table message. Return
+/// `MessageRewrite::Rewrite` after mutating the decoded message, or
+/// `MessageRewrite::Replace(bytes)` to provide encoded bytes directly.
 #[proc_macro_attribute]
 pub fn rewrite_demo_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as a string table entry rewriter.
+/// Rewrites one decoded string table entry update.
+///
+/// Use this for targeted string-table edits such as rewriting `userinfo` rows.
+/// The callback receives a mutable `StringTableEntryUpdate` and returns
+/// `Result<(), ParserError>`.
 #[proc_macro_attribute]
 pub fn rewrite_string_table_entry(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as an `svc_CreateStringTable` rewriter.
+/// Rewrites a decoded `svc_CreateStringTable` packet message.
+///
+/// Return `MessageRewrite::Rewrite` after mutating the decoded
+/// `CSvcMsgCreateStringTable`, or return `Replace` / `Drop` for explicit output
+/// control.
 #[proc_macro_attribute]
 pub fn rewrite_svc_create_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as an `svc_UpdateStringTable` rewriter.
+/// Rewrites a decoded `svc_UpdateStringTable` packet message.
+///
+/// This is useful for incremental string-table updates that arrive inside
+/// packet data. Return `MessageRewrite::Rewrite` after mutating the decoded
+/// `CSvcMsgUpdateStringTable`.
 #[proc_macro_attribute]
 pub fn rewrite_svc_update_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as an entity field replacer.
+/// Replaces decoded entity field values with custom logic.
+///
+/// This low-level form receives the current field as `&FieldValue` and returns
+/// `Option<FieldValue>`. Return `Some` to replace the value; return `None` to
+/// leave it unchanged or let later generated checks continue.
 #[proc_macro_attribute]
 pub fn replace_entity_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a typed `#[rewriter]` method as an entity field replacer.
+/// Replaces decoded entity field values with class and field filters.
 ///
-/// Supports exact string filters and simple string predicates:
+/// The attribute requires a `class = ...` filter and can also include
+/// `field = ...`. Field filters support exact strings and simple predicates:
 /// `exact`, `starts_with`, `ends_with`, `contains`, `any`, `all`, and `not`.
+///
+/// Field-specific handlers may use typed values such as `u64`, `bool`, or
+/// `String`. Class-only handlers must use `&FieldValue` and return
+/// `Option<FieldValue>` because there is no field predicate to determine one
+/// concrete value type.
 #[proc_macro_attribute]
 pub fn rewrite_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a `#[rewriter]` method as an entity rewrite filter.
+/// Filters which entities enter the entity field rewrite path.
+///
+/// Return `false` to skip all entity-field replacement callbacks for that
+/// entity. Use this to keep broad `#[rewrite_field]` handlers from forcing the
+/// writer to decode and re-encode unrelated entity classes.
 #[proc_macro_attribute]
 pub fn should_rewrite_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item

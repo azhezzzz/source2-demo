@@ -360,7 +360,10 @@ struct DemoLifecycleObserver {
 
 impl Observer for DemoLifecycleObserver {
     fn interests(&self) -> Interests {
-        Interests::DEMO | Interests::TICK_START | Interests::TICK_END | Interests::STOP
+        Interests::DEMO_MESSAGE
+            | Interests::TICK_START
+            | Interests::TICK_END
+            | Interests::REPLAY_END
     }
 
     fn on_demo_command(
@@ -457,9 +460,10 @@ struct PacketDispatchObserver {
 
 impl Observer for PacketDispatchObserver {
     fn interests(&self) -> Interests {
-        let interests = Interests::NET | Interests::SVC | Interests::BASE_UM;
+        let interests =
+            Interests::NET_MESSAGE | Interests::SVC_MESSAGE | Interests::BASE_USER_MESSAGE;
         #[cfg(feature = "dota")]
-        let interests = interests | Interests::DOTA_UM;
+        let interests = interests | Interests::DOTA_USER_MESSAGE;
         interests
     }
 
@@ -641,7 +645,7 @@ struct GameEventObserver {
 
 impl Observer for GameEventObserver {
     fn interests(&self) -> Interests {
-        Interests::BASE_GE
+        Interests::BASE_GAME_EVENT
     }
 
     fn on_base_game_event(

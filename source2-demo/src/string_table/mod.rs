@@ -22,7 +22,7 @@
 //!
 //! impl Observer for TableReader {
 //!     fn interests(&self) -> Interests {
-//!         Interests::ENABLE_STRINGTAB | Interests::TRACK_STRINGTAB
+//!         Interests::STRING_TABLE_STATE | Interests::STRING_TABLE_ENTRIES
 //!     }
 //!
 //!     fn on_string_table(

@@ -154,7 +154,7 @@ impl Context {
     /// Returns a reference to the entity container.
     ///
     /// Provides access to all game entities and their properties.
-    /// Requires `Interests::ENABLE_ENTITY` to be populated.
+    /// Requires `Interests::ENTITY_STATE` to be populated.
     pub fn entities(&self) -> &Entities {
         &self.entities
     }
@@ -162,7 +162,7 @@ impl Context {
     /// Returns a reference to the string tables.
     ///
     /// String tables contain game data like hero names, item names, etc.
-    /// Requires `Interests::ENABLE_STRINGTAB` to be populated.
+    /// Requires `Interests::STRING_TABLE_STATE` to be populated.
     pub fn string_tables(&self) -> &StringTables {
         &self.string_tables
     }

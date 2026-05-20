@@ -100,7 +100,7 @@ where
 
         try_observers!(
             self,
-            TRACK_STRINGTAB,
+            STRING_TABLE_ENTRIES,
             on_string_table(
                 &self.context,
                 &self.context.string_tables.tables[table_index],
@@ -127,7 +127,7 @@ where
 
         try_observers!(
             self,
-            TRACK_STRINGTAB,
+            STRING_TABLE_ENTRIES,
             on_string_table(
                 &self.context,
                 &self.context.string_tables.tables[string_table.table_id() as usize],
@@ -210,7 +210,7 @@ where
 
         try_observers!(
             self,
-            TRACK_ENTITY,
+            ENTITY_EVENTS,
             on_entity(
                 &self.context,
                 EntityEvents::Created,
@@ -233,7 +233,7 @@ where
 
         try_observers!(
             self,
-            TRACK_ENTITY,
+            ENTITY_EVENTS,
             on_entity(
                 &self.context,
                 EntityEvents::Updated,
@@ -247,7 +247,7 @@ where
     fn entity_deleted(&mut self, index: usize) -> Result<(), ParserError> {
         try_observers!(
             self,
-            TRACK_ENTITY,
+            ENTITY_EVENTS,
             on_entity(
                 &self.context,
                 EntityEvents::Deleted,

@@ -28,7 +28,7 @@ bitflags::bitflags! {
     /// impl Observer for EntityTracker {
     ///     fn interests(&self) -> Interests {
     ///         // Track entities and receive tick events
-    ///         Interests::ENABLE_ENTITY | Interests::TRACK_ENTITY | Interests::TICK_START
+    ///         Interests::ENTITY_STATE | Interests::ENTITY_EVENTS | Interests::TICK_START
     ///     }
     ///
     ///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
@@ -44,59 +44,59 @@ bitflags::bitflags! {
     /// ```
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct Interests: u64 {
-        /// Interest in demo commands (EDemoCommands)
-        const DEMO       = 1 << 0;
-        /// Interest in net messages (NetMessages)
-        const NET        = 1 << 1;
-        /// Interest in SVC messages (SvcMessages)
-        const SVC        = 1 << 2;
+        /// Interest in outer demo messages (`EDemoCommands`).
+        const DEMO_MESSAGE = 1 << 0;
+        /// Interest in net messages (`NetMessages`).
+        const NET_MESSAGE = 1 << 1;
+        /// Interest in SVC messages (`SvcMessages`).
+        const SVC_MESSAGE = 1 << 2;
 
-        /// Interest in base user messages (EBaseUserMessages)
-        const BASE_UM    = 1 << 3;
-        /// Interest in base game events (EBaseGameEvents) and game events
-        const BASE_GE    = 1 << 4;
+        /// Interest in base user messages (`EBaseUserMessages`).
+        const BASE_USER_MESSAGE = 1 << 3;
+        /// Interest in base game events (`EBaseGameEvents`) and decoded game events.
+        const BASE_GAME_EVENT = 1 << 4;
 
-        /// Interest in tick start events
+        /// Interest in tick start events.
         const TICK_START = 1 << 5;
-        /// Interest in tick end events
-        const TICK_END   = 1 << 6;
+        /// Interest in tick end events.
+        const TICK_END = 1 << 6;
 
-        /// Enable entity tracking (required for entity callbacks)
-        const ENABLE_ENTITY     = 1 << 7;
-        /// Interest in entity create/update/delete events
-        const TRACK_ENTITY     = 1 << 8;
-        /// Enable string table tracking
-        const ENABLE_STRINGTAB  = 1 << 9;
-        /// Interest in string table update events
-        const TRACK_STRINGTAB  = 1 << 10;
+        /// Maintain entity state while parsing.
+        const ENTITY_STATE = 1 << 7;
+        /// Interest in entity create/update/delete events.
+        const ENTITY_EVENTS = 1 << 8;
+        /// Maintain string table state while parsing.
+        const STRING_TABLE_STATE = 1 << 9;
+        /// Interest in string table update events.
+        const STRING_TABLE_ENTRIES = 1 << 10;
 
-        /// Interest in replay end event
-        const STOP       = 1 << 11;
-
-        #[cfg(feature = "dota")]
-        /// Interest in Dota 2 user messages (EDotaUserMessages)
-        const DOTA_UM    = 1 << 12;
+        /// Interest in the replay end event.
+        const REPLAY_END = 1 << 11;
 
         #[cfg(feature = "dota")]
-        /// Interest in combat log entries (Dota 2 only)
-        const COMBAT_LOG = 1 << 13;
+        /// Interest in Dota 2 user messages (`EDotaUserMessages`).
+        const DOTA_USER_MESSAGE = 1 << 12;
+
+        #[cfg(feature = "dota")]
+        /// Interest in combat log entries (Dota 2 only).
+        const COMBAT_LOG_ENTRIES = 1 << 13;
 
 
         #[cfg(feature = "deadlock")]
-        /// Interest in Citadel/Deadlock user messages (CitadelUserMessageIds)
-        const CITA_UM    = 1 << 14;
+        /// Interest in Citadel/Deadlock user messages (`CitadelUserMessageIds`).
+        const CITADEL_USER_MESSAGE = 1 << 14;
 
         #[cfg(feature = "deadlock")]
-        /// Interest in Citadel/Deadlock game events (ECitadelGameEvents)
-        const CITA_GE    = 1 << 15;
+        /// Interest in Citadel/Deadlock game events (`ECitadelGameEvents`).
+        const CITADEL_GAME_EVENT = 1 << 15;
 
         #[cfg(feature = "cs2")]
-        /// Interest in CS2 user messages (ECstrike15UserMessages)
-        const CS2_UM     = 1 << 16;
+        /// Interest in CS2 user messages (`ECstrike15UserMessages`).
+        const CS2_USER_MESSAGE = 1 << 16;
 
         #[cfg(feature = "cs2")]
-        /// Interest in CS2 game events (ECsgoGameEvents)
-        const CS2_GE     = 1 << 17;
+        /// Interest in CS2 game events (`ECsgoGameEvents`).
+        const CS2_GAME_EVENT = 1 << 17;
     }
 }
 
@@ -154,7 +154,7 @@ bitflags::bitflags! {
 ///
 /// impl Observer for EntityCounter {
 ///     fn interests(&self) -> Interests {
-///         Interests::ENABLE_ENTITY | Interests::TRACK_ENTITY
+///         Interests::ENTITY_STATE | Interests::ENTITY_EVENTS
 ///     }
 ///
 ///     fn on_entity(
@@ -183,8 +183,8 @@ bitflags::bitflags! {
 ///     fn interests(&self) -> Interests {
 ///         Interests::TICK_START
 ///             | Interests::TICK_END
-///             | Interests::ENABLE_ENTITY
-///             | Interests::TRACK_ENTITY
+///             | Interests::ENTITY_STATE
+///             | Interests::ENTITY_EVENTS
 ///     }
 ///
 ///     fn on_tick_start(&mut self, ctx: &Context) -> ObserverResult {
@@ -220,7 +220,7 @@ pub trait Observer {
 
     /// Called when a demo command is received.
     ///
-    /// Requires [`Interests::DEMO`] to be set.
+    /// Requires [`Interests::DEMO_MESSAGE`] to be set.
     #[cold]
     #[inline(never)]
     fn on_demo_command(
@@ -234,7 +234,7 @@ pub trait Observer {
 
     /// Called when a net message is received.
     ///
-    /// Requires [`Interests::NET`] to be set.
+    /// Requires [`Interests::NET_MESSAGE`] to be set.
     #[cold]
     #[inline(never)]
     fn on_net_message(
@@ -248,7 +248,7 @@ pub trait Observer {
 
     /// Called when an SVC (server-to-client) message is received.
     ///
-    /// Requires [`Interests::SVC`] to be set.
+    /// Requires [`Interests::SVC_MESSAGE`] to be set.
     #[cold]
     #[inline(never)]
     fn on_svc_message(
@@ -262,7 +262,7 @@ pub trait Observer {
 
     /// Called when a base user message is received.
     ///
-    /// Requires [`Interests::BASE_UM`] to be set.
+    /// Requires [`Interests::BASE_USER_MESSAGE`] to be set.
     #[cold]
     #[inline(never)]
     fn on_base_user_message(
@@ -276,7 +276,7 @@ pub trait Observer {
 
     /// Called when a base game event is received.
     ///
-    /// Requires [`Interests::BASE_GE`] to be set.
+    /// Requires [`Interests::BASE_GAME_EVENT`] to be set.
     #[cold]
     #[inline(never)]
     fn on_base_game_event(
@@ -308,7 +308,7 @@ pub trait Observer {
 
     /// Called when an entity is created, updated, or deleted.
     ///
-    /// Requires [`Interests::TRACK_ENTITY`] and [`Interests::ENABLE_ENTITY`] to
+    /// Requires [`Interests::ENTITY_EVENTS`] and [`Interests::ENTITY_STATE`] to
     /// be set.
     #[cold]
     #[inline(never)]
@@ -318,7 +318,7 @@ pub trait Observer {
 
     /// Called when a game event occurs.
     ///
-    /// Requires [`Interests::BASE_GE`] to be set.
+    /// Requires [`Interests::BASE_GAME_EVENT`] to be set.
     #[cold]
     #[inline(never)]
     fn on_game_event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
@@ -327,8 +327,8 @@ pub trait Observer {
 
     /// Called when a string table is updated.
     ///
-    /// Requires [`Interests::TRACK_STRINGTAB`] and
-    /// [`Interests::ENABLE_STRINGTAB`] to be set.
+    /// Requires [`Interests::STRING_TABLE_ENTRIES`] and
+    /// [`Interests::STRING_TABLE_STATE`] to be set.
     #[cold]
     #[inline(never)]
     fn on_string_table(
@@ -342,7 +342,7 @@ pub trait Observer {
 
     /// Called when the replay ends.
     ///
-    /// Requires [`Interests::STOP`] to be set.
+    /// Requires [`Interests::REPLAY_END`] to be set.
     /// This is the last callback before parsing completes.
     ///
     /// # Arguments
@@ -359,7 +359,7 @@ pub trait Observer {
     /// Combat log entries describe in-game events like damage, healing, kills,
     /// etc. Only available with the `dota` feature enabled.
     ///
-    /// Requires [`Interests::COMBAT_LOG`] to be set.
+    /// Requires [`Interests::COMBAT_LOG_ENTRIES`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "dota")]
@@ -372,7 +372,7 @@ pub trait Observer {
     /// Dota 2 specific user messages. Only available with the `dota` feature
     /// enabled.
     ///
-    /// Requires [`Interests::DOTA_UM`] to be set.
+    /// Requires [`Interests::DOTA_USER_MESSAGE`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "dota")]
@@ -390,7 +390,7 @@ pub trait Observer {
     /// Deadlock specific game events. Only available with the `deadlock`
     /// feature enabled.
     ///
-    /// Requires [`Interests::CITA_GE`] to be set.
+    /// Requires [`Interests::CITADEL_GAME_EVENT`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "deadlock")]
@@ -408,7 +408,7 @@ pub trait Observer {
     /// Deadlock specific user messages. Only available with the `deadlock`
     /// feature enabled.
     ///
-    /// Requires [`Interests::CITA_UM`] to be set.
+    /// Requires [`Interests::CITADEL_USER_MESSAGE`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "deadlock")]
@@ -426,7 +426,7 @@ pub trait Observer {
     /// CS2 specific user messages. Only available with the `cs2` feature
     /// enabled.
     ///
-    /// Requires [`Interests::CS2_UM`] to be set.
+    /// Requires [`Interests::CS2_USER_MESSAGE`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "cs2")]
@@ -443,7 +443,7 @@ pub trait Observer {
     ///
     /// CS2 specific game events. Only available with the `cs2` feature enabled.
     ///
-    /// Requires [`Interests::CS2_GE`] to be set.
+    /// Requires [`Interests::CS2_GAME_EVENT`] to be set.
     #[cold]
     #[inline(never)]
     #[cfg(feature = "cs2")]

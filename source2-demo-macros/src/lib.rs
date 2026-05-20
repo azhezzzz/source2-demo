@@ -299,7 +299,8 @@ use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, Expr, FnArg,
 /// The macro automatically determines which interest flags to set based on which
 /// handlers are defined. For example:
 /// - If you have `#[on_tick_start]`, `Interests::TICK_START` is added
-/// - If you have `#[on_entity]`, both `ENABLE_ENTITY` and `TRACK_ENTITY` are added
+/// - If you have `#[on_entity]`, both `Interests::ENTITY_STATE` and
+///   `Interests::ENTITY_EVENTS` are added
 /// - If you have `#[on_message]` handlers, appropriate message interest flags are added
 ///
 /// You can also use trait attributes like `#[uses_entities]` to manually ensure
@@ -340,18 +341,18 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     for a in &input.attrs {
         if a.path().is_ident("uses_entities") {
-            add_flag!(ENABLE_ENTITY);
+            add_flag!(ENTITY_STATE);
         }
         if a.path().is_ident("uses_string_tables") {
-            add_flag!(ENABLE_STRINGTAB);
+            add_flag!(STRING_TABLE_STATE);
         }
         if a.path().is_ident("uses_game_events") {
-            add_flag!(BASE_GE);
+            add_flag!(BASE_GAME_EVENT);
         }
         #[cfg(feature = "dota")]
         if a.path().is_ident("uses_combat_log") {
-            add_flag!(ENABLE_STRINGTAB);
-            add_flag!(COMBAT_LOG);
+            add_flag!(STRING_TABLE_STATE);
+            add_flag!(COMBAT_LOG_ENTRIES);
         }
     }
 
@@ -415,17 +416,18 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
             for attr in &method.attrs {
                 for a in &method.attrs {
                     if a.path().is_ident("uses_entities") {
-                        add_flag!(ENABLE_ENTITY);
+                        add_flag!(ENTITY_STATE);
                     }
                     if a.path().is_ident("uses_string_tables") {
-                        add_flag!(ENABLE_STRINGTAB);
+                        add_flag!(STRING_TABLE_STATE);
                     }
                     if a.path().is_ident("uses_game_events") {
-                        add_flag!(BASE_GE);
+                        add_flag!(BASE_GAME_EVENT);
                     }
                     #[cfg(feature = "dota")]
                     if a.path().is_ident("uses_combat_log") {
-                        add_flag!(DOTA_UM);
+                        add_flag!(STRING_TABLE_STATE);
+                        add_flag!(COMBAT_LOG_ENTRIES);
                     }
                 }
 
@@ -462,12 +464,17 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                         }
                         #[cfg(feature = "dota")]
                         "on_combat_log" => match observer_combat_log_args(method) {
-                            Ok(args) => on_combat_log_body.extend(quote! {
-                                self.#method_name(#args)?;
-                            }),
+                            Ok(args) => {
+                                has_combat_log = true;
+                                has_string_table = true;
+                                on_combat_log_body.extend(quote! {
+                                    self.#method_name(#args)?;
+                                });
+                            }
                             Err(error) => errors.extend(error.to_compile_error()),
                         },
                         "on_entity" => {
+                            has_entity = true;
                             has_entity_track = true;
                             match observer_entity_args(method) {
                                 Ok(args) => {
@@ -503,6 +510,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
                             Err(error) => errors.extend(error.to_compile_error()),
                         },
                         "on_string_table" => {
+                            has_string_table = true;
                             has_string_table_track = true;
                             match observer_string_table_args(method) {
                                 Ok(args) => {
@@ -855,33 +863,33 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
         interests = quote!(::source2_demo::Interests::all());
     }
 
-    add_if!(has_demo, DEMO);
-    add_if!(has_net, NET);
-    add_if!(has_svc, SVC);
-    add_if!(has_base_um, BASE_UM);
-    add_if!(has_base_ge, BASE_GE);
+    add_if!(has_demo, DEMO_MESSAGE);
+    add_if!(has_net, NET_MESSAGE);
+    add_if!(has_svc, SVC_MESSAGE);
+    add_if!(has_base_um, BASE_USER_MESSAGE);
+    add_if!(has_base_ge, BASE_GAME_EVENT);
     add_if!(has_tick_start, TICK_START);
     add_if!(has_tick_end, TICK_END);
-    add_if!(has_entity, ENABLE_ENTITY);
-    add_if!(has_entity_track, TRACK_ENTITY);
-    add_if!(has_string_table, ENABLE_STRINGTAB);
-    add_if!(has_string_table_track, TRACK_STRINGTAB);
-    add_if!(has_stop, STOP);
+    add_if!(has_entity, ENTITY_STATE);
+    add_if!(has_entity_track, ENTITY_EVENTS);
+    add_if!(has_string_table, STRING_TABLE_STATE);
+    add_if!(has_string_table_track, STRING_TABLE_ENTRIES);
+    add_if!(has_stop, REPLAY_END);
 
     #[cfg(feature = "dota")]
-    add_if!(has_dota_um, DOTA_UM);
+    add_if!(has_dota_um, DOTA_USER_MESSAGE);
     #[cfg(feature = "dota")]
-    add_if!(has_combat_log, COMBAT_LOG);
+    add_if!(has_combat_log, COMBAT_LOG_ENTRIES);
 
     #[cfg(feature = "citadel")]
-    add_if!(has_cita_um, CITA_UM);
+    add_if!(has_cita_um, CITADEL_USER_MESSAGE);
     #[cfg(feature = "citadel")]
-    add_if!(has_cita_ge, CITA_GE);
+    add_if!(has_cita_ge, CITADEL_GAME_EVENT);
 
     #[cfg(feature = "cs2")]
-    add_if!(has_cs2_um, CS2_UM);
+    add_if!(has_cs2_um, CS2_USER_MESSAGE);
     #[cfg(feature = "cs2")]
-    add_if!(has_cs2_ge, CS2_GE);
+    add_if!(has_cs2_ge, CS2_GAME_EVENT);
 
     let ret = quote! {
         impl Observer for #struct_name {
@@ -2393,7 +2401,7 @@ pub fn on_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// Marks the impl block to enable entity tracking.
 ///
 /// When applied to an impl block or individual method, automatically enables
-/// the `ENABLE_ENTITY` interest flag so entities are tracked during parsing.
+/// the `ENTITY_STATE` interest flag so entities are tracked during parsing.
 ///
 /// # Examples
 ///
@@ -2414,7 +2422,7 @@ pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// Marks the impl block to enable string table tracking.
 ///
 /// When applied to an impl block or individual method, automatically enables
-/// the `ENABLE_STRINGTAB` interest flag so string tables are tracked during parsing.
+/// the `STRING_TABLE_STATE` interest flag so string tables are tracked during parsing.
 ///
 /// # Examples
 ///
@@ -2435,7 +2443,7 @@ pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream 
 /// Marks the impl block to enable game event tracking.
 ///
 /// When applied to an impl block or individual method, automatically enables
-/// the `BASE_GE` interest flag so game events are tracked during parsing.
+/// the `BASE_GAME_EVENT` interest flag so game events are tracked during parsing.
 ///
 /// # Examples
 ///
@@ -2455,8 +2463,8 @@ pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// Marks the impl block to enable combat log tracking (Dota 2 only).
 ///
-/// When applied to an impl block, automatically enables the `COMBAT_LOG` and
-/// `ENABLE_STRINGTAB` interest flags for combat log parsing.
+/// When applied to an impl block, automatically enables the `COMBAT_LOG_ENTRIES` and
+/// `STRING_TABLE_STATE` interest flags for combat log parsing.
 ///
 /// # Requires Feature
 ///

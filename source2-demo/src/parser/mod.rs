@@ -64,7 +64,7 @@ use std::collections::VecDeque;
 ///
 /// impl Observer for HeroTracker {
 ///     fn interests(&self) -> Interests {
-///         Interests::ENABLE_ENTITY | Interests::TRACK_ENTITY
+///         Interests::ENTITY_STATE | Interests::ENTITY_EVENTS
 ///     }
 ///
 ///     fn on_entity(
@@ -461,7 +461,11 @@ where
             _ => {}
         };
 
-        try_observers!(self, DEMO, on_demo_command(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            DEMO_MESSAGE,
+            on_demo_command(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 }

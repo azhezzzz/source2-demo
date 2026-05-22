@@ -13,6 +13,10 @@
 //! - Set up interest flags based on used methods
 //! - Handle optional `Context` parameters
 //!
+//! Handler attributes may be imported and used as single-segment attributes,
+//! such as `#[on_message]`, or written with a path, such as
+//! `#[source2_demo_macros::on_message]`.
+//!
 //! ## Main Macros
 //!
 //! ### `#[observer]` - Main implementation macro

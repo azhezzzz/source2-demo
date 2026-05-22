@@ -9,6 +9,10 @@ use syn::parse_macro_input;
 use syn::punctuated::Punctuated;
 use syn::{Expr, FnArg, Ident, ItemImpl, Lit, Token, Type};
 
+fn path_is(path: &syn::Path, name: &str) -> bool {
+    path.segments.last().is_some_and(|segment| segment.ident == name)
+}
+
 pub(crate) fn expand_rewriter(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemImpl);
     let struct_name = &input.self_ty;
@@ -37,11 +41,11 @@ pub(crate) fn expand_rewriter(item: TokenStream) -> TokenStream {
 
         let method_name = method.sig.ident.clone();
         for attr in &method.attrs {
-            let Some(ident) = attr.path().get_ident() else {
+            let Some(segment) = attr.path().segments.last() else {
                 continue;
             };
 
-            match ident.to_string().as_str() {
+            match segment.ident.to_string().as_str() {
                 "rewrite_demo_message" => {
                     add_flag!(DEMO_MESSAGE);
                     let args = writer_callback_method_args(method, quote! {});
@@ -270,11 +274,11 @@ fn rewrite_field_body(attr: &syn::Attribute, method: &syn::ImplItemFn) -> syn::R
     let mut field = None;
 
     attr.parse_nested_meta(|meta| {
-        if meta.path.is_ident("class") {
+        if path_is(&meta.path, "class") {
             let value = meta.value()?;
             class = Some(value.parse::<Expr>()?);
             Ok(())
-        } else if meta.path.is_ident("field") {
+        } else if path_is(&meta.path, "field") {
             let value = meta.value()?;
             field = Some(value.parse::<Expr>()?);
             Ok(())

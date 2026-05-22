@@ -753,6 +753,58 @@ fn parser_propagates_observer_errors() {
     assert!(matches!(err, ParserError::ObserverError(_)));
 }
 
+#[derive(Default)]
+struct QualifiedAttributeObserver {
+    ticks: usize,
+}
+
+#[source2_demo_macros::observer]
+impl QualifiedAttributeObserver {
+    #[source2_demo_macros::on_tick_start]
+    fn tick_start(&mut self) -> ObserverResult {
+        self.ticks += 1;
+        Ok(())
+    }
+}
+
+#[test]
+fn observer_macro_accepts_path_qualified_handler_attributes() {
+    let replay = replay_with_playback_ticks(
+        20,
+        &[
+            (EDemoCommands::DemSyncTick, 0, sync_payload()),
+            (EDemoCommands::DemPacket, 5, demo_packet_payload(&[])),
+        ],
+    );
+    let mut parser = Parser::from_slice(&replay).unwrap();
+    let observer = parser.register_observer::<QualifiedAttributeObserver>();
+
+    parser.run_to_end().unwrap();
+
+    assert_eq!(observer.borrow().ticks, 1);
+}
+
+struct QualifiedAttributeRewriter;
+
+#[source2_demo_macros::rewriter]
+impl QualifiedAttributeRewriter {
+    #[source2_demo_macros::rewrite_packet_message]
+    fn drop_packet_message(
+        &mut self,
+        _msg_type: i32,
+        _payload: &[u8],
+    ) -> Result<MessageRewrite, ParserError> {
+        Ok(MessageRewrite::Drop)
+    }
+}
+
+#[test]
+fn rewriter_macro_accepts_path_qualified_handler_attributes() {
+    assert!(QualifiedAttributeRewriter
+        .interests()
+        .contains(RewriteInterests::PACKET_MESSAGE));
+}
+
 #[test]
 fn packet_message_encodes_decodes_and_replaces_protobuf_payload() {
     let mut original = CSvcMsgServerInfo::default();

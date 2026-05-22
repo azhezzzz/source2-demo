@@ -12,6 +12,10 @@ use syn::parse_macro_input;
 use syn::punctuated::Punctuated;
 use syn::{FnArg, Ident, ItemImpl, Token, Type};
 
+fn attr_is(attr: &syn::Attribute, name: &str) -> bool {
+    attr.path().segments.last().is_some_and(|segment| segment.ident == name)
+}
+
 pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStream {
     let (mode_all, mut errors) = parse_observer_mode(attr);
 
@@ -26,17 +30,17 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
     }
 
     for a in &input.attrs {
-        if a.path().is_ident("uses_entities") {
+        if attr_is(a, "uses_entities") {
             add_flag!(ENTITY_STATE);
         }
-        if a.path().is_ident("uses_string_tables") {
+        if attr_is(a, "uses_string_tables") {
             add_flag!(STRING_TABLE_STATE);
         }
-        if a.path().is_ident("uses_game_events") {
+        if attr_is(a, "uses_game_events") {
             add_flag!(BASE_GAME_EVENT);
         }
         #[cfg(feature = "dota")]
-        if a.path().is_ident("uses_combat_log") {
+        if attr_is(a, "uses_combat_log") {
             add_flag!(STRING_TABLE_STATE);
             add_flag!(COMBAT_LOG_ENTRIES);
         }
@@ -100,17 +104,17 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
     for item in &input.items {
         if let syn::ImplItem::Fn(method) = item {
             for a in &method.attrs {
-                if a.path().is_ident("uses_entities") {
+                if attr_is(a, "uses_entities") {
                     add_flag!(ENTITY_STATE);
                 }
-                if a.path().is_ident("uses_string_tables") {
+                if attr_is(a, "uses_string_tables") {
                     add_flag!(STRING_TABLE_STATE);
                 }
-                if a.path().is_ident("uses_game_events") {
+                if attr_is(a, "uses_game_events") {
                     add_flag!(BASE_GAME_EVENT);
                 }
                 #[cfg(feature = "dota")]
-                if a.path().is_ident("uses_combat_log") {
+                if attr_is(a, "uses_combat_log") {
                     add_flag!(STRING_TABLE_STATE);
                     add_flag!(COMBAT_LOG_ENTRIES);
                 }
@@ -119,8 +123,8 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
             for attr in &method.attrs {
                 let method_name = method.sig.ident.clone();
 
-                if let Some(ident) = attr.path().get_ident() {
-                    match ident.to_string().as_str() {
+                if let Some(segment) = attr.path().segments.last() {
+                    match segment.ident.to_string().as_str() {
                         "on_tick_start" => {
                             has_tick_start = true;
                             match observer_context_args(method, "#[on_tick_start]") {

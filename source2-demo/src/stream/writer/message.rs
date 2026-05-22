@@ -13,7 +13,7 @@ pub fn write_demo_message<W: Write + ?Sized>(
     writer.write_message(msg_type, tick, payload)
 }
 
-/// Writes a demo command message, optionally Snap-compressing the payload.
+/// Writes a demo command message, optionally Snappy-compressing the payload.
 pub fn write_demo_message_with_compression<W: Write + ?Sized>(
     writer: &mut W,
     msg_type: EDemoCommands,

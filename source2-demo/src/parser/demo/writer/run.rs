@@ -12,7 +12,7 @@ where
     R: BitsReader + MessageReader,
     W: Write + Seek,
 {
-    /// Parses the demo while emitting a rewritten stream.
+    /// Parses the demo while writing the rewritten stream.
     pub fn run(&mut self) -> Result<(), ParserError> {
         self.parser.reader.seek(0);
         let header = self.parser.reader.read_bytes(16);

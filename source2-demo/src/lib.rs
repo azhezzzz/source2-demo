@@ -22,8 +22,9 @@ pub(crate) use stream::reader;
 /// Demo rewriting APIs and lower-level bitstream writer utilities.
 ///
 /// This module is the preferred import path for writing or rewriting demo
-/// files. It includes [`DemoWriter`], [`DemoRewriter`], packet message helpers,
-/// and the bitstream writer utilities used by advanced rewrites.
+/// files. It includes [`DemoWriter`](crate::writer::DemoWriter),
+/// [`DemoRewriter`](crate::writer::DemoRewriter), packet message helpers, and
+/// the bitstream writer utilities used by advanced rewrites.
 pub mod writer {
     pub use crate::parser::{
         rewrite_protobuf_message, DemoRewriter, DemoWriter, MessageRewrite, PacketMessage,

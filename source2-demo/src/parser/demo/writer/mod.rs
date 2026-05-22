@@ -25,11 +25,12 @@ pub use types::{
 
 const INSTANCE_BASELINE_TABLE: &str = "instancebaseline";
 
-/// Demo writer that reads demo messages and emits a rewritten stream.
+/// Demo writer that reads demo messages and writes a rewritten stream.
 ///
-/// The writer keeps only the parser metadata needed for rewriting, such as
-/// serializers, classes, string tables, baselines, and entity state needed by
-/// field rewriters.
+/// The writer maintains the parser metadata needed for the registered
+/// rewrites, such as serializers, classes, string tables, baselines, and
+/// entity state. Output targets must be seekable so the demo header can be
+/// patched after writing.
 pub struct DemoWriter<'a, R, W>
 where
     R: BitsReader + MessageReader,
@@ -62,12 +63,11 @@ where
         }
     }
 
-    /// Adds an already constructed demo rewriter and returns a handle to its
-    /// state.
+    /// Adds an already constructed demo rewriter and returns a handle to it.
     ///
     /// Use this when the rewriter needs custom constructor state. Rewriters run
-    /// in registration order. For message payload rewrites, each rewriter sees
-    /// the output of the previous rewriter.
+    /// in registration order; message callbacks see the output of earlier
+    /// rewriters.
     pub fn add_rewriter<T>(&mut self, rewriter: T) -> Rc<RefCell<T>>
     where
         T: DemoRewriter + 'a,
@@ -78,12 +78,13 @@ where
         rewriter
     }
 
-    /// Registers a default demo rewriter and returns a handle to its state.
+    /// Registers a default demo rewriter and returns a handle to it.
     ///
     /// This mirrors
     /// [`Parser::register_observer`](crate::Parser::register_observer): the
     /// writer constructs `T::default()`, registers it, and returns an
-    /// `Rc<RefCell<T>>` so callers can inspect accumulated state after writing.
+    /// `Rc<RefCell<T>>` so callers can inspect accumulated state after
+    /// writing.
     ///
     /// # Examples
     ///
@@ -206,7 +207,7 @@ where
         self.rewrites_string_table_entries()
     }
 
-    /// Returns the wrapped parser and output writer.
+    /// Returns the wrapped parser and output target.
     pub fn into_parts(self) -> (Parser<'a, R>, W) {
         (self.parser, self.writer)
     }

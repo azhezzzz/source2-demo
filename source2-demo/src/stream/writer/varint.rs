@@ -22,12 +22,12 @@ pub fn write_var_u64_to_vec(value: u64) -> Vec<u8> {
     out
 }
 
-/// Appends an unsigned 32-bit varint to a byte buffer.
+/// Appends an unsigned varint used for 32-bit demo fields to a byte buffer.
 pub fn write_var_u32_to_buf(buf: &mut Vec<u8>, value: u64) {
     write_var_u64_to_buf(buf, value);
 }
 
-/// Encodes an unsigned 32-bit varint into a new byte vector.
+/// Encodes an unsigned varint used for 32-bit demo fields into a new byte vector.
 pub fn write_var_u32_to_vec(value: u64) -> Vec<u8> {
     let mut out = Vec::with_capacity(10);
     write_var_u32_to_buf(&mut out, value);

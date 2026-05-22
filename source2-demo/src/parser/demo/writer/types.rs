@@ -10,17 +10,19 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 bitflags::bitflags! {
-    /// Bitflags for declaring which rewrite callbacks a [`DemoRewriter`] uses.
+    /// Bitflags for declaring rewrite interests.
     ///
-    /// These flags let [`DemoWriter`](super::DemoWriter) skip expensive decoding
-    /// paths when no registered rewriter needs them.
+    /// Use these flags in [`DemoRewriter::interests`] to specify which rewrite
+    /// callbacks your rewriter wants to receive. This lets
+    /// [`DemoWriter`](super::DemoWriter) skip expensive decoding paths no
+    /// registered rewriter needs.
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct RewriteInterests: u32 {
         /// Interest in outer demo command payload rewrites.
         const DEMO_MESSAGE = 1 << 0;
         /// Interest in individual packet message payload rewrites.
         const PACKET_MESSAGE = 1 << 1;
-        /// Interest in mutating the final packet message list.
+        /// Interest in mutating the packet message list after per-message rewrites.
         const PACKET_MESSAGES = 1 << 2;
         /// Interest in outer `CDemoStringTables` rewrites.
         const DEMO_STRING_TABLES = 1 << 3;
@@ -35,14 +37,13 @@ bitflags::bitflags! {
     }
 }
 
-/// Outcome for a demo message rewrite operation.
+/// Outcome for a message rewrite operation.
 pub enum MessageRewrite {
     /// Leave the message unchanged.
     Keep,
-    /// Encode and replace the message payload from the mutated message.
+    /// Encode the mutated decoded message and replace the payload.
     ///
-    /// This is only honored by callbacks that provide a decoded message.
-    /// Raw payload callbacks should return `Replace` with explicit bytes.
+    /// Use this after changing a decoded protobuf message in place.
     Rewrite,
     /// Replace the message payload with the provided bytes.
     Replace(Vec<u8>),
@@ -50,13 +51,13 @@ pub enum MessageRewrite {
     Drop,
 }
 
-/// Trait for grouped demo rewrite behavior.
+/// Trait for handling demo rewrites.
 ///
-/// Implement this trait when a rewrite has state or spans several message
-/// types.
+/// Implement this trait directly for custom behavior, or use the `#[rewriter]`
+/// attribute macro to generate it from annotated methods.
 #[allow(unused_variables)]
 pub trait DemoRewriter {
-    /// Declares which rewrite callbacks this rewriter wants to receive.
+    /// Declares which rewrite callbacks this rewriter is interested in.
     ///
     /// Return an empty [`RewriteInterests`] to leave the demo unchanged.
     fn interests(&self) -> RewriteInterests {
@@ -64,6 +65,9 @@ pub trait DemoRewriter {
     }
 
     /// Rewrites an outer demo command payload.
+    ///
+    /// Requires [`RewriteInterests::DEMO_MESSAGE`] to be set. The payload is
+    /// passed as bytes; return [`MessageRewrite::Replace`] to emit new bytes.
     fn rewrite_demo_message(
         &mut self,
         ctx: &Context,
@@ -75,6 +79,9 @@ pub trait DemoRewriter {
     }
 
     /// Rewrites one packet message payload.
+    ///
+    /// Requires [`RewriteInterests::PACKET_MESSAGE`] to be set. The payload is
+    /// passed as bytes; return [`MessageRewrite::Replace`] to emit new bytes.
     fn rewrite_packet_message(
         &mut self,
         ctx: &Context,
@@ -85,10 +92,11 @@ pub trait DemoRewriter {
         Ok(MessageRewrite::Keep)
     }
 
-    /// Mutates the full packet message list after per-message rewrites.
+    /// Mutates the packet message list after per-message rewrites.
     ///
-    /// Messages inserted here are output-only; they are not processed for
-    /// writer metadata state.
+    /// Requires [`RewriteInterests::PACKET_MESSAGES`] to be set. Messages
+    /// inserted here are output-only; they are not processed for writer
+    /// metadata state.
     fn rewrite_packet_messages(
         &mut self,
         ctx: &Context,
@@ -98,7 +106,9 @@ pub trait DemoRewriter {
         Ok(())
     }
 
-    /// Rewrites an outer demo string table payload after it has been decoded.
+    /// Rewrites an outer demo string table message after it has been decoded.
+    ///
+    /// Requires [`RewriteInterests::DEMO_STRING_TABLES`] to be set.
     fn rewrite_demo_string_tables(
         &mut self,
         ctx: &Context,
@@ -109,6 +119,8 @@ pub trait DemoRewriter {
     }
 
     /// Rewrites one decoded string table entry update.
+    ///
+    /// Requires [`RewriteInterests::STRING_TABLE_ENTRIES`] to be set.
     fn rewrite_string_table_entry(
         &mut self,
         ctx: &Context,
@@ -120,6 +132,8 @@ pub trait DemoRewriter {
     }
 
     /// Rewrites a decoded `svc_CreateStringTable` message.
+    ///
+    /// Requires [`RewriteInterests::SVC_CREATE_STRING_TABLE`] to be set.
     fn rewrite_svc_create_string_table(
         &mut self,
         ctx: &Context,
@@ -130,6 +144,8 @@ pub trait DemoRewriter {
     }
 
     /// Rewrites a decoded `svc_UpdateStringTable` message.
+    ///
+    /// Requires [`RewriteInterests::SVC_UPDATE_STRING_TABLE`] to be set.
     fn rewrite_svc_update_string_table(
         &mut self,
         ctx: &Context,
@@ -141,7 +157,8 @@ pub trait DemoRewriter {
 
     /// Returns a replacement value for a decoded entity field.
     ///
-    /// The first registered rewriter that returns `Some` wins.
+    /// Requires [`RewriteInterests::ENTITY_FIELDS`] to be set. The first
+    /// registered rewriter that returns `Some` wins.
     fn replace_entity_field(
         &mut self,
         ctx: &Context,
@@ -154,6 +171,9 @@ pub trait DemoRewriter {
     }
 
     /// Decides whether an entity should enter the decoded field rewrite path.
+    ///
+    /// Requires [`RewriteInterests::ENTITY_FIELDS`] to be set. If any
+    /// registered rewriter returns `false`, the entity is not field-rewritten.
     fn should_rewrite_entity(
         &mut self,
         ctx: &Context,
@@ -267,7 +287,7 @@ where
     }
 }
 
-/// Helper to rewrite any prost message by decoding, mutating, and re-encoding.
+/// Rewrites a prost message by decoding, mutating, and re-encoding it.
 pub fn rewrite_protobuf_message<M, F>(
     msg: &[u8],
     mut rewrite: F,
@@ -285,7 +305,7 @@ where
     }
 }
 
-/// Decoded packet message passed to packet-list rewriters.
+/// Packet message passed to packet-list rewriters.
 #[derive(Clone, Debug)]
 pub struct PacketMessage {
     /// Inner packet message type.

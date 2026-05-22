@@ -78,6 +78,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Quick Start: Rewriting Demo Files
+
+Use `source2_demo::writer` when you want to write a modified demo. The writer
+parses the input replay, applies registered rewriters, and writes a new replay
+stream to the output.
+
+This example removes Dota 2 chat messages from a replay:
+
+```rust ignore
+use source2_demo::error::ParserError;
+use source2_demo::proto::CDotaUserMsgChatMessage;
+use source2_demo::writer::*;
+use std::fs::File;
+
+#[derive(Default)]
+struct RemoveChat;
+
+#[rewriter]
+impl RemoveChat {
+    #[rewrite_packet_message]
+    fn remove_chat(
+        &mut self,
+        _message: CDotaUserMsgChatMessage,
+    ) -> Result<MessageRewrite, ParserError> {
+        Ok(MessageRewrite::Drop)
+    }
+}
+
+fn main() -> anyhow::Result<()> {
+    let input = File::open("input.dem")?;
+    let output = File::create("output.dem")?;
+
+    let mut writer = DemoWriter::from_reader(input, output)?;
+    writer.register_rewriter::<RemoveChat>();
+    writer.run()?;
+
+    Ok(())
+}
+```
+
+Writer APIs are not included in `source2_demo::prelude`; import them from
+`source2_demo::writer`.
+
 ## Building Examples
 
 To build the examples, clone the repository and use Cargo:

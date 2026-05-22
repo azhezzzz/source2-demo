@@ -43,9 +43,10 @@
 //! packet payload or a decoded protobuf message. The protobuf form infers the
 //! packet id from the message type, just like `#[on_message]`.
 //!
+//! #### Drop a decoded packet message
+//!
 //! ```no_run
 //! # use source2_demo::error::ParserError;
-//! # use source2_demo::prelude::*;
 //! # use source2_demo::proto::CDotaUserMsgChatMessage;
 //! # use source2_demo::writer::*;
 //! struct RemoveChat;
@@ -58,6 +59,70 @@
 //!         _message: CDotaUserMsgChatMessage,
 //!     ) -> Result<MessageRewrite, ParserError> {
 //!         Ok(MessageRewrite::Drop)
+//!     }
+//! }
+//! ```
+//!
+//! #### Mutate and re-encode a decoded packet message
+//!
+//! ```no_run
+//! # use source2_demo::error::ParserError;
+//! # use source2_demo::proto::CDotaUserMsgChatMessage;
+//! # use source2_demo::writer::*;
+//! struct RedactChat;
+//!
+//! #[rewriter]
+//! impl RedactChat {
+//!     #[rewrite_packet_message]
+//!     fn redact_chat(
+//!         &mut self,
+//!         message: &mut CDotaUserMsgChatMessage,
+//!     ) -> Result<MessageRewrite, ParserError> {
+//!         message.message_text = Some("[redacted]".to_string());
+//!         Ok(MessageRewrite::Rewrite)
+//!     }
+//! }
+//! ```
+//!
+//! #### Rewrite a string table entry
+//!
+//! ```no_run
+//! # use source2_demo::error::ParserError;
+//! # use source2_demo::proto::{CMsgPlayerInfo, Message};
+//! # use source2_demo::writer::*;
+//! struct AnonymizeUserInfo;
+//!
+//! #[rewriter]
+//! impl AnonymizeUserInfo {
+//!     #[rewrite_string_table_entry]
+//!     fn rewrite_userinfo(
+//!         &mut self,
+//!         table_name: &str,
+//!         entry: &mut StringTableEntryUpdate,
+//!     ) -> Result<(), ParserError> {
+//!         if table_name == "userinfo" {
+//!             if let Some(value) = entry.value_mut() {
+//!                 let mut player = CMsgPlayerInfo::decode(value.as_slice())?;
+//!                 player.name = Some("Anonymous".to_string());
+//!                 *value = player.encode_to_vec();
+//!             }
+//!         }
+//!         Ok(())
+//!     }
+//! }
+//! ```
+//!
+//! #### Rewrite decoded entity fields
+//!
+//! ```no_run
+//! # use source2_demo::writer::*;
+//! struct RemoveSteamIds;
+//!
+//! #[rewriter]
+//! impl RemoveSteamIds {
+//!     #[rewrite_field(class = "CDOTA_PlayerResource", field = ends_with("m_iPlayerSteamID"))]
+//!     fn remove_steam_id(&mut self, _value: u64) -> u64 {
+//!         0
 //!     }
 //! }
 //! ```
@@ -342,9 +407,10 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
+/// ## Drop a decoded packet message
+///
 /// ```no_run
 /// # use source2_demo::error::ParserError;
-/// # use source2_demo::prelude::*;
 /// # use source2_demo::proto::CDotaUserMsgChatMessage;
 /// # use source2_demo::writer::*;
 /// struct RemoveChat;
@@ -357,6 +423,70 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///         _msg: CDotaUserMsgChatMessage,
 ///     ) -> Result<MessageRewrite, ParserError> {
 ///         Ok(MessageRewrite::Drop)
+///     }
+/// }
+/// ```
+///
+/// ## Mutate and re-encode a decoded packet message
+///
+/// ```no_run
+/// # use source2_demo::error::ParserError;
+/// # use source2_demo::proto::CDotaUserMsgChatMessage;
+/// # use source2_demo::writer::*;
+/// struct RedactChat;
+///
+/// #[rewriter]
+/// impl RedactChat {
+///     #[rewrite_packet_message]
+///     fn redact_chat(
+///         &mut self,
+///         message: &mut CDotaUserMsgChatMessage,
+///     ) -> Result<MessageRewrite, ParserError> {
+///         message.message_text = Some("[redacted]".to_string());
+///         Ok(MessageRewrite::Rewrite)
+///     }
+/// }
+/// ```
+///
+/// ## Rewrite a string table entry
+///
+/// ```no_run
+/// # use source2_demo::error::ParserError;
+/// # use source2_demo::proto::{CMsgPlayerInfo, Message};
+/// # use source2_demo::writer::*;
+/// struct AnonymizeUserInfo;
+///
+/// #[rewriter]
+/// impl AnonymizeUserInfo {
+///     #[rewrite_string_table_entry]
+///     fn rewrite_userinfo(
+///         &mut self,
+///         table_name: &str,
+///         entry: &mut StringTableEntryUpdate,
+///     ) -> Result<(), ParserError> {
+///         if table_name == "userinfo" {
+///             if let Some(value) = entry.value_mut() {
+///                 let mut player = CMsgPlayerInfo::decode(value.as_slice())?;
+///                 player.name = Some("Anonymous".to_string());
+///                 *value = player.encode_to_vec();
+///             }
+///         }
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// ## Rewrite decoded entity fields
+///
+/// ```no_run
+/// # use source2_demo::writer::*;
+/// struct RemoveSteamIds;
+///
+/// #[rewriter]
+/// impl RemoveSteamIds {
+///     #[rewrite_field(class = "CDOTA_PlayerResource", field = ends_with("m_iPlayerSteamID"))]
+///     fn remove_steam_id(&mut self, _value: u64) -> u64 {
+///         0
 ///     }
 /// }
 /// ```
@@ -452,6 +582,42 @@ pub fn rewrite_demo_message(_attr: TokenStream, item: TokenStream) -> TokenStrea
 /// can receive a protobuf message; the macro infers the packet message id from
 /// that protobuf type. Mutable protobuf arguments may return
 /// `MessageRewrite::Rewrite` to re-encode the modified message.
+///
+/// # Examples
+///
+/// ## Drop a decoded protobuf message
+///
+/// ```no_run
+/// # use source2_demo::error::ParserError;
+/// # use source2_demo::proto::CDotaUserMsgChatMessage;
+/// # use source2_demo::writer::*;
+/// # struct MyRewriter;
+/// # impl MyRewriter {
+/// #[rewrite_packet_message]
+/// fn remove_chat(&mut self, _msg: CDotaUserMsgChatMessage) -> Result<MessageRewrite, ParserError> {
+///     Ok(MessageRewrite::Drop)
+/// }
+/// # }
+/// ```
+///
+/// ## Mutate a decoded protobuf message
+///
+/// ```no_run
+/// # use source2_demo::error::ParserError;
+/// # use source2_demo::proto::CDotaUserMsgChatMessage;
+/// # use source2_demo::writer::*;
+/// # struct MyRewriter;
+/// # impl MyRewriter {
+/// #[rewrite_packet_message]
+/// fn redact_chat(
+///     &mut self,
+///     msg: &mut CDotaUserMsgChatMessage,
+/// ) -> Result<MessageRewrite, ParserError> {
+///     msg.message_text = Some("[redacted]".to_string());
+///     Ok(MessageRewrite::Rewrite)
+/// }
+/// # }
+/// ```
 #[proc_macro_attribute]
 pub fn rewrite_packet_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -482,6 +648,32 @@ pub fn rewrite_demo_string_tables(_attr: TokenStream, item: TokenStream) -> Toke
 /// Use this for targeted string-table edits such as rewriting `userinfo` rows.
 /// The callback receives a mutable `StringTableEntryUpdate` and returns
 /// `Result<(), ParserError>`.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::error::ParserError;
+/// # use source2_demo::proto::{CMsgPlayerInfo, Message};
+/// # use source2_demo::writer::*;
+/// # struct MyRewriter;
+/// # impl MyRewriter {
+/// #[rewrite_string_table_entry]
+/// fn anonymize_userinfo(
+///     &mut self,
+///     table_name: &str,
+///     entry: &mut StringTableEntryUpdate,
+/// ) -> Result<(), ParserError> {
+///     if table_name == "userinfo" {
+///         if let Some(value) = entry.value_mut() {
+///             let mut player = CMsgPlayerInfo::decode(value.as_slice())?;
+///             player.name = Some("Anonymous".to_string());
+///             *value = player.encode_to_vec();
+///         }
+///     }
+///     Ok(())
+/// }
+/// # }
+/// ```
 #[proc_macro_attribute]
 pub fn rewrite_string_table_entry(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -527,6 +719,19 @@ pub fn replace_entity_field(_attr: TokenStream, item: TokenStream) -> TokenStrea
 /// `String`. Class-only handlers must use `&FieldValue` and return
 /// `Option<FieldValue>` because there is no field predicate to determine one
 /// concrete value type.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::writer::*;
+/// # struct MyRewriter;
+/// # impl MyRewriter {
+/// #[rewrite_field(class = "CDOTA_PlayerResource", field = ends_with("m_iPlayerSteamID"))]
+/// fn remove_steam_id(&mut self, _value: u64) -> u64 {
+///     0
+/// }
+/// # }
+/// ```
 #[proc_macro_attribute]
 pub fn rewrite_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item

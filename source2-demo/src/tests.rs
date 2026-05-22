@@ -12,6 +12,10 @@ use crate::proto::{
 };
 #[cfg(feature = "dota")]
 use crate::proto::{CDotaUserMsgChatMessage, EDotaUserMessages};
+#[cfg(feature = "deadlock")]
+use crate::proto::{CitadelUserMessageIds, ECitadelGameEvents};
+#[cfg(feature = "cs2")]
+use crate::proto::{ECsgoGameEvents, ECstrike15UserMessages};
 use crate::reader::{BitsReader, MessageReader, SliceReader};
 use crate::writer::{
     write_demo_message, write_demo_message_with_compression, write_var_u64_to_vec, BitsWriter,

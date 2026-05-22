@@ -1,12 +1,12 @@
 mod baseline;
-mod emit;
 mod entity;
+mod input;
+mod output;
 mod packet;
 mod packet_state;
-mod raw;
+mod rewriter;
 mod run;
 mod string_table;
-mod types;
 
 use crate::entity::field::FieldValue;
 use crate::entity::{Entity, EntityEvents};
@@ -18,8 +18,8 @@ use std::cell::RefCell;
 use std::io::{Seek, Write};
 use std::rc::Rc;
 
-use raw::RawDemoMessage;
-pub use types::{
+use input::RawDemoMessage;
+pub use rewriter::{
     rewrite_protobuf_message, DemoRewriter, MessageRewrite, PacketMessage, RewriteInterests,
 };
 

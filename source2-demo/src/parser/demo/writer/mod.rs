@@ -89,7 +89,6 @@ where
     /// # Examples
     ///
     /// ```ignore
-    /// # use source2_demo::error::ParserError;
     /// # use source2_demo::prelude::*;
     /// # use source2_demo::proto::CDotaUserMsgChatMessage;
     /// # use source2_demo::writer::*;

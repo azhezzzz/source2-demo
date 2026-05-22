@@ -46,7 +46,6 @@
 //! #### Drop a decoded packet message
 //!
 //! ```no_run
-//! # use source2_demo::error::ParserError;
 //! # use source2_demo::proto::CDotaUserMsgChatMessage;
 //! # use source2_demo::writer::*;
 //! struct RemoveChat;
@@ -66,7 +65,6 @@
 //! #### Mutate and re-encode a decoded packet message
 //!
 //! ```no_run
-//! # use source2_demo::error::ParserError;
 //! # use source2_demo::proto::CDotaUserMsgChatMessage;
 //! # use source2_demo::writer::*;
 //! struct RedactChat;
@@ -87,7 +85,6 @@
 //! #### Rewrite a string table entry
 //!
 //! ```no_run
-//! # use source2_demo::error::ParserError;
 //! # use source2_demo::proto::{CMsgPlayerInfo, Message};
 //! # use source2_demo::writer::*;
 //! struct AnonymizeUserInfo;
@@ -410,7 +407,6 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// ## Drop a decoded packet message
 ///
 /// ```no_run
-/// # use source2_demo::error::ParserError;
 /// # use source2_demo::proto::CDotaUserMsgChatMessage;
 /// # use source2_demo::writer::*;
 /// struct RemoveChat;
@@ -430,7 +426,6 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// ## Mutate and re-encode a decoded packet message
 ///
 /// ```no_run
-/// # use source2_demo::error::ParserError;
 /// # use source2_demo::proto::CDotaUserMsgChatMessage;
 /// # use source2_demo::writer::*;
 /// struct RedactChat;
@@ -451,7 +446,6 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// ## Rewrite a string table entry
 ///
 /// ```no_run
-/// # use source2_demo::error::ParserError;
 /// # use source2_demo::proto::{CMsgPlayerInfo, Message};
 /// # use source2_demo::writer::*;
 /// struct AnonymizeUserInfo;
@@ -588,7 +582,6 @@ pub fn rewrite_demo_message(_attr: TokenStream, item: TokenStream) -> TokenStrea
 /// ## Drop a decoded protobuf message
 ///
 /// ```no_run
-/// # use source2_demo::error::ParserError;
 /// # use source2_demo::proto::CDotaUserMsgChatMessage;
 /// # use source2_demo::writer::*;
 /// # struct MyRewriter;
@@ -603,7 +596,6 @@ pub fn rewrite_demo_message(_attr: TokenStream, item: TokenStream) -> TokenStrea
 /// ## Mutate a decoded protobuf message
 ///
 /// ```no_run
-/// # use source2_demo::error::ParserError;
 /// # use source2_demo::proto::CDotaUserMsgChatMessage;
 /// # use source2_demo::writer::*;
 /// # struct MyRewriter;
@@ -652,7 +644,6 @@ pub fn rewrite_demo_string_tables(_attr: TokenStream, item: TokenStream) -> Toke
 /// # Examples
 ///
 /// ```no_run
-/// # use source2_demo::error::ParserError;
 /// # use source2_demo::proto::{CMsgPlayerInfo, Message};
 /// # use source2_demo::writer::*;
 /// # struct MyRewriter;

@@ -26,6 +26,7 @@ pub(crate) use stream::reader;
 /// [`DemoRewriter`](crate::writer::DemoRewriter), packet message helpers, and
 /// the bitstream writer utilities used by advanced rewrites.
 pub mod writer {
+    pub use crate::error::ParserError;
     pub use crate::parser::{
         rewrite_protobuf_message, DemoRewriter, DemoWriter, MessageRewrite, PacketMessage,
         RewriteInterests,
@@ -82,6 +83,7 @@ pub mod proto {
 pub mod prelude {
     pub use crate::entity::field::FieldValue;
     pub use crate::entity::{Entity, EntityEvents};
+    pub use crate::error::ParserError;
     pub use crate::event::{EventValue, GameEvent, GameEventList};
     pub use crate::parser::{Context, DemoRunner, Interests, Observer, ObserverResult, Parser};
     pub use crate::string_table::{StringTable, StringTableRow, StringTables};

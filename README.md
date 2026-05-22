@@ -87,6 +87,7 @@ stream to the output.
 This example removes Dota 2 chat messages from a replay:
 
 ```rust ignore
+use source2_demo::prelude::*;
 use source2_demo::proto::CDotaUserMsgChatMessage;
 use source2_demo::writer::*;
 use std::fs::File;

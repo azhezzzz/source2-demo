@@ -642,6 +642,36 @@ fn observer_macro_can_receive_raw_message_payloads() {
 }
 
 #[derive(Default)]
+struct AllModeObserver;
+
+#[observer(all)]
+impl AllModeObserver {}
+
+#[derive(Default)]
+struct UsesAllObserver;
+
+#[observer]
+#[source2_demo_macros::uses_all]
+impl UsesAllObserver {}
+
+#[derive(Default)]
+struct UsesAllMethodObserver;
+
+#[observer]
+impl UsesAllMethodObserver {
+    #[allow(dead_code)]
+    #[source2_demo_macros::uses_all]
+    fn enable_all(&mut self) {}
+}
+
+#[test]
+fn observer_all_mode_and_uses_all_marker_enable_every_interest() {
+    assert_eq!(AllModeObserver.interests(), Interests::all());
+    assert_eq!(UsesAllObserver.interests(), Interests::all());
+    assert_eq!(UsesAllMethodObserver.interests(), Interests::all());
+}
+
+#[derive(Default)]
 struct GameEventObserver {
     base_events: Vec<EBaseGameEvents>,
     named_events: Vec<(i32, String, i32)>,

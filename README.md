@@ -43,7 +43,8 @@ use source2_demo::proto::*;
 struct Chat;
 
 // Mark the impl block with the observer attribute
-#[observer(all)]
+#[observer]
+#[uses_all]
 impl Chat {
     // Use the on_message attribute to mark the protobuf message handler
     #[on_message]
@@ -117,9 +118,6 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 ```
-
-Writer APIs are not included in `source2_demo::prelude`; import them from
-`source2_demo::writer`.
 
 ## Building Examples
 

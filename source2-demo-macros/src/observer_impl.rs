@@ -17,7 +17,7 @@ fn attr_is(attr: &syn::Attribute, name: &str) -> bool {
 }
 
 pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let (mode_all, mut errors) = parse_observer_mode(attr);
+    let (mut mode_all, mut errors) = parse_observer_mode(attr);
 
     let input = parse_macro_input!(item as ItemImpl);
     let struct_name = &input.self_ty;
@@ -30,6 +30,9 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
     }
 
     for a in &input.attrs {
+        if attr_is(a, "uses_all") {
+            mode_all = true;
+        }
         if attr_is(a, "uses_entities") {
             add_flag!(ENTITY_STATE);
         }
@@ -104,6 +107,9 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
     for item in &input.items {
         if let syn::ImplItem::Fn(method) = item {
             for a in &method.attrs {
+                if attr_is(a, "uses_all") {
+                    mode_all = true;
+                }
                 if attr_is(a, "uses_entities") {
                     add_flag!(ENTITY_STATE);
                 }
@@ -610,12 +616,10 @@ fn parse_observer_mode(attr: TokenStream) -> (bool, proc_macro2::TokenStream) {
     match parser.parse(attr) {
         Ok(idents) => {
             for id in idents {
-                if id == "manual" {
-                    mode_all = false;
-                } else if id == "all" {
+                if id == "all" {
                     mode_all = true;
                 } else {
-                    errors.extend(syn::Error::new_spanned(id, "expected `manual` or `all`").to_compile_error());
+                    errors.extend(syn::Error::new_spanned(id, "expected `all`").to_compile_error());
                 }
             }
         }

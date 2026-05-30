@@ -149,6 +149,7 @@
 //!
 //! These mark impl blocks with which data types to track:
 //!
+//! - `#[uses_all]` - Track all supported data
 //! - `#[uses_entities]` - Track entities
 //! - `#[uses_string_tables]` - Track string tables
 //! - `#[uses_game_events]` - Track game events
@@ -238,8 +239,8 @@ use proc_macro::TokenStream;
 ///
 /// # Modes
 ///
-/// Use `#[observer]` or `#[observer(manual)]` to infer interests from handlers
-/// and `#[uses_*]` markers. Use `#[observer(all)]` to enable every interest.
+/// Use `#[observer]` to infer interests from handlers and `#[uses_*]` markers.
+/// Use `#[observer(all)]` or `#[uses_all]` to enable every interest.
 ///
 /// # Handler Attributes
 ///
@@ -261,6 +262,7 @@ use proc_macro::TokenStream;
 ///
 /// Apply these to the `impl` block or individual methods to enable tracking:
 ///
+/// - `#[uses_all]` - Enable all tracking
 /// - `#[uses_entities]` - Enable entity tracking
 /// - `#[uses_string_tables]` - Enable string table tracking
 /// - `#[uses_game_events]` - Enable game event tracking
@@ -1251,6 +1253,25 @@ pub fn on_stop(_attr: TokenStream, item: TokenStream) -> TokenStream {
 #[cfg(feature = "dota")]
 #[proc_macro_attribute]
 pub fn on_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Marks the impl block or individual method to enable all tracking.
+///
+/// This is equivalent to `#[observer(all)]`.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[observer]
+/// #[uses_all]
+/// impl MyObs {
+/// # fn dummy(&mut self) -> ObserverResult { Ok(()) }
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn uses_all(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 

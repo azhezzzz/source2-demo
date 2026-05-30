@@ -211,8 +211,8 @@
 //!   - `#[on_entity("CDOTA_Unit_Hero_Axe")]` - Only heroes named Axe
 //!   - `#[on_game_event("player_death")]` - Only death events
 //!   - `#[on_string_table("userinfo")]` - Only userinfo table updates
-//! - **Game-Specific Handlers**: Use `#[on_dota_user_message]`, `#[on_citadel_user_message]`,
-//!   etc. for game-specific message types
+//! - **Game-Specific Messages**: Use `#[on_message]` with Dota 2, Deadlock, or
+//!   CS2 protobuf message types
 
 mod observer_impl;
 mod protobuf_map;
@@ -235,6 +235,11 @@ use proc_macro::TokenStream;
 /// - Sets up interest flags based on which handlers are defined
 /// - Decodes protobuf messages and passes them to handlers
 /// - Filters events based on optional string arguments
+///
+/// # Modes
+///
+/// Use `#[observer]` or `#[observer(manual)]` to infer interests from handlers
+/// and `#[uses_*]` markers. Use `#[observer(all)]` to enable every interest.
 ///
 /// # Handler Attributes
 ///
@@ -263,16 +268,22 @@ use proc_macro::TokenStream;
 ///
 /// # Parameter Guidelines
 ///
-/// Handlers can have these parameters (all optional except `&mut self`):
+/// Handlers can receive these parameters. Most are optional; `#[on_message]`
+/// requires either one protobuf message or a supported message enum plus
+/// `&[u8]` payload.
 /// - `ctx: &Context` - Current replay state (always optional)
 /// - Specific parameters depending on the handler:
-///   - `event: EntityEvents` (on_entity)
+///   - `event: EntityEvents` or `event: &EntityEvents` (on_entity)
 ///   - `entity: &Entity` (on_entity)
 ///   - `ge: &GameEvent` (on_game_event)
 ///   - `table: &StringTable` (on_string_table)
 ///   - `modified: &[i32]` (on_string_table)
 ///   - `cle: &CombatLogEntry` (on_combat_log)
-///   - Protobuf message types (on_message)
+///   - A protobuf message, or a supported message enum plus `&[u8]` payload
+///     (on_message)
+///
+/// Handler parameters can appear in any order. Handlers return
+/// `ObserverResult`.
 ///
 /// # Examples
 ///
@@ -504,24 +515,34 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// Marks a method as a protobuf message handler.
 ///
 /// Use this to handle specific protobuf message types. The message type is inferred
-/// from the method's parameter type, which should be a protobuf message struct.
+/// from the method's parameter type, which should be a mapped protobuf message
+/// struct.
 ///
 /// The method will automatically decode binary message data and call your handler
 /// with the decoded message object.
 ///
 /// # Parameters
 ///
-/// The handler can receive:
-/// - `ctx: &Context` (optional) - Access to current replay state
-/// - Message parameter - The decoded protobuf message (inferred from parameter type)
-/// - Message can be taken by value or reference
+/// A decoded handler can receive:
+///
+/// - `ctx: &Context` (optional)
+/// - One protobuf message by value or shared reference
+///
+/// A raw handler can instead receive:
+///
+/// - `ctx: &Context` (optional)
+/// - One supported message enum by value or shared reference
+/// - `payload: &[u8]`
+///
+/// Parameters can appear in any order.
+/// Return `ObserverResult`.
 ///
 /// # Supported Message Types
 ///
 /// - `CDotaUserMsgChatMessage` and other Dota 2 messages
 /// - `CCitadelUserMsgChatMsg` and other Deadlock messages
-/// - `CCSUserMessage_*` and other CS2 messages
-/// - Any protobuf message type with a `decode` method
+/// - `CCsUsrMsgVguiMenu` and other CS2 messages
+/// - Other mapped protobuf message types
 ///
 /// # Examples
 ///
@@ -566,6 +587,20 @@ pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// }
 /// # }
 /// ```
+///
+/// ## Handle raw messages
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_message]
+/// fn on_raw(&mut self, msg_type: SvcMessages, payload: &[u8]) -> ObserverResult {
+///     println!("{msg_type:?}: {} bytes", payload.len());
+///     Ok(())
+/// }
+/// # }
+/// ```
 #[proc_macro_attribute]
 pub fn on_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -577,6 +612,8 @@ pub fn on_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// dropping or replacing whole `EDemoCommands` messages. Raw handlers can
 /// receive `ctx: &Context`, `tick: u32`, `msg_type: EDemoCommands`, and
 /// `payload: &[u8]`, in any supported callback-argument order.
+///
+/// Return `Result<MessageRewrite, ParserError>`.
 #[proc_macro_attribute]
 pub fn rewrite_demo_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -588,6 +625,15 @@ pub fn rewrite_demo_message(_attr: TokenStream, item: TokenStream) -> TokenStrea
 /// can receive a protobuf message; the macro infers the packet message id from
 /// that protobuf type. Mutable protobuf arguments may return
 /// `MessageRewrite::Rewrite` to re-encode the modified message.
+///
+/// # Parameters
+///
+/// A raw handler can receive `ctx: &Context`, `tick: u32`, `msg_type: i32`,
+/// and `payload: &[u8]`. A typed handler can receive `ctx: &Context`,
+/// `tick: u32`, and one protobuf message by value, shared reference, or mutable
+/// reference. Parameters can appear in any order.
+///
+/// Return `Result<MessageRewrite, ParserError>`.
 ///
 /// # Examples
 ///
@@ -634,6 +680,10 @@ pub fn rewrite_packet_message(_attr: TokenStream, item: TokenStream) -> TokenStr
 /// Use this when the rewrite needs packet-wide context, such as appending a new
 /// `PacketMessage`, removing several messages together, or reordering messages
 /// within one packet.
+///
+/// The handler can receive `ctx: &Context`, `tick: u32`, and
+/// `messages: &mut Vec<PacketMessage>` in any order. Return
+/// `Result<(), ParserError>`.
 #[proc_macro_attribute]
 pub fn rewrite_packet_messages(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -644,6 +694,10 @@ pub fn rewrite_packet_messages(_attr: TokenStream, item: TokenStream) -> TokenSt
 /// This callback sees the full demo string-table message. Return
 /// `MessageRewrite::Rewrite` after mutating the decoded message, or
 /// `MessageRewrite::Replace(bytes)` to provide encoded bytes directly.
+///
+/// The handler can receive `ctx: &Context`, `tick: u32`, and
+/// `message: &mut CDemoStringTables` in any order. Return
+/// `Result<MessageRewrite, ParserError>`.
 #[proc_macro_attribute]
 pub fn rewrite_demo_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -652,7 +706,8 @@ pub fn rewrite_demo_string_tables(_attr: TokenStream, item: TokenStream) -> Toke
 /// Rewrites one decoded string table entry update.
 ///
 /// Use this for targeted string-table edits such as rewriting `userinfo` rows.
-/// The callback receives a mutable `StringTableEntryUpdate` and returns
+/// The handler can receive `ctx: &Context`, `tick: u32`, `table_name: &str`,
+/// and `entry: &mut StringTableEntryUpdate` in any order. Return
 /// `Result<(), ParserError>`.
 ///
 /// # Examples
@@ -690,6 +745,10 @@ pub fn rewrite_string_table_entry(_attr: TokenStream, item: TokenStream) -> Toke
 /// Return `MessageRewrite::Rewrite` after mutating the decoded
 /// `CSvcMsgCreateStringTable`, or return `Replace` / `Drop` for explicit output
 /// control.
+///
+/// The handler can receive `ctx: &Context`, `tick: u32`, and
+/// `message: &mut CSvcMsgCreateStringTable` in any order. Return
+/// `Result<MessageRewrite, ParserError>`.
 #[proc_macro_attribute]
 pub fn rewrite_svc_create_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -700,6 +759,10 @@ pub fn rewrite_svc_create_string_table(_attr: TokenStream, item: TokenStream) ->
 /// This is useful for incremental string-table updates that arrive inside
 /// packet data. Return `MessageRewrite::Rewrite` after mutating the decoded
 /// `CSvcMsgUpdateStringTable`.
+///
+/// The handler can receive `ctx: &Context`, `tick: u32`, and
+/// `message: &mut CSvcMsgUpdateStringTable` in any order. Return
+/// `Result<MessageRewrite, ParserError>`.
 #[proc_macro_attribute]
 pub fn rewrite_svc_update_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -710,6 +773,10 @@ pub fn rewrite_svc_update_string_table(_attr: TokenStream, item: TokenStream) ->
 /// This low-level form receives the current field as `&FieldValue` and returns
 /// `Option<FieldValue>`. Return `Some` to replace the value; return `None` to
 /// leave it unchanged or let later generated checks continue.
+///
+/// The handler can receive `ctx: &Context`, `event: EntityEvents`,
+/// `entity: &Entity`, `field_name: &str`, and `value: &FieldValue` in any
+/// order.
 #[proc_macro_attribute]
 pub fn replace_entity_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -717,14 +784,42 @@ pub fn replace_entity_field(_attr: TokenStream, item: TokenStream) -> TokenStrea
 
 /// Replaces decoded entity field values with class and field filters.
 ///
-/// The attribute requires a `class = ...` filter and can also include
-/// `field = ...`. Field filters support exact strings and simple predicates:
-/// `exact`, `starts_with`, `ends_with`, `contains`, `any`, `all`, and `not`.
+/// # Attribute Arguments
+///
+/// - `class = ...` is required.
+/// - `field = ...` is optional.
+///
+/// Both filters accept an exact string literal or the `exact`, `starts_with`,
+/// `ends_with`, `contains`, `any`, `all`, and `not` predicates.
 ///
 /// Field-specific handlers may use typed values such as `u64`, `bool`, or
-/// `String`. Class-only handlers must use `&FieldValue` and return
-/// `Option<FieldValue>` because there is no field predicate to determine one
-/// concrete value type.
+/// `String`. Class-only handlers must use `FieldValue` or `&FieldValue`
+/// because there is no field predicate to determine one concrete value type.
+///
+/// # Handler Parameters
+///
+/// A handler must receive one field value parameter. Field-specific handlers
+/// support `&str`, `String`, `&String`, `bool`, `f32`, `i8`, `i16`, `i32`,
+/// `i64`, `u8`, `u16`, `u32`, `u64`, `[f32; 2]`, `[f32; 3]`, `[f32; 4]`,
+/// `FieldValue`, and `&FieldValue`. Class-only handlers must use `FieldValue`
+/// or `&FieldValue`.
+///
+/// A handler can also receive any of these optional parameters:
+///
+/// - `ctx: &Context`
+/// - `event: EntityEvents`
+/// - `entity: &Entity`
+/// - `field_name: &str`
+///
+/// Parameters can appear in any order except that `field_name: &str` must come
+/// before the field value parameter. This matters because `&str` can itself be
+/// the field value type.
+///
+/// # Return Values
+///
+/// Return a replacement value directly to always rewrite the field. Return
+/// `Option<T>` to rewrite with `Some(value)` or leave the field unchanged with
+/// `None`. The replacement must convert into `FieldValue`.
 ///
 /// # Examples
 ///
@@ -749,6 +844,9 @@ pub fn rewrite_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// Return `false` to skip all entity-field replacement callbacks for that
 /// entity. Use this to keep broad `#[rewrite_field]` handlers from forcing the
 /// writer to decode and re-encode unrelated entity classes.
+///
+/// The handler can receive `ctx: &Context`, `event: EntityEvents`, and
+/// `entity: &Entity` in any order. Return `bool`.
 #[proc_macro_attribute]
 pub fn should_rewrite_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
@@ -763,6 +861,8 @@ pub fn should_rewrite_entity(_attr: TokenStream, item: TokenStream) -> TokenStre
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state including tick number
+///
+/// Return `ObserverResult`.
 ///
 /// # When It's Called
 ///
@@ -815,6 +915,8 @@ pub fn on_tick_start(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
 ///
+/// Return `ObserverResult`.
+///
 /// # When It's Called
 ///
 /// Called after all events for the current tick have been processed.
@@ -853,8 +955,10 @@ pub fn on_tick_end(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
-/// - `event: EntityEvents` (optional) - Type of entity event (Created, Updated, Deleted)
-/// - `entity: &Entity` - The entity that changed
+/// - `event: EntityEvents` or `event: &EntityEvents` (optional) - Type of entity event
+/// - `entity: &Entity` (optional) - The entity that changed
+///
+/// Parameters can appear in any order. Return `ObserverResult`.
 ///
 /// # Filtering
 ///
@@ -918,7 +1022,9 @@ pub fn on_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
-/// - `ge: &GameEvent` - The game event
+/// - `ge: &GameEvent` (optional) - The game event
+///
+/// Parameters can appear in any order. Return `ObserverResult`.
 ///
 /// # Filtering
 ///
@@ -981,8 +1087,10 @@ pub fn on_game_event(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
-/// - `table: &StringTable` - The updated string table
-/// - `modified: &[i32]` - Indices of rows that were modified
+/// - `table: &StringTable` (optional) - The updated string table
+/// - `modified: &[i32]` (optional) - Indices of rows that were modified
+///
+/// Parameters can appear in any order. Return `ObserverResult`.
 ///
 /// # Filtering
 ///
@@ -1043,6 +1151,8 @@ pub fn on_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Final replay state
 ///
+/// Return `ObserverResult`.
+///
 /// # Examples
 ///
 /// ## Output final statistics
@@ -1089,7 +1199,9 @@ pub fn on_stop(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
-/// - `cle: &CombatLogEntry` - The combat log entry
+/// - `cle: &CombatLogEntry` (optional) - The combat log entry
+///
+/// Parameters can appear in any order. Return `ObserverResult`.
 ///
 /// # Requires Feature
 ///
@@ -1207,8 +1319,9 @@ pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// Marks the impl block to enable combat log tracking (Dota 2 only).
 ///
-/// When applied to an impl block, automatically enables the `COMBAT_LOG_ENTRIES` and
-/// `STRING_TABLE_STATE` interest flags for combat log parsing.
+/// When applied to an impl block or individual method, automatically enables
+/// the `COMBAT_LOG_ENTRIES` and `STRING_TABLE_STATE` interest flags for combat
+/// log parsing.
 ///
 /// # Requires Feature
 ///

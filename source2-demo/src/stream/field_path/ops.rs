@@ -1,7 +1,7 @@
 use crate::entity::field::FieldPath;
-use crate::reader::*;
+use crate::reader::{BitsReader, SliceReader};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum FieldOp {
     PlusOne,
     PlusTwo,
@@ -48,7 +48,7 @@ pub(crate) enum FieldOp {
 impl FieldOp {
     #[inline]
     pub(crate) fn execute(&self, r: &mut SliceReader, fp: &mut FieldPath) {
-        match &self {
+        match self {
             FieldOp::PlusOne => fp.inc_curr(1),
             FieldOp::PlusTwo => fp.inc_curr(2),
             FieldOp::PlusThree => fp.inc_curr(3),
@@ -56,7 +56,7 @@ impl FieldOp {
             FieldOp::PlusN => fp.inc_curr(r.read_ubit_var_fp_unchecked() as u16 + 5),
             FieldOp::PushOneLeftDeltaZeroRightZero => fp.push(0),
             FieldOp::PushOneLeftDeltaZeroRightNonZero => {
-                fp.push(r.read_ubit_var_fp_unchecked() as u16);
+                fp.push(r.read_ubit_var_fp_unchecked() as u16)
             }
             FieldOp::PushOneLeftDeltaOneRightZero => {
                 fp.inc_curr(1);
@@ -166,7 +166,6 @@ impl FieldOp {
                 fp.pop(1);
                 fp.inc_curr(1);
             }
-
             FieldOp::PopOnePlusN => {
                 fp.pop(1);
                 fp.inc_curr(r.read_ubit_var_fp_unchecked() as u16 + 1);
@@ -210,9 +209,7 @@ impl FieldOp {
                     }
                 }
             }
-            FieldOp::NonTopoPenultimatePlusOne => {
-                fp.inc(fp.last - 1, 1);
-            }
+            FieldOp::NonTopoPenultimatePlusOne => fp.inc(fp.last - 1, 1),
             FieldOp::NonTopoComplexPack4Bits => {
                 for i in 0..=fp.last {
                     if r.read_bool() {
@@ -221,12 +218,12 @@ impl FieldOp {
                     }
                 }
             }
-            FieldOp::FieldPathEncodeFinish => unreachable!()
+            FieldOp::FieldPathEncodeFinish => unreachable!(),
         }
     }
 }
 
-pub(crate) const OPERATIONS: [(FieldOp, u32); 40] = [
+pub(crate) const FIELD_OPS: [(FieldOp, u32); 40] = [
     (FieldOp::PlusOne, 36271),
     (FieldOp::PlusTwo, 10334),
     (FieldOp::PlusThree, 1375),

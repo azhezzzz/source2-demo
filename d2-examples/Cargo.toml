@@ -5,7 +5,8 @@ members = [
     "combatlog",
     "lifestate",
     "opendota",
-    "wards"
+    "wards",
+    "remove-chat"
 ]
 
 [profile.dev]

@@ -7,9 +7,9 @@ use crate::error::FieldValueError;
 
 /// Value type for entity properties.
 ///
-/// This enum represents all possible types that can be stored in entity properties.
-/// Use [`TryInto`] to convert to Rust types, or use the `property!` macro for
-/// convenient access.
+/// This enum represents all possible types that can be stored in entity
+/// properties. Use [`TryInto`] to convert to Rust types, or use the `property!`
+/// macro for convenient access.
 ///
 /// # Variants
 ///
@@ -78,6 +78,110 @@ pub enum FieldValue {
     Unsigned32(u32),
     /// Unsigned 64-bit integer
     Unsigned64(u64),
+}
+
+/// Converts ordinary Rust values into [`FieldValue`] replacements.
+pub trait IntoFieldValue {
+    /// Converts this value into a [`FieldValue`].
+    fn into_field_value(self) -> FieldValue;
+}
+
+/// Converts a field rewrite handler result into an optional replacement.
+///
+/// Returning a plain value replaces the field. Returning `Option<T>` allows a
+/// handler to keep the original field by returning `None`.
+pub trait FieldRewriteResult {
+    /// Converts this handler result into an optional [`FieldValue`].
+    fn into_field_rewrite_result(self) -> Option<FieldValue>;
+}
+
+impl<T> FieldRewriteResult for T
+where
+    T: IntoFieldValue,
+{
+    fn into_field_rewrite_result(self) -> Option<FieldValue> {
+        Some(self.into_field_value())
+    }
+}
+
+impl<T> FieldRewriteResult for Option<T>
+where
+    T: IntoFieldValue,
+{
+    fn into_field_rewrite_result(self) -> Option<FieldValue> {
+        self.map(IntoFieldValue::into_field_value)
+    }
+}
+
+impl IntoFieldValue for FieldValue {
+    fn into_field_value(self) -> FieldValue {
+        self
+    }
+}
+
+impl IntoFieldValue for String {
+    fn into_field_value(self) -> FieldValue {
+        FieldValue::String(self)
+    }
+}
+
+impl IntoFieldValue for &str {
+    fn into_field_value(self) -> FieldValue {
+        FieldValue::String(self.to_string())
+    }
+}
+
+impl IntoFieldValue for bool {
+    fn into_field_value(self) -> FieldValue {
+        FieldValue::Boolean(self)
+    }
+}
+
+impl IntoFieldValue for f32 {
+    fn into_field_value(self) -> FieldValue {
+        FieldValue::Float(self)
+    }
+}
+
+impl IntoFieldValue for [f32; 2] {
+    fn into_field_value(self) -> FieldValue {
+        FieldValue::Vector2D(self)
+    }
+}
+
+impl IntoFieldValue for [f32; 3] {
+    fn into_field_value(self) -> FieldValue {
+        FieldValue::Vector3D(self)
+    }
+}
+
+impl IntoFieldValue for [f32; 4] {
+    fn into_field_value(self) -> FieldValue {
+        FieldValue::Vector4D(self)
+    }
+}
+
+macro_rules! impl_into_field_value {
+    ($($ty:ty => $variant:ident),* $(,)?) => {
+        $(
+            impl IntoFieldValue for $ty {
+                fn into_field_value(self) -> FieldValue {
+                    FieldValue::$variant(self)
+                }
+            }
+        )*
+    };
+}
+
+impl_into_field_value! {
+    i8 => Signed8,
+    i16 => Signed16,
+    i32 => Signed32,
+    i64 => Signed64,
+    u8 => Unsigned8,
+    u16 => Unsigned16,
+    u32 => Unsigned32,
+    u64 => Unsigned64,
 }
 
 impl TryInto<String> for FieldValue {
@@ -589,7 +693,8 @@ impl FieldValue {
         }
     }
 
-    /// Return a reference to a 2D vector ([f32; 2]). Panics if the value is not `Vector2D`.
+    /// Return a reference to a 2D vector ([f32; 2]). Panics if the value is not
+    /// `Vector2D`.
     #[inline]
     pub fn vec2(&self) -> &[f32; 2] {
         if let FieldValue::Vector2D(v) = self {
@@ -599,7 +704,8 @@ impl FieldValue {
         }
     }
 
-    /// Return a reference to a 3D vector ([f32; 3]). Panics if the value is not `Vector3D`.
+    /// Return a reference to a 3D vector ([f32; 3]). Panics if the value is not
+    /// `Vector3D`.
     #[inline]
     pub fn vec3(&self) -> &[f32; 3] {
         if let FieldValue::Vector3D(v) = self {
@@ -609,7 +715,8 @@ impl FieldValue {
         }
     }
 
-    /// Return a reference to a 4D vector ([f32; 4]). Panics if the value is not `Vector4D`.
+    /// Return a reference to a 4D vector ([f32; 4]). Panics if the value is not
+    /// `Vector4D`.
     #[inline]
     pub fn vec4(&self) -> &[f32; 4] {
         if let FieldValue::Vector4D(v) = self {
@@ -691,8 +798,8 @@ impl FieldValue {
         }
     }
 
-    /// Read as `usize`. Accepts `Unsigned32` or `Unsigned64` and casts to `usize`.
-    /// Panics for other variants.
+    /// Read as `usize`. Accepts `Unsigned32` or `Unsigned64` and casts to
+    /// `usize`. Panics for other variants.
     #[inline]
     pub fn usize(&self) -> usize {
         match self {
@@ -702,4 +809,3 @@ impl FieldValue {
         }
     }
 }
-

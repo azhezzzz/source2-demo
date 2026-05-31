@@ -107,8 +107,18 @@ impl Default for Context {
 impl Context {
     pub(crate) fn new(replay_info: CDemoFileInfo) -> Self {
         Context {
+            classes: Classes::default(),
+            entities: Entities::default(),
+            string_tables: StringTables::default(),
+            game_events: GameEventList::default(),
+            tick: u32::MAX,
+            previous_tick: u32::MAX,
+            net_tick: u32::MAX,
+            game_build: 0,
             replay_info,
-            ..Default::default()
+            baselines: BaselineContainer::default(),
+            serializers: HashMap::default(),
+            last_full_packet_tick: u32::MAX,
         }
     }
 }
@@ -144,7 +154,7 @@ impl Context {
     /// Returns a reference to the entity container.
     ///
     /// Provides access to all game entities and their properties.
-    /// Requires `Interests::ENABLE_ENTITY` to be populated.
+    /// Requires `Interests::ENTITY_STATE` to be populated.
     pub fn entities(&self) -> &Entities {
         &self.entities
     }
@@ -152,7 +162,7 @@ impl Context {
     /// Returns a reference to the string tables.
     ///
     /// String tables contain game data like hero names, item names, etc.
-    /// Requires `Interests::ENABLE_STRINGTAB` to be populated.
+    /// Requires `Interests::STRING_TABLE_STATE` to be populated.
     pub fn string_tables(&self) -> &StringTables {
         &self.string_tables
     }
@@ -188,7 +198,8 @@ impl Context {
 
     /// Returns replay file metadata.
     ///
-    /// Contains information about the replay including duration, map, and game info.
+    /// Contains information about the replay including duration, map, and game
+    /// info.
     pub fn replay_info(&self) -> &CDemoFileInfo {
         &self.replay_info
     }

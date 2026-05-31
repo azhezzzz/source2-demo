@@ -2,8 +2,8 @@ use crate::error::ParserError;
 use crate::parser::demo::svc::SvcMsg;
 use crate::proto::*;
 use crate::reader::{BitsReader, MessageReader};
-use crate::{Interests, Parser};
 use crate::{try_observers, GameEvent, GameEventList};
+use crate::{Interests, Parser};
 
 #[cfg(feature = "dota")]
 use crate::event::CombatLogEntry;
@@ -75,7 +75,11 @@ where
         msg_type: EBaseUserMessages,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, BASE_UM, on_base_user_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            BASE_USER_MESSAGE,
+            on_base_user_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -84,17 +88,21 @@ where
         msg_type: EBaseGameEvents,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        if self.anyone_interested(Interests::BASE_GE) {
+        if self.anyone_interested(Interests::BASE_GAME_EVENT) {
             if msg_type == EBaseGameEvents::GeSource1LegacyGameEventList {
                 self.context.game_events = GameEventList::new(CSvcMsgGameEventList::decode(msg)?);
             }
 
             if msg_type == EBaseGameEvents::GeSource1LegacyGameEvent {
                 let ge = GameEvent::new(&self.context.game_events, CSvcMsgGameEvent::decode(msg)?);
-                try_observers!(self, BASE_GE, on_game_event(&self.context, &ge))?;
+                try_observers!(self, BASE_GAME_EVENT, on_game_event(&self.context, &ge))?;
             }
 
-            try_observers!(self, BASE_GE, on_base_game_event(&self.context, msg_type, msg))?;
+            try_observers!(
+                self,
+                BASE_GAME_EVENT,
+                on_base_game_event(&self.context, msg_type, msg)
+            )?;
         }
         Ok(())
     }
@@ -107,10 +115,10 @@ where
                 self.create_string_table(msg)?
             }
             SvcMessages::SvcUpdateStringTable => {
-                if self.anyone_interested(Interests::ENABLE_STRINGTAB) {
+                if self.anyone_interested(Interests::STRING_TABLE_STATE) {
                     let msg = CSvcMsgUpdateStringTable::decode(msg)?;
                     self.update_string_table(msg)?
-                } else if self.anyone_interested(Interests::ENABLE_ENTITY) {
+                } else if self.anyone_interested(Interests::ENTITY_STATE) {
                     let msg = CSvcMsgUpdateStringTable::decode(msg)?;
                     if self.context.string_tables.tables[msg.table_id() as usize].name
                         == "instancebaseline"
@@ -120,14 +128,18 @@ where
                 }
             }
             SvcMessages::SvcPacketEntities => {
-                if self.anyone_interested(Interests::ENABLE_ENTITY) {
+                if self.anyone_interested(Interests::ENTITY_STATE) {
                     self.packet_entities(CSvcMsgPacketEntities::decode(msg)?)?
                 }
             }
             _ => {}
         }
 
-        try_observers!(self, SVC, on_svc_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            SVC_MESSAGE,
+            on_svc_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -136,7 +148,11 @@ where
             self.context.net_tick = CNetMsgTick::decode(msg)?.tick();
         }
 
-        try_observers!(self, NET, on_net_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            NET_MESSAGE,
+            on_net_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -158,11 +174,15 @@ where
 
     fn on_tick_end(&mut self) -> Result<(), ParserError> {
         #[cfg(feature = "dota")]
-        if self.anyone_interested(Interests::ENABLE_STRINGTAB | Interests::COMBAT_LOG) {
+        if self.anyone_interested(Interests::STRING_TABLE_STATE | Interests::COMBAT_LOG_ENTRIES) {
             if let Ok(names) = self.context.string_tables.get_by_name("CombatLogNames") {
                 while let Some(log) = self.combat_log.pop_front() {
                     let entry = CombatLogEntry { names, log };
-                    try_observers!(self, COMBAT_LOG, on_combat_log(&self.context, &entry))?;
+                    try_observers!(
+                        self,
+                        COMBAT_LOG_ENTRIES,
+                        on_combat_log(&self.context, &entry)
+                    )?;
                 }
             }
         }
@@ -172,7 +192,7 @@ where
     }
 
     fn on_stop(&mut self) -> Result<(), ParserError> {
-        try_observers!(self, STOP, on_stop(&self.context))?;
+        try_observers!(self, REPLAY_END, on_stop(&self.context))?;
         Ok(())
     }
 
@@ -182,14 +202,18 @@ where
         msg_type: EDotaUserMessages,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        if self.anyone_interested(Interests::COMBAT_LOG)
+        if self.anyone_interested(Interests::COMBAT_LOG_ENTRIES)
             && msg_type == EDotaUserMessages::DotaUmCombatLogDataHltv
         {
             let entry = CMsgDotaCombatLogEntry::decode(msg)?;
             self.combat_log.push_back(entry);
         }
 
-        try_observers!(self, DOTA_UM, on_dota_user_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            DOTA_USER_MESSAGE,
+            on_dota_user_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -199,7 +223,11 @@ where
         msg_type: ECitadelGameEvents,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, CITA_GE, on_citadel_game_event(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            CITADEL_GAME_EVENT,
+            on_citadel_game_event(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -209,7 +237,11 @@ where
         msg_type: CitadelUserMessageIds,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, CITA_UM, on_citadel_user_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            CITADEL_USER_MESSAGE,
+            on_citadel_user_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -219,7 +251,11 @@ where
         msg_type: ECstrike15UserMessages,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, CS2_UM, on_cs2_user_message(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            CS2_USER_MESSAGE,
+            on_cs2_user_message(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 
@@ -229,7 +265,11 @@ where
         msg_type: ECsgoGameEvents,
         msg: &[u8],
     ) -> Result<(), ParserError> {
-        try_observers!(self, CS2_GE, on_cs2_game_event(&self.context, msg_type, msg))?;
+        try_observers!(
+            self,
+            CS2_GAME_EVENT,
+            on_cs2_game_event(&self.context, msg_type, msg)
+        )?;
         Ok(())
     }
 }

@@ -16,6 +16,7 @@ use crate::string_table::StringTable;
 ///
 /// ```no_run
 /// use source2_demo::prelude::*;
+/// use source2_demo::proto::DotaCombatlogTypes;
 ///
 /// #[derive(Default)]
 /// struct CombatLog;

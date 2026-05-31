@@ -78,7 +78,8 @@ impl StringTables {
     ///
     /// # Errors
     ///
-    /// Returns [`StringTableError::TableNotFoundById`] if no table exists at the given ID.
+    /// Returns [`StringTableError::TableNotFoundById`] if no table exists at
+    /// the given ID.
     ///
     /// # Examples
     ///
@@ -108,8 +109,8 @@ impl StringTables {
     ///
     /// # Errors
     ///
-    /// Returns [`StringTableError::TableNotFoundByName`] if no table with the given
-    /// name exists.
+    /// Returns [`StringTableError::TableNotFoundByName`] if no table with the
+    /// given name exists.
     ///
     /// # Examples
     ///

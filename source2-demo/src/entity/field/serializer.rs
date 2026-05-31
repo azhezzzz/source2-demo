@@ -34,7 +34,7 @@ impl Default for Serializer {
 
 impl Serializer {
     #[inline]
-    pub(crate) fn get_name_for_field_path(&self, fp: &FieldPath) -> String {
+    pub(crate) fn get_name(&self, fp: &FieldPath) -> String {
         let mut i = 0;
         let mut current_serializer = self;
         let mut current_field = &current_serializer.fields[fp.path[i] as usize];
@@ -43,7 +43,7 @@ impl Serializer {
             name += &current_field.var_name;
             i += 1;
             match &current_field.model {
-                FieldModel::Array | FieldModel::ArrayVector(_) => {
+                FieldModel::Array | FieldModel::ValueVector(_) => {
                     if i > fp.last {
                         break;
                     }
@@ -80,7 +80,7 @@ impl Serializer {
     }
 
     #[inline]
-    pub(crate) fn get_type_for_field_path(&self, fp: &FieldPath) -> &FieldType {
+    pub(crate) fn get_type(&self, fp: &FieldPath) -> &FieldType {
         let mut i = 0;
         let mut current_serializer = self;
         let mut current_field = &current_serializer.fields[fp.path[i] as usize];
@@ -88,7 +88,7 @@ impl Serializer {
             i += 1;
             match &current_field.model {
                 FieldModel::Value | FieldModel::Array => return current_field.field_type.as_ref(),
-                FieldModel::ArrayVector(_) => {
+                FieldModel::ValueVector(_) => {
                     if i == fp.last {
                         return current_field.field_type.as_ref().generic.as_ref().unwrap();
                     }
@@ -116,7 +116,7 @@ impl Serializer {
     }
 
     #[inline]
-    pub(crate) fn get_decoder_for_field_path(&self, fp: &FieldPath) -> &FieldDecoder {
+    pub(crate) fn get_decoder(&self, fp: &FieldPath) -> &FieldDecoder {
         let mut i = 0;
         let mut current_serializer = self;
         let mut current_field = &current_serializer.fields[fp.path[i] as usize];
@@ -124,7 +124,7 @@ impl Serializer {
             i += 1;
             match &current_field.model {
                 FieldModel::Value | FieldModel::Array => return &current_field.decoder,
-                FieldModel::ArrayVector(decoder) => {
+                FieldModel::ValueVector(decoder) => {
                     if i == fp.last {
                         return decoder;
                     }
@@ -152,7 +152,7 @@ impl Serializer {
     }
 
     #[inline]
-    pub(crate) fn get_field_path_for_name(&self, name: &str) -> Result<FieldPath, SerializerError> {
+    pub(crate) fn get_path(&self, name: &str) -> Result<FieldPath, SerializerError> {
         if let Some(&fp) = self.fp_cache.get().get(name) {
             return Ok(fp);
         }
@@ -175,7 +175,7 @@ impl Serializer {
                     fp.last += 1;
                     offset += f.var_name.len() + 1;
                     match &f.model {
-                        FieldModel::Array | FieldModel::ArrayVector(_) => {
+                        FieldModel::Array | FieldModel::ValueVector(_) => {
                             fp.path[fp.last] = name[offset..].parse::<u16>().unwrap();
                             break 'outer;
                         }
@@ -204,7 +204,7 @@ impl Serializer {
         Ok(fp)
     }
 
-    pub(crate) fn get_field_paths<'a>(
+    pub(crate) fn get_paths<'a>(
         &'a self,
         fp: &'a mut FieldPath,
         st: &'a FieldState,
@@ -214,7 +214,7 @@ impl Serializer {
             .enumerate()
             .flat_map(|(i, f)| {
                 fp.path[fp.last] = i as u16;
-                f.get_field_paths(fp, st)
+                f.get_paths(fp, st)
             })
             .collect::<Vec<_>>()
     }

@@ -65,7 +65,7 @@ pub trait DemoRunner {
     /// # fn main() -> anyhow::Result<()> {
     /// let replay = std::fs::File::open("replay.dem")?;
     /// let mut parser = Parser::from_reader(&replay)?;
-    /// 
+    ///
     /// // Process first 5 minutes (30 ticks per second * 60 seconds * 5 minutes)
     /// parser.run_to_tick(9000)?;
     /// # Ok(())
@@ -97,10 +97,10 @@ pub trait DemoRunner {
     /// # fn main() -> anyhow::Result<()> {
     /// let replay = std::fs::File::open("replay.dem")?;
     /// let mut parser = Parser::from_reader(&replay)?;
-    /// 
+    ///
     /// // Jump to 10 minutes in
     /// parser.jump_to_tick(18000)?;
-    /// 
+    ///
     /// // Now register observers and continue
     /// parser.register_observer::<MyObserver>();
     /// parser.run_to_tick(20000)?;

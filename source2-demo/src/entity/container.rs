@@ -13,7 +13,8 @@ use crate::Entity;
 /// # Entity Access Patterns
 ///
 /// Different scenarios require different lookup methods:
-/// - **Known class name**: Use [`get_by_class_name`](Entities::get_by_class_name)
+/// - **Known class name**: Use
+///   [`get_by_class_name`](Entities::get_by_class_name)
 /// - **Iterating all**: Use [`iter`](Entities::iter)
 /// - **Known index**: Use [`get_by_index`](Entities::get_by_index)
 /// - **Finding by type**: Use iterator with filter
@@ -37,7 +38,8 @@ use crate::Entity;
 /// use source2_demo::prelude::*;
 ///
 /// # fn example(ctx: &Context) -> anyhow::Result<()> {
-/// let radiant_heroes: Vec<&Entity> = ctx.entities()
+/// let radiant_heroes: Vec<&Entity> = ctx
+///     .entities()
 ///     .iter()
 ///     .filter(|e| {
 ///         e.class().name().starts_with("CDOTA_Unit_Hero_")
@@ -116,8 +118,8 @@ impl Entities {
     ///
     /// # Errors
     ///
-    /// Returns [`EntityError::IndexNotFound`] if no entity exists at the given index
-    /// or if the entity at that index has been deleted.
+    /// Returns [`EntityError::IndexNotFound`] if no entity exists at the given
+    /// index or if the entity at that index has been deleted.
     ///
     /// # Examples
     ///
@@ -172,8 +174,8 @@ impl Entities {
     /// Gets the first entity with the specified class ID.
     ///
     /// Typically only useful if you know there's only one entity of that class,
-    /// or if you only need the first one. For finding multiple entities of a type,
-    /// use [`iter`](Entities::iter) with a filter.
+    /// or if you only need the first one. For finding multiple entities of a
+    /// type, use [`iter`](Entities::iter) with a filter.
     ///
     /// # Arguments
     ///
@@ -181,7 +183,8 @@ impl Entities {
     ///
     /// # Errors
     ///
-    /// Returns [`EntityError::ClassIdNotFound`] if no entity with the given class ID exists.
+    /// Returns [`EntityError::ClassIdNotFound`] if no entity with the given
+    /// class ID exists.
     ///
     /// # Examples
     ///
@@ -225,7 +228,8 @@ impl Entities {
     /// let player_resource = ctx.entities().get_by_class_name("CDOTA_PlayerResource")?;
     ///
     /// // Now you can get player info from this entity
-    /// let player_name: String = property!(player_resource, "m_vecPlayerData.{:04}.m_iszPlayerName", 0);
+    /// let player_name: String =
+    ///     property!(player_resource, "m_vecPlayerData.{:04}.m_iszPlayerName", 0);
     /// # Ok(())
     /// # }
     /// ```

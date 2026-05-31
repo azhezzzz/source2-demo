@@ -6,6 +6,7 @@ members = [
     "death-events",
     "damage-events",
     "chat",
+    "anonymize-replay",
 ]
 
 [profile.dev]

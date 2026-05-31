@@ -18,8 +18,8 @@
 //! ## Handling errors
 //!
 //! ```no_run
-//! use source2_demo::prelude::*;
 //! use source2_demo::error::*;
+//! use source2_demo::prelude::*;
 //!
 //! # fn example(ctx: &Context) {
 //! match ctx.entities().get_by_index(0) {
@@ -77,6 +77,13 @@ pub enum ParserError {
     /// Invalid CDemoFileInfo offset
     #[error("Wrong CDemoFileInfo offset")]
     ReplayEncodingError,
+
+    /// Missing rewrite state for a string table
+    #[error("Missing rewrite state for string table {table_id}")]
+    MissingStringTableRewriteState {
+        /// String table id that lacked rewrite state.
+        table_id: usize,
+    },
 
     /// File is not a valid Source 2 demo
     #[error("Supports only Source 2 replays")]
@@ -189,4 +196,10 @@ pub enum CombatLogError {
     /// Missing name in combat log entry
     #[error("No {0} for {1}")]
     EmptyName(String, String),
+}
+
+impl From<std::io::Error> for ParserError {
+    fn from(value: std::io::Error) -> Self {
+        ParserError::IoError(value.to_string())
+    }
 }

@@ -6,7 +6,7 @@ members = [
     "lifestate",
     "opendota",
     "wards",
-    "remove-chat",
+    "remove-chat"
 ]
 
 [profile.dev]

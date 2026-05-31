@@ -1,5 +1,7 @@
 use source2_demo::prelude::*;
-use source2_demo::proto::CMsgPlayerInfo;
+use source2_demo::proto::{
+    CCitadelUserMsgPostMatchDetails, CMsgMatchMetaDataContents, CMsgPlayerInfo,
+};
 use source2_demo::writer::*;
 use std::fs::File;
 
@@ -21,6 +23,24 @@ impl ReplayAnonymizer {
     #[rewrite_field(class = "CCitadelGameRulesProxy", field = "m_pGameRules.m_unMatchID")]
     fn remove_match_id(&mut self, _value: u32) -> u32 {
         0
+    }
+
+    #[rewrite_packet_message]
+    fn remove_post_match_details(
+        &mut self,
+        message: &mut CCitadelUserMsgPostMatchDetails,
+    ) -> Result<MessageRewrite, ParserError> {
+        if let Some(match_details) = message.match_details.as_mut() {
+            let mut metadata = CMsgMatchMetaDataContents::decode(match_details.as_slice())?;
+            if let Some(match_info) = metadata.match_info.as_mut() {
+                match_info.match_id = Some(0);
+                for player in &mut match_info.players {
+                    player.account_id = Some(0);
+                }
+            }
+            *match_details = metadata.encode_to_vec();
+        }
+        Ok(MessageRewrite::Rewrite)
     }
 
     #[rewrite_string_table_entry]

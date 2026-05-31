@@ -495,7 +495,7 @@ where
     /// let replay = std::fs::File::open("deadlock_replay.dem")?;
     /// let mut parser = Parser::from_reader(&replay)?;
     /// let match_details = parser.deadlock_match_details()?;
-    /// println!("Match ID: {:?}", match_details.match_id());
+    /// println!("Match info available: {}", match_details.match_info.is_some());
     ///
     /// Ok(())
     /// }
@@ -528,7 +528,7 @@ impl<'a> Parser<'a, SliceReader<'a>> {
     /// let replay = std::fs::read("deadlock_replay.dem")?;
     /// let mut parser = Parser::new(&replay)?;
     /// let match_details = parser.deadlock_match_details()?;
-    /// println!("Match ID: {:?}", match_details.match_id());
+    /// println!("Match info available: {}", match_details.match_info.is_some());
     ///
     /// Ok(())
     /// }

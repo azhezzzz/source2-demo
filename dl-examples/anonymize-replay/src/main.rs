@@ -60,6 +60,11 @@ impl ReplayAnonymizer {
         }
         Ok(())
     }
+
+    #[should_rewrite_entity]
+    fn should_rewrite_entity(&mut self, entity: &Entity) -> bool {
+        ["CCitadelPlayerController", "CCitadelGameRulesProxy"].contains(&entity.class().name())
+    }
 }
 
 fn main() -> anyhow::Result<()> {

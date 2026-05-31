@@ -79,13 +79,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Quick Start: Rewriting Demo Files
+## Quick Start: Rewriting Protobuf Messages
 
 Use `source2_demo::writer` when you want to write a modified demo. The writer
 parses the input replay, applies registered rewriters, and writes a new replay
 stream to the output.
 
-This example removes Dota 2 chat messages from a replay:
+This example removes Dota 2 chat messages by rewriting a protobuf packet message:
 
 ```rust ignore
 use source2_demo::prelude::*;
@@ -119,6 +119,66 @@ fn main() -> anyhow::Result<()> {
 }
 ```
 
+## Quick Start: Rewriting Fields and String Tables
+
+This Deadlock example anonymizes a replay by rewriting entity fields, a packet message,
+and userinfo entries in string tables. The full example is in `dl-examples/anonymize-replay`.
+
+```rust ignore
+use source2_demo::prelude::*;
+use source2_demo::proto::{
+    CCitadelUserMsgPostMatchDetails, CMsgMatchMetaDataContents, CMsgPlayerInfo,
+};
+use source2_demo::writer::*;
+
+#[derive(Default)]
+struct ReplayAnonymizer;
+
+#[rewriter]
+impl ReplayAnonymizer {
+    #[rewrite_field(class = "CCitadelPlayerController", field = "m_steamID")]
+    fn remove_steam_id(&mut self, _value: u64) -> u64 {
+        0
+    }
+
+    #[rewrite_packet_message]
+    fn remove_post_match_details(
+        &mut self,
+        message: &mut CCitadelUserMsgPostMatchDetails,
+    ) -> Result<MessageRewrite, ParserError> {
+        if let Some(match_details) = message.match_details.as_mut() {
+            let mut metadata = CMsgMatchMetaDataContents::decode(match_details.as_slice())?;
+            if let Some(match_info) = metadata.match_info.as_mut() {
+                match_info.match_id = Some(0);
+                for player in &mut match_info.players {
+                    player.account_id = Some(0);
+                }
+            }
+            *match_details = metadata.encode_to_vec();
+        }
+        Ok(MessageRewrite::Rewrite)
+    }
+
+    #[rewrite_string_table_entry]
+    fn remove_userinfo(
+        &mut self,
+        table_name: &str,
+        entry: &mut StringTableEntryUpdate,
+    ) -> Result<(), ParserError> {
+        if table_name == "userinfo" {
+            if let Some(value) = entry.value_mut() {
+                let mut player = CMsgPlayerInfo::decode(value.as_slice())?;
+                player.name = Some("Anonymous".to_string());
+                player.xuid = Some(0);
+                player.steamid = Some(0);
+                *value = player.encode_to_vec();
+            }
+        }
+        Ok(())
+    }
+}
+```
+
 ## Building Examples
 
 To build the examples, clone the repository and use Cargo:
@@ -130,6 +190,13 @@ cd source2-demo
 # Build examples for a specific game
 cd dl-examples # d2-examples
 cargo build --release
+```
+
+### Run a Specific Example
+
+```shell
+cargo run --release -p example input.dem
+cargo run --release -p example input.dem output.dem
 ```
 
 ## Features

@@ -1,6 +1,6 @@
 use source2_demo::prelude::*;
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{BufReader, Write};
 
 struct LifeState {
     current_life_state: HashMap<u32, i32>,
@@ -64,7 +64,8 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    let mut parser = Parser::from_reader(std::fs::File::open(filepath)?)?;
+    let input = BufReader::new(std::fs::File::open(filepath)?);
+    let mut parser = Parser::from_reader(input)?;
 
     parser.register_observer::<LifeState>();
 

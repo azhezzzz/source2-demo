@@ -1,5 +1,6 @@
 use source2_demo::prelude::*;
 use source2_demo::proto::DotaCombatlogTypes;
+use std::io::BufReader;
 
 #[derive(Default)]
 struct CombatLog;
@@ -112,7 +113,8 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    let mut parser = Parser::from_reader(std::fs::File::open(filepath)?)?;
+    let input = BufReader::new(std::fs::File::open(filepath)?);
+    let mut parser = Parser::from_reader(input)?;
 
     parser.register_observer::<CombatLog>();
 

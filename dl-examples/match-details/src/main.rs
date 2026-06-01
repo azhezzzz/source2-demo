@@ -1,4 +1,5 @@
 use source2_demo::prelude::*;
+use std::io::BufReader;
 
 fn main() -> anyhow::Result<()> {
     let args = std::env::args().collect::<Vec<_>>();
@@ -7,7 +8,8 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    let mut parser = Parser::from_reader(std::fs::File::open(filepath)?)?;
+    let input = BufReader::new(std::fs::File::open(filepath)?);
+    let mut parser = Parser::from_reader(input)?;
 
     let start = std::time::Instant::now();
     println!(

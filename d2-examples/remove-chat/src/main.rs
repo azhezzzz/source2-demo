@@ -3,6 +3,7 @@ use source2_demo::proto::CDotaUserMsgChatMessage;
 use source2_demo::writer::*;
 
 use std::fs::File;
+use std::io::{BufReader, BufWriter};
 
 #[derive(Default)]
 struct RemoveChat;
@@ -28,8 +29,8 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    let input = File::open(input_path)?;
-    let output = File::create(output_path)?;
+    let input = BufReader::new(File::open(input_path)?);
+    let output = BufWriter::new(File::create(output_path)?);
 
     let mut writer = DemoWriter::from_reader(input, output)?;
     writer.register_rewriter::<RemoveChat>();

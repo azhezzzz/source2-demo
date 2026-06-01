@@ -4,6 +4,7 @@
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::fmt::{Display, Formatter};
+use std::io::BufReader;
 use std::rc::Rc;
 
 use anyhow::{Result, bail};
@@ -671,7 +672,8 @@ fn main() -> anyhow::Result<()> {
 
     let start = std::time::Instant::now();
 
-    let mut parser = Parser::from_reader(std::fs::File::open(filepath)?)?;
+    let input = BufReader::new(std::fs::File::open(filepath)?);
+    let mut parser = Parser::from_reader(input)?;
 
     let game_time = parser.register_observer::<GameTime>();
     let wards = parser.register_observer::<Wards>();

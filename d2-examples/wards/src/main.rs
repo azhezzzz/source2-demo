@@ -1,4 +1,5 @@
 use source2_demo::prelude::*;
+use std::io::BufReader;
 
 mod wards;
 
@@ -36,7 +37,8 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    let mut parser = Parser::from_reader(std::fs::File::open(filepath)?)?;
+    let input = BufReader::new(std::fs::File::open(filepath)?);
+    let mut parser = Parser::from_reader(input)?;
 
     let wards = parser.register_observer::<Wards>();
     let ward_events = parser.register_observer::<WardEvents>();

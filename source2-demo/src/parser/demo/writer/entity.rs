@@ -137,16 +137,22 @@ where
         let state = self.entity_baseline_state(class_id, &class.serializer);
         let mut entity = Entity::new(index as u32, serial, class, state);
 
-        if self.should_rewrite_entity(EntityEvents::Created, &entity) {
+        let track = self.should_track_entity(EntityEvents::Created, &entity);
+        let rewrite = self.should_rewrite_entity(EntityEvents::Created, &entity);
+        if track || rewrite {
             self.rewrite_fields(
                 reader,
                 path_reader,
                 replacements,
                 EntityEvents::Created,
                 &mut entity,
+                rewrite,
             )?;
         } else {
             Self::skip_original_fields(reader, path_reader, &entity);
+        }
+        if !track {
+            entity.state = FieldState::default();
         }
         self.parser.context.entities.entities_vec[index] = entity;
 
@@ -161,16 +167,22 @@ where
         index: usize,
     ) -> Result<(), ParserError> {
         let mut entity = std::mem::take(&mut self.parser.context.entities.entities_vec[index]);
-        if self.should_rewrite_entity(EntityEvents::Updated, &entity) {
+        let track = self.should_track_entity(EntityEvents::Updated, &entity);
+        let rewrite = self.should_rewrite_entity(EntityEvents::Updated, &entity);
+        if track || rewrite {
             self.rewrite_fields(
                 reader,
                 path_reader,
                 replacements,
                 EntityEvents::Updated,
                 &mut entity,
+                rewrite,
             )?;
         } else {
             Self::skip_original_fields(reader, path_reader, &entity);
+        }
+        if !track {
+            entity.state = FieldState::default();
         }
         self.parser.context.entities.entities_vec[index] = entity;
 
@@ -207,6 +219,7 @@ where
         replacements: &mut Vec<FieldReplacement>,
         event: EntityEvents,
         entity: &mut Entity,
+        rewrite: bool,
     ) -> Result<(), ParserError> {
         let mut paths = Vec::new();
         let mut fp = FieldPath::default();
@@ -244,6 +257,10 @@ where
                 value_start,
                 value_end,
             });
+        }
+
+        if !rewrite {
+            return Ok(());
         }
 
         for field in decoded_fields {

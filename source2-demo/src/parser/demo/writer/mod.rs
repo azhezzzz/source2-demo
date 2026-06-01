@@ -135,6 +135,18 @@ where
             .all(|rewriter| rewriter.should_rewrite_entity(ctx, event, entity))
     }
 
+    pub(crate) fn should_track_entity(&mut self, event: EntityEvents, entity: &Entity) -> bool {
+        let ctx = &self.parser.context;
+        self.rewriters
+            .iter_mut()
+            .filter(|rewriter| {
+                rewriter
+                    .interests()
+                    .contains(RewriteInterests::ENTITY_FIELDS)
+            })
+            .all(|rewriter| rewriter.should_track_entity(ctx, event, entity))
+    }
+
     pub(crate) fn replace_entity_field(
         &mut self,
         event: EntityEvents,

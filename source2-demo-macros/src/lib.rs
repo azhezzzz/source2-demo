@@ -413,7 +413,7 @@ pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///   levels of decoding.
 /// - `#[rewrite_field]` and `#[replace_entity_field]` replace decoded entity
 ///   field values, while `#[should_rewrite_entity]` filters which entities enter
-///   that path.
+///   that path and `#[should_track_entity]` filters which entities retain state.
 ///
 /// # Return Values
 ///
@@ -851,6 +851,18 @@ pub fn rewrite_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// `entity: &Entity` in any order. Return `bool`.
 #[proc_macro_attribute]
 pub fn should_rewrite_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Filters which entities retain decoded field state while rewriting.
+///
+/// Return `false` to skip state decoding when the entity also does not enter
+/// the rewrite path. The default is `true`, preserving complete entity state.
+///
+/// The handler can receive `ctx: &Context`, `event: EntityEvents`, and
+/// `entity: &Entity` in any order. Return `bool`.
+#[proc_macro_attribute]
+pub fn should_track_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 

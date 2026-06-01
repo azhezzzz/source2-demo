@@ -41,7 +41,7 @@ pub mod writer {
         replace_entity_field, rewrite_demo_message, rewrite_demo_string_tables, rewrite_field,
         rewrite_packet_message, rewrite_packet_messages, rewrite_string_table_entry,
         rewrite_svc_create_string_table, rewrite_svc_update_string_table, rewriter,
-        should_rewrite_entity,
+        should_rewrite_entity, should_track_entity,
     };
 }
 

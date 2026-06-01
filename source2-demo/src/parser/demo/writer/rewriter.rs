@@ -182,6 +182,15 @@ pub trait DemoRewriter {
     ) -> bool {
         true
     }
+
+    /// Decides whether decoded state should be retained for an entity.
+    ///
+    /// Requires [`RewriteInterests::ENTITY_FIELDS`] to be set. Returning
+    /// `false` allows the writer to skip decoding fields when the entity also
+    /// does not enter the rewrite path.
+    fn should_track_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> bool {
+        true
+    }
 }
 
 impl<T> DemoRewriter for Rc<RefCell<T>>
@@ -284,6 +293,10 @@ where
         entity: &Entity,
     ) -> bool {
         self.borrow_mut().should_rewrite_entity(ctx, event, entity)
+    }
+
+    fn should_track_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> bool {
+        self.borrow_mut().should_track_entity(ctx, event, entity)
     }
 }
 

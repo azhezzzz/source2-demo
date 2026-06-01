@@ -3,17 +3,35 @@ use crate::proto::{CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, Message, 
 use crate::reader::{BitsReader, SliceReader};
 use crate::writer::{BitsWriter, BitstreamWriter};
 
+pub(crate) enum PacketDataRewrite {
+    Unchanged,
+    Changed(Vec<u8>),
+}
+
 impl<'a, R, W> DemoWriter<'a, R, W>
 where
     R: BitsReader + MessageReader,
     W: Write + Seek,
 {
+    #[cfg(test)]
     pub(crate) fn rewrite_packet_data(
         &mut self,
         tick: u32,
         data: &[u8],
         process_state: bool,
     ) -> Result<Vec<u8>, ParserError> {
+        match self.rewrite_packet_data_if_changed(tick, data, process_state)? {
+            PacketDataRewrite::Unchanged => Ok(data.to_vec()),
+            PacketDataRewrite::Changed(data) => Ok(data),
+        }
+    }
+
+    pub(crate) fn rewrite_packet_data_if_changed(
+        &mut self,
+        tick: u32,
+        data: &[u8],
+        process_state: bool,
+    ) -> Result<PacketDataRewrite, ParserError> {
         let mut reader = SliceReader::new(data);
         let mut messages = Vec::new();
         let mut changed = false;
@@ -182,7 +200,7 @@ where
         }
 
         if !changed {
-            return Ok(data.to_vec());
+            return Ok(PacketDataRewrite::Unchanged);
         }
 
         let mut out = Vec::with_capacity(data.len());
@@ -194,6 +212,6 @@ where
         }
         writer.flush()?;
         drop(writer);
-        Ok(out)
+        Ok(PacketDataRewrite::Changed(out))
     }
 }

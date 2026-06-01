@@ -1,3 +1,4 @@
+use super::packet::PacketDataRewrite;
 use super::*;
 use crate::parser::demo::DemoCommands;
 use crate::proto::{
@@ -55,21 +56,24 @@ where
                     let can_write_raw = payload.is_none();
                     let payload = Self::materialize_payload(&mut payload, &message)?;
                     let mut packet = CDemoPacket::decode(payload.as_slice())?;
-                    let rewritten = self.rewrite_packet_data(
+                    let rewritten = self.rewrite_packet_data_if_changed(
                         message.tick,
                         packet.data(),
                         self.needs_packet_state(),
                     )?;
-                    if can_write_raw && rewritten == packet.data() {
-                        self.write_raw_demo_message(
-                            message.msg_type,
-                            message.tick,
-                            message.raw_payload.as_slice(),
-                            message.compressed,
-                        )?;
-                        continue;
+                    match rewritten {
+                        PacketDataRewrite::Unchanged if can_write_raw => {
+                            self.write_raw_demo_message(
+                                message.msg_type,
+                                message.tick,
+                                message.raw_payload.as_slice(),
+                                message.compressed,
+                            )?;
+                            continue;
+                        }
+                        PacketDataRewrite::Unchanged => {}
+                        PacketDataRewrite::Changed(rewritten) => packet.data = Some(rewritten),
                     }
-                    packet.data = Some(rewritten);
                     let packet_bytes = packet.encode_to_vec();
                     self.write_demo_message_with_compression(
                         message.msg_type,
@@ -106,12 +110,14 @@ where
 
                     if let Some(packet) = full.packet.as_mut() {
                         if self.needs_packet_scan() {
-                            let rewritten = self.rewrite_packet_data(
+                            let rewritten = self.rewrite_packet_data_if_changed(
                                 message.tick,
                                 packet.data(),
                                 should_process && self.needs_packet_state(),
                             )?;
-                            packet.data = Some(rewritten);
+                            if let PacketDataRewrite::Changed(rewritten) = rewritten {
+                                packet.data = Some(rewritten);
+                            }
                         }
                     }
 

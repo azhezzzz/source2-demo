@@ -33,6 +33,7 @@ pub(crate) fn expand_rewriter(item: TokenStream) -> TokenStream {
     let mut rewrite_svc_update_string_table_body = quote!();
     let mut replace_entity_field_body = quote!();
     let mut should_rewrite_entity_body = quote!();
+    let mut should_track_entity_body = quote!();
 
     for item in &input.items {
         let syn::ImplItem::Fn(method) = item else {
@@ -155,6 +156,15 @@ pub(crate) fn expand_rewriter(item: TokenStream) -> TokenStream {
                         }
                     });
                 }
+                "should_track_entity" => {
+                    add_flag!(ENTITY_FIELDS);
+                    let args = should_entity_method_args(method, "should_track_entity");
+                    should_track_entity_body.extend(quote! {
+                        if !self.#method_name(#args) {
+                            return false;
+                        }
+                    });
+                }
                 _ => {}
             }
         }
@@ -258,6 +268,16 @@ pub(crate) fn expand_rewriter(item: TokenStream) -> TokenStream {
                 entity: &::source2_demo::Entity,
             ) -> bool {
                 #should_rewrite_entity_body
+                true
+            }
+
+            fn should_track_entity(
+                &mut self,
+                ctx: &::source2_demo::Context,
+                event: ::source2_demo::EntityEvents,
+                entity: &::source2_demo::Entity,
+            ) -> bool {
+                #should_track_entity_body
                 true
             }
 
@@ -462,6 +482,10 @@ fn replace_entity_field_method_args(method: &syn::ImplItemFn) -> proc_macro2::To
 }
 
 fn should_rewrite_entity_method_args(method: &syn::ImplItemFn) -> proc_macro2::TokenStream {
+    should_entity_method_args(method, "should_rewrite_entity")
+}
+
+fn should_entity_method_args(method: &syn::ImplItemFn, attribute: &str) -> proc_macro2::TokenStream {
     let mut args = Vec::new();
 
     for input in method.sig.inputs.iter().skip(1) {
@@ -476,7 +500,8 @@ fn should_rewrite_entity_method_args(method: &syn::ImplItemFn) -> proc_macro2::T
         } else if is_entity_type(&type_string) {
             quote! { entity }
         } else {
-            quote! { compile_error!("unsupported #[should_rewrite_entity] argument") }
+            let message = format!("unsupported #[{attribute}] argument");
+            quote! { compile_error!(#message) }
         };
         args.push(arg);
     }

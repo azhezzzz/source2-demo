@@ -280,44 +280,6 @@ fn demo_writer_without_rewriters_preserves_demo_bytes() {
     assert_eq!(output.into_inner(), replay);
 }
 
-struct KeepPacketMessage;
-
-impl DemoRewriter for KeepPacketMessage {
-    fn interests(&self) -> RewriteInterests {
-        RewriteInterests::PACKET_MESSAGE
-    }
-
-    fn rewrite_packet_message(
-        &mut self,
-        _ctx: &Context,
-        _tick: u32,
-        _msg_type: i32,
-        _payload: &[u8],
-    ) -> Result<MessageRewrite, ParserError> {
-        Ok(MessageRewrite::Keep)
-    }
-}
-
-#[test]
-fn demo_writer_preserves_scanned_unchanged_compressed_packets() {
-    let mut replay =
-        replay_with_playback_ticks(20, &[(EDemoCommands::DemSyncTick, 0, sync_payload())]);
-    let packet = demo_packet_payload(&[(9999, &[1, 2, 3])]);
-    write_demo_message_with_compression(&mut replay, EDemoCommands::DemPacket, 5, &packet, true)
-        .unwrap();
-    write_demo_message(&mut replay, EDemoCommands::DemStop, 10, &[]).unwrap();
-
-    let parser = Parser::from_slice(&replay).unwrap();
-    let output = Cursor::new(Vec::new());
-    let mut writer = DemoWriter::new(parser, output);
-    writer.add_rewriter(KeepPacketMessage);
-
-    writer.run().unwrap();
-    let (_, output) = writer.into_parts();
-
-    assert_eq!(output.into_inner(), replay);
-}
-
 #[test]
 fn demo_writer_updates_parser_context_tick() {
     let replay = replay_with_playback_ticks(

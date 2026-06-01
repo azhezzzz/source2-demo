@@ -242,6 +242,15 @@ where
             value_end: usize,
         }
 
+        if !rewrite {
+            for fp in paths {
+                let decoder = entity.class.serializer.get_decoder(&fp);
+                let value = decoder.decode(reader);
+                entity.state.set(&fp, value);
+            }
+            return Ok(());
+        }
+
         let mut decoded_fields = Vec::with_capacity(paths.len());
         for fp in paths {
             let name = entity.class.serializer.get_name(&fp);
@@ -257,10 +266,6 @@ where
                 value_start,
                 value_end,
             });
-        }
-
-        if !rewrite {
-            return Ok(());
         }
 
         for field in decoded_fields {

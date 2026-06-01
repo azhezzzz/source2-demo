@@ -4,6 +4,7 @@ use source2_demo::proto::{
 };
 use source2_demo::writer::*;
 use std::fs::File;
+use std::io::{BufReader, BufWriter};
 
 #[derive(Default)]
 struct ReplayAnonymizer;
@@ -65,6 +66,11 @@ impl ReplayAnonymizer {
     fn should_rewrite_entity(&mut self, entity: &Entity) -> bool {
         ["CCitadelPlayerController", "CCitadelGameRulesProxy"].contains(&entity.class().name())
     }
+
+    #[should_track_entity]
+    fn should_track_entity(&mut self) -> bool {
+        false
+    }
 }
 
 fn main() -> anyhow::Result<()> {
@@ -77,8 +83,8 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    let input = File::open(input_path)?;
-    let output = File::create(output_path)?;
+    let input = BufReader::new(File::open(input_path)?);
+    let output = BufWriter::new(File::create(output_path)?);
 
     let mut writer = DemoWriter::from_reader(input, output)?;
     writer.register_rewriter::<ReplayAnonymizer>();

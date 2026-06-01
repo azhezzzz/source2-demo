@@ -95,8 +95,8 @@ impl<'a> BitsReader for SliceReader<'a> {
 
     #[inline]
     fn read_bytes(&mut self, amount: u32) -> Vec<u8> {
-        let mut bytes = Vec::new();
-        self.read_bytes_into(amount, &mut bytes);
+        let mut bytes = vec![0; amount as usize];
+        self.bit_reader.read_bytes(&mut bytes);
         bytes
     }
 

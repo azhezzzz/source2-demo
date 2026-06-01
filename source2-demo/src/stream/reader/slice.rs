@@ -40,6 +40,12 @@ impl<'a> SliceReader<'a> {
     }
 
     #[inline]
+    pub(crate) fn read_bytes_into(&mut self, amount: u32, bytes: &mut Vec<u8>) {
+        bytes.resize(amount as usize, 0);
+        self.bit_reader.read_bytes(bytes);
+    }
+
+    #[inline]
     pub(crate) fn skip_cstring(&mut self) {
         self.refill();
         loop {
@@ -89,8 +95,8 @@ impl<'a> BitsReader for SliceReader<'a> {
 
     #[inline]
     fn read_bytes(&mut self, amount: u32) -> Vec<u8> {
-        let mut bytes = vec![0; amount as usize];
-        self.bit_reader.read_bytes(&mut bytes);
+        let mut bytes = Vec::new();
+        self.read_bytes_into(amount, &mut bytes);
         bytes
     }
 

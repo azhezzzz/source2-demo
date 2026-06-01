@@ -1,11 +1,17 @@
 use super::*;
 use crate::proto::{CSvcMsgCreateStringTable, CSvcMsgUpdateStringTable, Message, SvcMessages};
 use crate::reader::{BitsReader, SliceReader};
+use crate::stream::copy::{bit_position, copy_original_bits};
 use crate::writer::{BitsWriter, BitstreamWriter};
 
 pub(crate) enum PacketDataRewrite {
     Unchanged,
     Changed(Vec<u8>),
+}
+
+enum PacketDataPart {
+    Original { start_bit: usize, bit_len: usize },
+    Changed(PacketMessage),
 }
 
 impl<'a, R, W> DemoWriter<'a, R, W>
@@ -33,15 +39,26 @@ where
         process_state: bool,
     ) -> Result<PacketDataRewrite, ParserError> {
         let mut reader = SliceReader::new(data);
+        let retain_messages = self.has_rewriters(RewriteInterests::PACKET_MESSAGES);
         let mut messages = Vec::new();
+        let mut parts = Vec::new();
+        let mut scratch = Vec::new();
         let mut changed = false;
 
         'messages: while reader.remaining_bytes() != 0 {
+            let message_start = bit_position(&reader);
             let msg_type = reader.read_ubit_var() as i32;
             let size = reader.read_var_u32();
-            let msg_buf = reader.read_bytes(size);
+            let msg_buf = if retain_messages {
+                reader.read_bytes(size)
+            } else {
+                reader.read_bytes_into(size, &mut scratch);
+                std::mem::take(&mut scratch)
+            };
+            let message_end = bit_position(&reader);
 
             let mut msg_payload = msg_buf;
+            let mut payload_changed = false;
             let ctx = &self.parser.context;
             for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
                 rewriter
@@ -60,6 +77,7 @@ where
                     }
                     MessageRewrite::Replace(bytes) => {
                         changed = true;
+                        payload_changed = true;
                         msg_payload = bytes;
                     }
                     MessageRewrite::Keep | MessageRewrite::Rewrite => {}
@@ -80,6 +98,7 @@ where
                             {
                                 msg_payload = rewritten;
                                 changed = true;
+                                payload_changed = true;
                             }
                             handled_entity = true;
                         }
@@ -89,7 +108,7 @@ where
                                     .has_rewriters(RewriteInterests::SVC_CREATE_STRING_TABLE) =>
                         {
                             let mut msg = CSvcMsgCreateStringTable::decode(msg_payload.as_slice())?;
-                            let mut message_changed =
+                            let mut table_changed =
                                 self.rewrite_create_string_table_entries(tick, &mut msg)?;
                             for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
                                 rewriter
@@ -107,12 +126,14 @@ where
                                     MessageRewrite::Keep => {}
                                     MessageRewrite::Rewrite => {
                                         changed = true;
-                                        message_changed = false;
+                                        payload_changed = true;
+                                        table_changed = false;
                                         msg_payload = msg.encode_to_vec();
                                     }
                                     MessageRewrite::Replace(bytes) => {
                                         changed = true;
-                                        message_changed = false;
+                                        payload_changed = true;
+                                        table_changed = false;
                                         if update_string_table_state {
                                             msg =
                                                 CSvcMsgCreateStringTable::decode(bytes.as_slice())?;
@@ -125,9 +146,10 @@ where
                                 self.process_create_string_table(&msg)?;
                                 processed_state = true;
                             }
-                            if message_changed {
+                            if table_changed {
                                 msg_payload = msg.encode_to_vec();
                                 changed = true;
+                                payload_changed = true;
                             }
                         }
                         SvcMessages::SvcUpdateStringTable
@@ -136,7 +158,7 @@ where
                                     .has_rewriters(RewriteInterests::SVC_UPDATE_STRING_TABLE) =>
                         {
                             let mut msg = CSvcMsgUpdateStringTable::decode(msg_payload.as_slice())?;
-                            let mut message_changed =
+                            let mut table_changed =
                                 self.rewrite_update_string_table_entries(tick, &mut msg)?;
                             for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
                                 rewriter
@@ -154,12 +176,14 @@ where
                                     MessageRewrite::Keep => {}
                                     MessageRewrite::Rewrite => {
                                         changed = true;
-                                        message_changed = false;
+                                        payload_changed = true;
+                                        table_changed = false;
                                         msg_payload = msg.encode_to_vec();
                                     }
                                     MessageRewrite::Replace(bytes) => {
                                         changed = true;
-                                        message_changed = false;
+                                        payload_changed = true;
+                                        table_changed = false;
                                         if update_string_table_state {
                                             msg =
                                                 CSvcMsgUpdateStringTable::decode(bytes.as_slice())?;
@@ -172,9 +196,10 @@ where
                                 self.process_update_string_table(&msg)?;
                                 processed_state = true;
                             }
-                            if message_changed {
+                            if table_changed {
                                 msg_payload = msg.encode_to_vec();
                                 changed = true;
+                                payload_changed = true;
                             }
                         }
                         _ => {}
@@ -186,7 +211,20 @@ where
                 self.process_packet_message_state(msg_type, msg_payload.as_slice())?;
             }
 
-            messages.push(PacketMessage::new(msg_type, msg_payload));
+            if retain_messages {
+                messages.push(PacketMessage::new(msg_type, msg_payload));
+            } else if payload_changed {
+                parts.push(PacketDataPart::Changed(PacketMessage::new(
+                    msg_type,
+                    msg_payload,
+                )));
+            } else {
+                scratch = msg_payload;
+                parts.push(PacketDataPart::Original {
+                    start_bit: message_start,
+                    bit_len: message_end - message_start,
+                });
+            }
         }
 
         for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
@@ -205,10 +243,25 @@ where
 
         let mut out = Vec::with_capacity(data.len());
         let mut writer = BitstreamWriter::new(&mut out);
-        for message in messages {
-            writer.write_ubit_var(message.msg_type as u32)?;
-            writer.write_var_u32(message.payload.len() as u32)?;
-            writer.write_bytes(message.payload.as_slice())?;
+        if retain_messages {
+            for message in messages {
+                writer.write_ubit_var(message.msg_type as u32)?;
+                writer.write_var_u32(message.payload.len() as u32)?;
+                writer.write_bytes(message.payload.as_slice())?;
+            }
+        } else {
+            for part in parts {
+                match part {
+                    PacketDataPart::Original { start_bit, bit_len } => {
+                        copy_original_bits(data, start_bit, bit_len, &mut writer)?;
+                    }
+                    PacketDataPart::Changed(message) => {
+                        writer.write_ubit_var(message.msg_type as u32)?;
+                        writer.write_var_u32(message.payload.len() as u32)?;
+                        writer.write_bytes(message.payload.as_slice())?;
+                    }
+                }
+            }
         }
         writer.flush()?;
         drop(writer);

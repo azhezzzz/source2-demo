@@ -47,6 +47,7 @@ where
     ) -> Result<(Vec<u8>, bool), ParserError> {
         let mut reader = SliceReader::new(entity_data);
         let mut replacements = Vec::new();
+        let mut paths = Vec::new();
         let mut index = usize::MAX;
         let mut path_reader = FieldPathCodec::default();
 
@@ -65,6 +66,7 @@ where
                     self.rewrite_entity_created(
                         &mut reader,
                         &mut path_reader,
+                        &mut paths,
                         &mut replacements,
                         index,
                     )?;
@@ -73,6 +75,7 @@ where
                     self.rewrite_entity_updated(
                         &mut reader,
                         &mut path_reader,
+                        &mut paths,
                         &mut replacements,
                         index,
                     )?;
@@ -118,6 +121,7 @@ where
         &mut self,
         reader: &mut SliceReader<'_>,
         path_reader: &mut FieldPathCodec,
+        paths: &mut Vec<FieldPath>,
         replacements: &mut Vec<FieldReplacement>,
         index: usize,
     ) -> Result<(), ParserError> {
@@ -143,13 +147,14 @@ where
             self.rewrite_fields(
                 reader,
                 path_reader,
+                paths,
                 replacements,
                 EntityEvents::Created,
                 &mut entity,
                 rewrite,
             )?;
         } else {
-            Self::skip_original_fields(reader, path_reader, &entity);
+            Self::skip_original_fields(reader, path_reader, paths, &entity);
         }
         if !track {
             entity.state = FieldState::default();
@@ -163,6 +168,7 @@ where
         &mut self,
         reader: &mut SliceReader<'_>,
         path_reader: &mut FieldPathCodec,
+        paths: &mut Vec<FieldPath>,
         replacements: &mut Vec<FieldReplacement>,
         index: usize,
     ) -> Result<(), ParserError> {
@@ -173,13 +179,14 @@ where
             self.rewrite_fields(
                 reader,
                 path_reader,
+                paths,
                 replacements,
                 EntityEvents::Updated,
                 &mut entity,
                 rewrite,
             )?;
         } else {
-            Self::skip_original_fields(reader, path_reader, &entity);
+            Self::skip_original_fields(reader, path_reader, paths, &entity);
         }
         if !track {
             entity.state = FieldState::default();
@@ -192,9 +199,10 @@ where
     fn skip_original_fields(
         reader: &mut SliceReader<'_>,
         path_reader: &mut FieldPathCodec,
+        paths: &mut Vec<FieldPath>,
         entity: &Entity,
     ) {
-        let mut paths = Vec::new();
+        paths.clear();
         let mut fp = FieldPath::default();
 
         loop {
@@ -207,7 +215,7 @@ where
             paths.push(fp);
         }
 
-        for fp in paths {
+        for fp in paths.iter().copied() {
             entity.class.serializer.get_decoder(&fp).skip(reader);
         }
     }
@@ -216,12 +224,13 @@ where
         &mut self,
         reader: &mut SliceReader<'_>,
         path_reader: &mut FieldPathCodec,
+        paths: &mut Vec<FieldPath>,
         replacements: &mut Vec<FieldReplacement>,
         event: EntityEvents,
         entity: &mut Entity,
         rewrite: bool,
     ) -> Result<(), ParserError> {
-        let mut paths = Vec::new();
+        paths.clear();
         let mut fp = FieldPath::default();
 
         loop {
@@ -243,7 +252,7 @@ where
         }
 
         if !rewrite {
-            for fp in paths {
+            for fp in paths.iter().copied() {
                 let decoder = entity.class.serializer.get_decoder(&fp);
                 let value = decoder.decode(reader);
                 entity.state.set(&fp, value);
@@ -252,7 +261,7 @@ where
         }
 
         let mut decoded_fields = Vec::with_capacity(paths.len());
-        for fp in paths {
+        for fp in paths.iter().copied() {
             let name = entity.class.serializer.get_name(&fp);
             let decoder = entity.class.serializer.get_decoder(&fp);
             let value_start = bit_position(reader);

@@ -37,6 +37,8 @@ More examples can be found in the `d2-examples` and `dl-examples` directories.
 ```rust ignore
 use source2_demo::prelude::*;
 use source2_demo::proto::*;
+use std::fs::File;
+use std::io::BufReader;
 
 // Create a struct that implements the Default trait
 #[derive(Default)]
@@ -67,7 +69,8 @@ impl Chat {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a parser
-    let mut parser = Parser::from_reader(std::fs::File::open("replay.dem")?)?;
+    let input = BufReader::new(File::open("replay.dem")?);
+    let mut parser = Parser::from_reader(input)?;
 
     // Register observers
     parser.register_observer::<Chat>();
@@ -92,6 +95,7 @@ use source2_demo::prelude::*;
 use source2_demo::proto::CDotaUserMsgChatMessage;
 use source2_demo::writer::*;
 use std::fs::File;
+use std::io::{BufReader, BufWriter};
 
 #[derive(Default)]
 struct RemoveChat;
@@ -108,8 +112,8 @@ impl RemoveChat {
 }
 
 fn main() -> anyhow::Result<()> {
-    let input = File::open("input.dem")?;
-    let output = File::create("output.dem")?;
+    let input = BufReader::new(File::open("input.dem")?);
+    let output = BufWriter::new(File::create("output.dem")?);
 
     let mut writer = DemoWriter::from_reader(input, output)?;
     writer.register_rewriter::<RemoveChat>();
@@ -245,4 +249,3 @@ at your option.
 ### Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
-

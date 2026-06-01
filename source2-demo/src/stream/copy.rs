@@ -15,7 +15,28 @@ pub(crate) fn copy_original_bits(
     bit_len: usize,
     writer: &mut BitstreamWriter<'_>,
 ) -> Result<(), ParserError> {
-    for bit_index in start_bit..start_bit + bit_len {
+    let end_bit = start_bit + bit_len;
+    let aligned_start = ((start_bit + 7) & !7).min(end_bit);
+    for bit_index in start_bit..aligned_start {
+        let byte = source[bit_index / 8];
+        let bit = ((byte >> (bit_index % 8)) & 1) != 0;
+        writer.write_bit(bit)?;
+    }
+
+    let aligned_end = end_bit & !7;
+    let mut byte_index = aligned_start / 8;
+    let end_byte = aligned_end / 8;
+    while byte_index + 8 <= end_byte {
+        let value = u64::from_le_bytes(source[byte_index..byte_index + 8].try_into().unwrap());
+        writer.write_bits(64, value)?;
+        byte_index += 8;
+    }
+    while byte_index < end_byte {
+        writer.write_bits(8, source[byte_index] as u64)?;
+        byte_index += 1;
+    }
+
+    for bit_index in aligned_end.max(aligned_start)..end_bit {
         let byte = source[bit_index / 8];
         let bit = ((byte >> (bit_index % 8)) & 1) != 0;
         writer.write_bit(bit)?;

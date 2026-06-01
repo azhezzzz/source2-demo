@@ -88,20 +88,25 @@ where
                         continue;
                     }
 
+                    let can_write_raw = payload.is_none();
                     let payload = Self::materialize_payload(&mut payload, &message)?;
                     let mut full = CDemoFullPacket::decode(payload.as_slice())?;
                     let should_process = self.parser.context.last_full_packet_tick == u32::MAX
                         || self.parser.skip_deltas;
+                    let mut changed = false;
 
                     if let Some(table) = full.string_table.take() {
                         if self.needs_demo_string_table_scan() {
-                            if let Some(rewritten) =
+                            if let Some((rewritten, table_changed)) =
                                 self.rewrite_string_tables(message.tick, table)?
                             {
                                 if should_process && self.needs_demo_string_table_state() {
                                     self.parser.dem_string_tables(rewritten.clone())?;
                                 }
                                 full.string_table = Some(rewritten);
+                                changed |= table_changed;
+                            } else {
+                                changed = true;
                             }
                         } else {
                             full.string_table = Some(table);
@@ -117,11 +122,21 @@ where
                             )?;
                             if let PacketDataRewrite::Changed(rewritten) = rewritten {
                                 packet.data = Some(rewritten);
+                                changed = true;
                             }
                         }
                     }
 
                     self.parser.context.last_full_packet_tick = message.tick;
+                    if can_write_raw && !changed {
+                        self.write_raw_demo_message(
+                            message.msg_type,
+                            message.tick,
+                            message.raw_payload.as_slice(),
+                            message.compressed,
+                        )?;
+                        continue;
+                    }
                     let full_bytes = full.encode_to_vec();
                     self.write_demo_message_with_compression(
                         message.msg_type,

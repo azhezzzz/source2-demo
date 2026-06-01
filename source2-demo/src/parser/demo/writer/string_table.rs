@@ -16,11 +16,12 @@ where
         &mut self,
         tick: u32,
         mut msg: CDemoStringTables,
-    ) -> Result<Option<CDemoStringTables>, ParserError> {
+    ) -> Result<Option<(CDemoStringTables, bool)>, ParserError> {
+        let mut changed = false;
         if self.rewrites_entity_fields() {
-            let _ = self.rewrite_instance_baselines(&mut msg)?;
+            changed |= self.rewrite_instance_baselines(&mut msg)?;
         }
-        self.rewrite_demo_string_table_entries(tick, &mut msg)?;
+        changed |= self.rewrite_demo_string_table_entries(tick, &mut msg)?;
         for rewriter in self.rewriters.iter_mut().filter(|rewriter| {
             rewriter
                 .interests()
@@ -29,13 +30,15 @@ where
             let ctx = &self.parser.context;
             match rewriter.rewrite_demo_string_tables(ctx, tick, &mut msg)? {
                 MessageRewrite::Drop => return Ok(None),
-                MessageRewrite::Keep | MessageRewrite::Rewrite => {}
+                MessageRewrite::Keep => {}
+                MessageRewrite::Rewrite => changed = true,
                 MessageRewrite::Replace(bytes) => {
                     msg = CDemoStringTables::decode(bytes.as_slice())?;
+                    changed = true;
                 }
             }
         }
-        Ok(Some(msg))
+        Ok(Some((msg, changed)))
     }
 
     pub(crate) fn rewrite_create_string_table_entries(

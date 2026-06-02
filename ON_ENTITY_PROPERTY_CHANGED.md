@@ -6,6 +6,9 @@
 - 已删除旧的单字段 `on_entity_property_changed` observer 能力
 - 已删除 `class_pattern` / `property_pattern` 过滤语法及其 `regex` 依赖
 - 当前仅保留一个批量字段回调：`on_entity_properties_changed`
+- 当前本地分支头提交：`fa95d665d3848add437c93bb83ab8807540b13c8`
+- 当前 `origin/master` 提交：`464dea09d4ee1015bc66df27f4aff338a122ab74`
+- 当前相对 `origin/master` 状态：`ahead_by = 16`，`behind_by = 0`
 
 ### 当前最小功能增量
 
@@ -89,9 +92,9 @@
 - 上游来源：`https://github.com/Rupas1k/source2-demo`
 - fork 内部分支对比：`azhezzzz/source2-demo:master...azhezzzz/source2-demo:on_entity_property_changed`
 - GitHub 分支页的上游对比口径：`Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed`
-- 当前上游 `master` 提交：`43677da88b114b5ee8a0dd7fa3ae6208799ffdcb`
+- 当前上游/`origin/master` 提交：`464dea09d4ee1015bc66df27f4aff338a122ab74`
 - 当前 fork `master` 提交：`de4ab4263984cc9326d29bfcb17a001db366a78b`
-- 本地当前 `on_entity_property_changed` 分支头提交：`d03be8059534db9ef2aeb1d4f4ae2808c2486164`
+- 本地当前 `on_entity_property_changed` 分支头提交：`fa95d665d3848add437c93bb83ab8807540b13c8`
 
 这条分支是在上游项目 `Rupas1k/source2-demo` 的基础上维护的功能分支，用于给解析器补充“实体属性级别变更通知”能力，并保留后续同步上游时可继续 rebase / merge 的空间。
 

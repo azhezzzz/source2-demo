@@ -27,6 +27,19 @@
 - `Class::field_name_for_path(&FieldPath)`
 - `FieldPath` 的对外可见性
 
+其中对外公开 API 目前是：
+
+- `Interests::TRACK_ENTITY_PROPERTY`
+- `#[on_entity_properties_changed]`
+- `FieldPath`
+- `Entity::get_property_by_field_path(&FieldPath)`
+- `Entity::field_paths()`
+- `Class::field_name_for_path(&FieldPath)`
+
+其中内部辅助接口目前是：
+
+- `FieldReader::field_paths(count)`
+
 ## 优先优化方向
 
 ### 1. 优先检查 `LastTickEntities`

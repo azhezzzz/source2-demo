@@ -22,7 +22,7 @@
 3. `Entity::get_property_by_field_path(&FieldPath)`
    在已知字段路径时读取当前字段值。
 4. `Entity::field_paths()` 与 `FieldReader::field_paths(count)`
-   用于枚举创建时的全部字段路径，以及更新时本次 packet 的变更字段路径。
+   用于枚举实体当前全量字段路径，以及更新时本次 packet 的变更字段路径。
 
 ### 当前新增的公开 API
 
@@ -66,7 +66,7 @@
 
 ### 当前语义
 
-- 实体创建时：一次回调返回当前实体上所有已填充字段路径
+- 实体创建时：不触发属性级回调
 - 实体更新时：一次回调返回本次 packet 中全部变更字段路径
 - 实体删除时：不触发属性级回调
 
@@ -152,7 +152,7 @@
 对 `on_entity_property_changed` 需求本身的判断：
 
 - 属性级回调语义没有变化
-- 实体创建时仍然按当前已有属性逐个通知
+- 实体创建时不触发属性级回调
 - 实体更新时仍然只对本次变更字段通知
 - 实体删除时仍然不触发属性级回调
 - 回调看到的仍然是更新后的实体状态
@@ -621,7 +621,7 @@ fn on_entity_property_changed(
 - 在已知 `FieldPath` 的情况下直接取属性值
 - 枚举当前实体状态里已经存在的全部字段路径
 
-其中 `Entity::field_paths()` 是实体创建时“逐属性触发回调”的关键辅助接口。
+其中 `Entity::field_paths()` 主要用于实体快照、调试或其它需要枚举全量字段路径的场景，不再作为创建时逐属性派发回调的基础。
 
 ### 5. 底层字段解码器开始保留“本次变更了哪些字段”
 
@@ -636,19 +636,13 @@ fn on_entity_property_changed(
 
 这一步是整个功能的核心基础。没有这层改动，解析器只能知道“实体状态被更新了”，但不知道“具体是哪些属性在这次 packet 中发生了变化”。
 
-### 6. 实体创建 / 更新路径增加逐属性派发
+### 6. 实体更新路径增加逐属性派发
 
 涉及文件：
 
 - `source2-demo/src/parser/demo/svc.rs`
 
 行为变化：
-
-- `entity_created(...)`
-  - 先照常完成实体构建
-  - 先触发原有的 `on_entity(Created, ...)`
-  - 然后枚举当前实体中所有已填充字段
-  - 对每个字段依次触发 `on_entity_property_changed(...)`
 
 - `entity_updated(...)`
   - 先用 `FieldReader` 解码本次更新
@@ -658,6 +652,8 @@ fn on_entity_property_changed(
 
 - `entity_deleted(...)`
   - 没有额外加入属性级回调
+
+当前行为不再在 `entity_created(...)` 中触发 `on_entity_property_changed(...)`。
 
 这里保留了一个很重要的语义：属性回调看到的始终是“更新后的实体状态”，而不是更新前状态。
 
@@ -741,7 +737,7 @@ fn on_entity_property_changed(
 ## 需要保持的行为约束
 
 - `on_entity_property_changed(...)` 必须看到更新后的实体状态
-- 实体创建时应按“当前已有属性”逐个通知，而不是按 serializer schema 全量通知
+- 实体创建时不触发属性变更回调
 - 实体删除时不触发属性变更回调
 - `#[on_entity_property_changed("ClassName")]` 必须保持精确匹配语义
 - `class_pattern` / `property_pattern` 必须保持 regex 语义

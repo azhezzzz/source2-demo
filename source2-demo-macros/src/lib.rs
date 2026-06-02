@@ -140,7 +140,7 @@
 //! - `#[on_tick_start]` - Called at tick start
 //! - `#[on_tick_end]` - Called at tick end
 //! - `#[on_entity]` - Called for entity changes
-//! - `#[on_entity_properties_changed]` - Called for batched changed entity properties
+//! - `#[on_entity_properties_changed]` - Called for batched changed entity properties on updates
 //! - `#[on_game_event]` - Called for game events
 //! - `#[on_string_table]` - Called for string table updates
 //! - `#[on_stop]` - Called when replay ends
@@ -251,7 +251,7 @@ use proc_macro::TokenStream;
 /// - `#[on_tick_end]` - Called at the end of each tick
 /// - `#[on_entity]` - Called when entities change
 /// - `#[on_entity("ClassName")]` - Only for specific entity classes
-/// - `#[on_entity_properties_changed]` - Observe batched property changes for all entities
+/// - `#[on_entity_properties_changed]` - Observe batched property changes for entity updates
 /// - `#[on_message]` - Called for protobuf messages (type inferred from param)
 /// - `#[on_game_event]` - Called for all game events
 /// - `#[on_game_event("event_name")]` - Only for specific events

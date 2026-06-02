@@ -218,21 +218,6 @@ where
             )
         )?;
 
-        let field_paths = self.context.entities.entities_vec[index]
-            .class()
-            .serializer
-            .get_paths(&mut FieldPath::default(), &self.context.entities.entities_vec[index].state);
-
-        try_observers!(
-            self,
-            TRACK_ENTITY_PROPERTY,
-            on_entity_properties_changed(
-                &self.context,
-                &self.context.entities.entities_vec[index],
-                &field_paths
-            )
-        )?;
-
         Ok(())
     }
 

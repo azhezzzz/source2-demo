@@ -2,7 +2,8 @@
 //!
 //! # Procedural Macros for Source 2 Replay Parser
 //!
-//! This crate provides procedural macros that simplify implementing the Observer trait.
+//! This crate provides procedural macros that simplify implementing the `Observer`
+//! and `DemoRewriter` traits.
 //!
 //! ## Overview
 //!
@@ -11,6 +12,10 @@
 //! - Generate protobuf message decoding
 //! - Set up interest flags based on used methods
 //! - Handle optional `Context` parameters
+//!
+//! Handler attributes may be imported and used as single-segment attributes,
+//! such as `#[on_message]`, or written with a path, such as
+//! `#[source2_demo_macros::on_message]`.
 //!
 //! ## Main Macros
 //!
@@ -34,6 +39,99 @@
 //! }
 //! ```
 //!
+//! ### `#[rewriter]` - Demo writer implementation macro
+//!
+//! Automatically implements the `DemoRewriter` trait for replay rewriting.
+//! Use it when you want to drop, replace, or mutate demo messages while the
+//! writer emits a new replay. Packet message handlers can receive either the raw
+//! packet payload or a decoded protobuf message. The protobuf form infers the
+//! packet id from the message type, just like `#[on_message]`.
+//!
+//! #### Drop a decoded packet message
+//!
+//! ```no_run
+//! # use source2_demo::prelude::*;
+//! # use source2_demo::proto::CDotaUserMsgChatMessage;
+//! # use source2_demo::writer::*;
+//! struct RemoveChat;
+//!
+//! #[rewriter]
+//! impl RemoveChat {
+//!     #[rewrite_packet_message]
+//!     fn remove_chat(
+//!         &mut self,
+//!         _message: CDotaUserMsgChatMessage,
+//!     ) -> Result<MessageRewrite, ParserError> {
+//!         Ok(MessageRewrite::Drop)
+//!     }
+//! }
+//! ```
+//!
+//! #### Mutate and re-encode a decoded packet message
+//!
+//! ```no_run
+//! # use source2_demo::prelude::*;
+//! # use source2_demo::proto::CDotaUserMsgChatMessage;
+//! # use source2_demo::writer::*;
+//! struct RedactChat;
+//!
+//! #[rewriter]
+//! impl RedactChat {
+//!     #[rewrite_packet_message]
+//!     fn redact_chat(
+//!         &mut self,
+//!         message: &mut CDotaUserMsgChatMessage,
+//!     ) -> Result<MessageRewrite, ParserError> {
+//!         message.message_text = Some("[redacted]".to_string());
+//!         Ok(MessageRewrite::Rewrite)
+//!     }
+//! }
+//! ```
+//!
+//! #### Rewrite a string table entry
+//!
+//! ```no_run
+//! # use source2_demo::prelude::*;
+//! # use source2_demo::proto::CMsgPlayerInfo;
+//! # use source2_demo::writer::*;
+//! struct AnonymizeUserInfo;
+//!
+//! #[rewriter]
+//! impl AnonymizeUserInfo {
+//!     #[rewrite_string_table_entry]
+//!     fn rewrite_userinfo(
+//!         &mut self,
+//!         table_name: &str,
+//!         entry: &mut StringTableEntryUpdate,
+//!     ) -> Result<(), ParserError> {
+//!         if table_name == "userinfo" {
+//!             if let Some(value) = entry.value_mut() {
+//!                 let mut player = CMsgPlayerInfo::decode(value.as_slice())?;
+//!                 player.name = Some("Anonymous".to_string());
+//!                 *value = player.encode_to_vec();
+//!             }
+//!         }
+//!         Ok(())
+//!     }
+//! }
+//! ```
+//!
+//! #### Rewrite decoded entity fields
+//!
+//! ```no_run
+//! # use source2_demo::prelude::*;
+//! # use source2_demo::writer::*;
+//! struct RemoveSteamIds;
+//!
+//! #[rewriter]
+//! impl RemoveSteamIds {
+//!     #[rewrite_field(class = "CDOTA_PlayerResource", field = ends_with("m_iPlayerSteamID"))]
+//!     fn remove_steam_id(&mut self, _value: u64) -> u64 {
+//!         0
+//!     }
+//! }
+//! ```
+//!
 //! ### Event Handler Macros
 //!
 //! These attributes mark methods as event handlers within an #[observer] impl:
@@ -52,6 +150,7 @@
 //!
 //! These mark impl blocks with which data types to track:
 //!
+//! - `#[uses_all]` - Track all supported data
 //! - `#[uses_entities]` - Track entities
 //! - `#[uses_string_tables]` - Track string tables
 //! - `#[uses_game_events]` - Track game events
@@ -114,15 +213,15 @@
 //!   - `#[on_entity("CDOTA_Unit_Hero_Axe")]` - Only heroes named Axe
 //!   - `#[on_game_event("player_death")]` - Only death events
 //!   - `#[on_string_table("userinfo")]` - Only userinfo table updates
-//! - **Game-Specific Handlers**: Use `#[on_dota_user_message]`, `#[on_citadel_user_message]`,
-//!   etc. for game-specific message types
+//! - **Game-Specific Messages**: Use `#[on_message]` with Dota 2, Deadlock, or
+//!   CS2 protobuf message types
 
+mod observer_impl;
 mod protobuf_map;
+mod rewriter_impl;
+mod type_utils;
 
-use crate::protobuf_map::get_enum_from_struct;
-use proc_macro::{TokenStream};
-use quote::{quote, ToTokens};
-use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, FnArg, Ident, ItemImpl, Token, Type};
+use proc_macro::TokenStream;
 
 #[allow(unused_mut)]
 #[proc_macro_attribute]
@@ -138,6 +237,11 @@ use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, FnArg, Ident
 /// - Sets up interest flags based on which handlers are defined
 /// - Decodes protobuf messages and passes them to handlers
 /// - Filters events based on optional string arguments
+///
+/// # Modes
+///
+/// Use `#[observer]` to infer interests from handlers and `#[uses_*]` markers.
+/// Use `#[observer(all)]` or `#[uses_all]` to enable every interest.
 ///
 /// # Handler Attributes
 ///
@@ -160,6 +264,7 @@ use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, FnArg, Ident
 ///
 /// Apply these to the `impl` block or individual methods to enable tracking:
 ///
+/// - `#[uses_all]` - Enable all tracking
 /// - `#[uses_entities]` - Enable entity tracking
 /// - `#[uses_string_tables]` - Enable string table tracking
 /// - `#[uses_game_events]` - Enable game event tracking
@@ -167,17 +272,23 @@ use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, FnArg, Ident
 ///
 /// # Parameter Guidelines
 ///
-/// Handlers can have these parameters (all optional except `&mut self`):
+/// Handlers can receive these parameters. Most are optional; `#[on_message]`
+/// requires either one protobuf message or a supported message enum plus
+/// `&[u8]` payload.
 /// - `ctx: &Context` - Current replay state (always optional)
 /// - Specific parameters depending on the handler:
-///   - `event: EntityEvents` (on_entity)
+///   - `event: EntityEvents` or `event: &EntityEvents` (on_entity)
 ///   - `entity: &Entity` (on_entity)
 ///   - `entity: &Entity` and `field_paths: &[FieldPath]` (on_entity_properties_changed)
 ///   - `ge: &GameEvent` (on_game_event)
 ///   - `table: &StringTable` (on_string_table)
 ///   - `modified: &[i32]` (on_string_table)
 ///   - `cle: &CombatLogEntry` (on_combat_log)
-///   - Protobuf message types (on_message)
+///   - A protobuf message, or a supported message enum plus `&[u8]` payload
+///     (on_message)
+///
+/// Handler parameters can appear in any order. Handlers return
+/// `ObserverResult`.
 ///
 /// # Examples
 ///
@@ -275,557 +386,168 @@ use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, FnArg, Ident
 /// The macro automatically determines which interest flags to set based on which
 /// handlers are defined. For example:
 /// - If you have `#[on_tick_start]`, `Interests::TICK_START` is added
-/// - If you have `#[on_entity]`, both `ENABLE_ENTITY` and `TRACK_ENTITY` are added
+/// - If you have `#[on_entity]`, both `Interests::ENTITY_STATE` and
+///   `Interests::ENTITY_EVENTS` are added
 /// - If you have `#[on_message]` handlers, appropriate message interest flags are added
 ///
 /// You can also use trait attributes like `#[uses_entities]` to manually ensure
 /// certain interests are set.
 pub fn observer(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let mut mode_all = false;
-
-    if !attr.is_empty() {
-        let parser = Punctuated::<Ident, Token![,]>::parse_terminated;
-        if let Ok(idents) = parser.parse(attr.clone()) {
-            for id in idents {
-                if id == "manual" { mode_all = false; }
-                if id == "all" { mode_all = true; }
-            }
-        }
-    }
-
-    let input = parse_macro_input!(item as ItemImpl);
-    let struct_name = &input.self_ty;
-
-    let mut interests = quote!(::source2_demo::Interests::empty());
-    macro_rules! add_flag {
-        ($flag:ident) => {
-            interests = quote!(#interests | ::source2_demo::Interests::$flag);
-        };
-    }
-
-    for a in &input.attrs {
-        if a.path().is_ident("uses_entities") { add_flag!(ENABLE_ENTITY); }
-        if a.path().is_ident("uses_string_tables") { add_flag!(ENABLE_STRINGTAB); }
-        if a.path().is_ident("uses_game_events") { add_flag!(BASE_GE); }
-        #[cfg(feature = "dota")]
-        if a.path().is_ident("uses_combat_log") {
-            add_flag!(ENABLE_STRINGTAB);
-            add_flag!(COMBAT_LOG);
-        }
-    }
-
-    let mut has_demo = false;
-    let mut has_net = false;
-    let mut has_svc = false;
-    let mut has_base_um = false;
-    let mut has_base_ge = false;
-    let mut has_tick_start = false;
-    let mut has_tick_end = false;
-    let mut has_entity = false;
-    let mut has_entity_track = false;
-    let mut has_entity_property_track = false;
-    let mut has_string_table = false;
-    let mut has_string_table_track = false;
-    let mut has_stop = false;
-
-    #[cfg(feature = "dota")]
-    let mut has_dota_um = false;
-    #[cfg(feature = "dota")]
-    let mut has_combat_log = false;
-
-    #[cfg(feature = "citadel")]
-    let mut has_cita_um = false;
-    #[cfg(feature = "citadel")]
-    let mut has_cita_ge = false;
-
-    #[cfg(feature = "cs2")]
-    let mut has_cs2_um = false;
-    #[cfg(feature = "cs2")]
-    let mut has_cs2_ge = false;
-
-    #[cfg(feature = "dota")]
-    let mut on_combat_log_body = quote!();
-    #[cfg(feature = "dota")]
-    let mut on_dota_user_message_body = quote!();
-
-    #[cfg(feature = "citadel")]
-    let mut on_citadel_user_message_body = quote!();
-    #[cfg(feature = "citadel")]
-    let mut on_citadel_game_event_body = quote!();
-
-    #[cfg(feature = "cs2")]
-    let mut on_cs2_user_message_body = quote!();
-    #[cfg(feature = "cs2")]
-    let mut on_cs2_game_event_body = quote!();
-
-    let mut on_svc_message_body = quote!();
-    let mut on_net_message_body = quote!();
-    let mut on_base_game_event_body = quote!();
-    let mut on_demo_command_body = quote!();
-    let mut on_base_user_message_body = quote!();
-    let mut on_tick_start_body = quote!();
-    let mut on_tick_end_body = quote!();
-    let mut on_entity_body = quote!();
-    let mut on_entity_properties_changed_body = quote!();
-    let mut on_game_event_body = quote!();
-    let mut on_string_table_body = quote!();
-    let mut on_stop_body = quote!();
-
-    for item in &input.items {
-        if let syn::ImplItem::Fn(method) = item {
-            for attr in &method.attrs {
-                for a in &method.attrs {
-                    if a.path().is_ident("uses_entities") { add_flag!(ENABLE_ENTITY); }
-                    if a.path().is_ident("uses_string_tables") { add_flag!(ENABLE_STRINGTAB); }
-                    if a.path().is_ident("uses_game_events") { add_flag!(BASE_GE); }
-                    #[cfg(feature = "dota")]
-                    if a.path().is_ident("uses_combat_log") { add_flag!(DOTA_UM); }
-                }
-
-                let method_name = method.sig.ident.clone();
-                let mut args = vec![];
-
-                let (arg_type, _) = get_arg_type(method, 1);
-                if arg_type.to_token_stream().to_string() == "Context" {
-                    args.push(quote! { ctx })
-                }
-
-                if let Some(ident) = attr.path().get_ident() {
-                    match ident.to_string().as_str() {
-                        "on_tick_start" => {
-                            has_tick_start = true;
-                            on_tick_start_body.extend(quote! {
-                            self.#method_name(#(#args),*)?;
-                        })
-                        }
-                        "on_tick_end" => {
-                            has_tick_end = true;
-                            on_tick_end_body.extend(quote! {
-                            self.#method_name(#(#args),*)?;
-                        })
-                        }
-                        "on_stop" => {
-                            has_stop = true;
-                            on_stop_body.extend(quote! {
-                                self.#method_name(#(#args),*)?;
-                            });
-                        }
-                        #[cfg(feature = "dota")]
-                        "on_combat_log" => {
-                            args.push(quote! { cle });
-
-                            on_combat_log_body.extend(quote! {
-                                self.#method_name(#(#args),*)?;
-                            })
-                        }
-                        "on_entity" => {
-                            has_entity = true;
-                            has_entity_track = true;
-                            let (arg_type, is_ref) = get_arg_type(method, args.len() + 1);
-
-                            if arg_type.to_token_stream().to_string() == "EntityEvents" {
-                                if is_ref {
-                                    args.push(quote! { &event });
-                                } else {
-                                    args.push(quote! { event });
-                                }
-                            }
-
-                            args.push(quote! { entity });
-
-                            on_entity_body.extend(if let Ok(entity_class) = attr.parse_args::<syn::LitStr>() {
-                                quote! {
-                                    if entity.class().name() == #entity_class {
-                                        self.#method_name(#(#args),*)?;
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    self.#method_name(#(#args),*)?;
-                                }
-                            });
-                        }
-                        "on_entity_properties_changed" => {
-                            has_entity = true;
-                            has_entity_property_track = true;
-                            args.push(quote! { entity });
-                            args.push(quote! { field_paths });
-
-                            if !matches!(&attr.meta, syn::Meta::Path(_)) {
-                                panic!(
-                                    "invalid #[on_entity_properties_changed(...)] arguments: expected #[on_entity_properties_changed]"
-                                );
-                            }
-                            on_entity_properties_changed_body.extend(quote! {
-                                self.#method_name(#(#args),*)?;
-                            });
-                        }
-                        "on_game_event" => {
-                            args.push(quote! { ge });
-                            on_game_event_body.extend(if let Ok(event_name) = attr.parse_args::<syn::LitStr>() {
-                                quote! {
-                                    if ge.name() == #event_name {
-                                        self.#method_name(#(#args),*)?;
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    self.#method_name(#(#args),*)?;
-                                }
-                            });
-                        }
-                        "on_string_table" => {
-                            has_string_table_track = true;
-                            args.push(quote! { table });
-                            args.push(quote! { modified });
-                            on_string_table_body.extend(if let Ok(table_name) = attr.parse_args::<syn::LitStr>() {
-                                quote! {
-                                    if table.name() == #table_name {
-                                        self.#method_name(#(#args),*)?;
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    self.#method_name(#(#args),*)?;
-                                }
-                            });
-                        }
-                        "on_message" => {
-                            let (arg_type, is_ref) = get_arg_type(method, args.len() + 1);
-                            let enum_type = get_enum_from_struct(arg_type.to_token_stream().to_string().as_str());
-                            let type_string = enum_type.to_token_stream().to_string();
-                            let root = type_string.split("::").collect::<Vec<_>>()[0].trim();
-
-                            args.push(if is_ref {
-                                quote! { &message }
-                            } else {
-                                quote! { message }
-                            });
-
-                            macro_rules! extend {
-                                ($body: ident) => {
-                                    $body.extend(quote! {
-                                        if msg_type == #enum_type {
-                                            if let Ok(message) = #arg_type::decode(msg) {
-                                                self.#method_name(#(#args),*)?;
-                                            }
-                                        }
-                                    })
-                                };
-                            }
-
-                            match root {
-                                "EDemoCommands" => has_demo = true,
-                                "EBaseUserMessages" => has_base_um = true,
-                                "EBaseGameEvents" => has_base_ge = true,
-                                "SvcMessages" => has_svc = true,
-                                "NetMessages" => has_net = true,
-                                #[cfg(feature = "dota")]
-                                "EDotaUserMessages" => has_dota_um = true,
-                                #[cfg(feature = "citadel")]
-                                "CitadelUserMessageIds" => has_cita_um = true,
-                                #[cfg(feature = "citadel")]
-                                "ECitadelGameEvents" => has_cita_ge = true,
-                                #[cfg(feature = "cs2")]
-                                "ECstrike15UserMessages" => has_cs2_um = true,
-                                #[cfg(feature = "cs2")]
-                                "ECsgoGameEvents" => has_cs2_ge = true,
-                                _ => {}
-                            }
-
-
-                            match root {
-                                "EDemoCommands" => extend!(on_demo_command_body),
-                                "EBaseUserMessages" => extend!(on_base_user_message_body),
-                                "EBaseGameEvents" => extend!(on_base_game_event_body),
-                                "SvcMessages" => extend!(on_svc_message_body),
-                                "NetMessages" => extend!(on_net_message_body),
-
-                                #[cfg(feature = "dota")]
-                                "EDotaUserMessages" => extend!(on_dota_user_message_body),
-                                #[cfg(feature = "citadel")]
-                                "CitadelUserMessageIds" => extend!(on_citadel_user_message_body),
-                                #[cfg(feature = "citadel")]
-                                "ECitadelGameEvents" => extend!(on_citadel_game_event_body),
-                                #[cfg(feature = "cs2")]
-                                "ECstrike15UserMessages" => extend!(on_cs2_user_message_body),
-                                #[cfg(feature = "cs2")]
-                                "ECsgoGameEvents" => extend!(on_cs2_game_event_body),
-
-                                x => unreachable!("{}", x),
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-    }
-
-    let mut obs_body = quote! {
-        fn on_base_user_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: EBaseUserMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_base_user_message_body
-            Ok(())
-        }
-
-        fn on_svc_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: SvcMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_svc_message_body
-            Ok(())
-        }
-
-        fn on_net_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: NetMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_net_message_body
-            Ok(())
-        }
-
-        fn on_base_game_event(
-            &mut self,
-            ctx: &Context,
-            msg_type: EBaseGameEvents,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_base_game_event_body
-            Ok(())
-        }
-
-        fn on_demo_command(
-            &mut self,
-            ctx: &Context,
-            msg_type: EDemoCommands,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_demo_command_body
-            Ok(())
-        }
-
-        fn on_tick_start(
-            &mut self,
-            ctx: &Context,
-        ) -> ObserverResult {
-            #on_tick_start_body
-            Ok(())
-        }
-
-        fn on_tick_end(
-            &mut self,
-            ctx: &Context,
-        ) -> ObserverResult {
-            #on_tick_end_body
-            Ok(())
-        }
-
-        fn on_entity(
-            &mut self,
-            ctx: &Context,
-            event: EntityEvents,
-            entity: &Entity,
-        ) -> ObserverResult {
-            #on_entity_body
-            Ok(())
-        }
-
-        fn on_entity_properties_changed(
-            &mut self,
-            ctx: &Context,
-            entity: &Entity,
-            field_paths: &[::source2_demo::FieldPath],
-        ) -> ObserverResult {
-            #on_entity_properties_changed_body
-            Ok(())
-        }
-
-        fn on_game_event(
-            &mut self,
-            ctx: &Context,
-            ge: &GameEvent
-        ) -> ObserverResult {
-            #on_game_event_body
-            Ok(())
-        }
-
-        fn on_string_table(
-            &mut self,
-            ctx: &Context,
-            table: &StringTable,
-            modified: &[i32]
-        ) -> ObserverResult {
-            #on_string_table_body
-            Ok(())
-        }
-
-        fn on_stop(
-            &mut self,
-            ctx: &Context,
-        ) -> ObserverResult {
-            #on_stop_body
-            Ok(())
-        }
-    };
-
-    #[cfg(feature = "dota")]
-    obs_body.extend(quote! {
-        fn on_combat_log(
-            &mut self,
-            ctx: &Context,
-            cle: &CombatLogEntry
-        ) -> ObserverResult {
-            #on_combat_log_body
-            Ok(())
-        }
-
-        fn on_dota_user_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: EDotaUserMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_dota_user_message_body
-            Ok(())
-        }
-    });
-
-    #[cfg(feature = "citadel")]
-    obs_body.extend(quote! {
-        fn on_citadel_user_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: CitadelUserMessageIds,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_citadel_user_message_body
-            Ok(())
-        }
-
-        fn on_citadel_game_event(
-            &mut self,
-            ctx: &Context,
-            msg_type: ECitadelGameEvents,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_citadel_game_event_body
-            Ok(())
-        }
-    });
-
-    #[cfg(feature = "cs2")]
-    obs_body.extend(quote! {
-        fn on_cs2_user_message(
-            &mut self,
-            ctx: &Context,
-            msg_type: ECstrike15UserMessages,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_cs2_user_message_body
-            Ok(())
-        }
-
-        fn on_cs2_game_event(
-            &mut self,
-            ctx: &Context,
-            msg_type: ECsgoGameEvents,
-            msg: &[u8],
-        ) -> ObserverResult {
-            #on_cs2_game_event_body
-            Ok(())
-        }
-    });
-
-    macro_rules! add_if { ($cond:expr, $flag:ident) => {
-        if $cond { interests = quote!(#interests | ::source2_demo::Interests::$flag); }
-    }}
-
-    if mode_all {
-        interests = quote!(::source2_demo::Interests::all());
-    }
-
-    add_if!(has_demo,       DEMO);
-    add_if!(has_net,        NET);
-    add_if!(has_svc,        SVC);
-    add_if!(has_base_um,    BASE_UM);
-    add_if!(has_base_ge,    BASE_GE);
-    add_if!(has_tick_start, TICK_START);
-    add_if!(has_tick_end,   TICK_END);
-    add_if!(has_entity,     ENABLE_ENTITY);
-    add_if!(has_entity_track,     TRACK_ENTITY);
-    add_if!(has_entity_property_track, TRACK_ENTITY_PROPERTY);
-    add_if!(has_string_table,  ENABLE_STRINGTAB);
-    add_if!(has_string_table_track,  TRACK_STRINGTAB);
-    add_if!(has_stop,       STOP);
-
-    #[cfg(feature = "dota")]
-    add_if!(has_dota_um,    DOTA_UM);
-    #[cfg(feature = "dota")]
-    add_if!(has_combat_log, COMBAT_LOG);
-
-    #[cfg(feature = "citadel")]
-    add_if!(has_cita_um,    CITA_UM);
-    #[cfg(feature = "citadel")]
-    add_if!(has_cita_ge,    CITA_GE);
-
-    #[cfg(feature = "cs2")]
-    add_if!(has_cs2_um,     CS2_UM);
-    #[cfg(feature = "cs2")]
-    add_if!(has_cs2_ge,     CS2_GE);
-
-    let ret = quote! {
-        impl Observer for #struct_name {
-            fn interests(&self) -> ::source2_demo::Interests { #interests }
-            #obs_body
-        }
-        #input
-    };
-
-    TokenStream::from(ret)
+    observer_impl::expand_observer(attr, item)
 }
 
-fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
-    if let Some(FnArg::Typed(pat_type)) = method.sig.inputs.iter().nth(n) {
-        if let Type::Reference(x) = pat_type.ty.as_ref() {
-            (*x.elem.clone(), true)
-        } else {
-            (*pat_type.ty.clone(), false)
-        }
-    } else {
-        panic!("Expected argument")
-    }
+/// Implements the `DemoRewriter` trait for your struct.
+///
+/// Apply this to an inherent `impl` block and mark methods with writer callback
+/// attributes. The macro builds the `RewriteInterests` mask from those methods
+/// so the writer only decodes the parts of the replay your rewrite needs.
+///
+/// # Callback Types
+///
+/// - `#[rewrite_demo_message]` sees outer `EDemoCommands` payloads before
+///   packet-level decoding.
+/// - `#[rewrite_packet_message]` sees messages inside demo packets. It can take
+///   raw `(msg_type, payload)` arguments or a decoded protobuf message.
+/// - `#[rewrite_packet_messages]` can mutate the final decoded packet message
+///   list after individual packet-message callbacks run.
+/// - `#[rewrite_demo_string_tables]`, `#[rewrite_string_table_entry]`,
+///   `#[rewrite_svc_create_string_table]`, and
+///   `#[rewrite_svc_update_string_table]` target string-table data at different
+///   levels of decoding.
+/// - `#[rewrite_field]` and `#[replace_entity_field]` replace decoded entity
+///   field values, while `#[should_rewrite_entity]` filters which entities enter
+///   that path and `#[should_track_entity]` filters which entities retain state.
+///
+/// # Return Values
+///
+/// Message callbacks return `Result<MessageRewrite, ParserError>`.
+/// `Keep` leaves the current payload alone, `Drop` removes it, `Replace(bytes)`
+/// writes explicit bytes, and `Rewrite` re-encodes a mutable decoded protobuf
+/// argument when that callback supports it. List, entry, and filter callbacks
+/// use the return type of the matching `DemoRewriter` method.
+///
+/// # Examples
+///
+/// ## Drop a decoded packet message
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::CDotaUserMsgChatMessage;
+/// # use source2_demo::writer::*;
+/// struct RemoveChat;
+///
+/// #[rewriter]
+/// impl RemoveChat {
+///     #[rewrite_packet_message]
+///     fn remove_chat(
+///         &mut self,
+///         _msg: CDotaUserMsgChatMessage,
+///     ) -> Result<MessageRewrite, ParserError> {
+///         Ok(MessageRewrite::Drop)
+///     }
+/// }
+/// ```
+///
+/// ## Mutate and re-encode a decoded packet message
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::CDotaUserMsgChatMessage;
+/// # use source2_demo::writer::*;
+/// struct RedactChat;
+///
+/// #[rewriter]
+/// impl RedactChat {
+///     #[rewrite_packet_message]
+///     fn redact_chat(
+///         &mut self,
+///         message: &mut CDotaUserMsgChatMessage,
+///     ) -> Result<MessageRewrite, ParserError> {
+///         message.message_text = Some("[redacted]".to_string());
+///         Ok(MessageRewrite::Rewrite)
+///     }
+/// }
+/// ```
+///
+/// ## Rewrite a string table entry
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::CMsgPlayerInfo;
+/// # use source2_demo::writer::*;
+/// struct AnonymizeUserInfo;
+///
+/// #[rewriter]
+/// impl AnonymizeUserInfo {
+///     #[rewrite_string_table_entry]
+///     fn rewrite_userinfo(
+///         &mut self,
+///         table_name: &str,
+///         entry: &mut StringTableEntryUpdate,
+///     ) -> Result<(), ParserError> {
+///         if table_name == "userinfo" {
+///             if let Some(value) = entry.value_mut() {
+///                 let mut player = CMsgPlayerInfo::decode(value.as_slice())?;
+///                 player.name = Some("Anonymous".to_string());
+///                 *value = player.encode_to_vec();
+///             }
+///         }
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// ## Rewrite decoded entity fields
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::writer::*;
+/// struct RemoveSteamIds;
+///
+/// #[rewriter]
+/// impl RemoveSteamIds {
+///     #[rewrite_field(class = "CDOTA_PlayerResource", field = ends_with("m_iPlayerSteamID"))]
+///     fn remove_steam_id(&mut self, _value: u64) -> u64 {
+///         0
+///     }
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn rewriter(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    rewriter_impl::expand_rewriter(item)
 }
 
 /// Marks a method as a protobuf message handler.
 ///
 /// Use this to handle specific protobuf message types. The message type is inferred
-/// from the method's parameter type, which should be a protobuf message struct.
+/// from the method's parameter type, which should be a mapped protobuf message
+/// struct.
 ///
 /// The method will automatically decode binary message data and call your handler
 /// with the decoded message object.
 ///
 /// # Parameters
 ///
-/// The handler can receive:
-/// - `ctx: &Context` (optional) - Access to current replay state
-/// - Message parameter - The decoded protobuf message (inferred from parameter type)
-/// - Message can be taken by value or reference
+/// A decoded handler can receive:
+///
+/// - `ctx: &Context` (optional)
+/// - One protobuf message by value or shared reference
+///
+/// A raw handler can instead receive:
+///
+/// - `ctx: &Context` (optional)
+/// - One supported message enum by value or shared reference
+/// - `payload: &[u8]`
+///
+/// Parameters can appear in any order.
+/// Return `ObserverResult`.
 ///
 /// # Supported Message Types
 ///
 /// - `CDotaUserMsgChatMessage` and other Dota 2 messages
 /// - `CCitadelUserMsgChatMsg` and other Deadlock messages
-/// - `CCSUserMessage_*` and other CS2 messages
-/// - Any protobuf message type with a `decode` method
+/// - `CCsUsrMsgVguiMenu` and other CS2 messages
+/// - Other mapped protobuf message types
 ///
 /// # Examples
 ///
@@ -870,8 +592,280 @@ fn get_arg_type(method: &syn::ImplItemFn, n: usize) -> (Type, bool) {
 /// }
 /// # }
 /// ```
+///
+/// ## Handle raw messages
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # struct MyObs;
+/// # impl MyObs {
+/// #[on_message]
+/// fn on_raw(&mut self, msg_type: SvcMessages, payload: &[u8]) -> ObserverResult {
+///     println!("{msg_type:?}: {} bytes", payload.len());
+///     Ok(())
+/// }
+/// # }
+/// ```
 #[proc_macro_attribute]
 pub fn on_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Rewrites an outer demo command payload.
+///
+/// Use this for callbacks that operate before packet-level decoding, such as
+/// dropping or replacing whole `EDemoCommands` messages. Raw handlers can
+/// receive `ctx: &Context`, `tick: u32`, `msg_type: EDemoCommands`, and
+/// `payload: &[u8]`, in any supported callback-argument order.
+///
+/// Return `Result<MessageRewrite, ParserError>`.
+#[proc_macro_attribute]
+pub fn rewrite_demo_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Rewrites an individual message inside a demo packet.
+///
+/// A raw handler can receive packet metadata and payload bytes. A typed handler
+/// can receive a protobuf message; the macro infers the packet message id from
+/// that protobuf type. Mutable protobuf arguments may return
+/// `MessageRewrite::Rewrite` to re-encode the modified message.
+///
+/// # Parameters
+///
+/// A raw handler can receive `ctx: &Context`, `tick: u32`, `msg_type: i32`,
+/// and `payload: &[u8]`. A typed handler can receive `ctx: &Context`,
+/// `tick: u32`, and one protobuf message by value, shared reference, or mutable
+/// reference. Parameters can appear in any order.
+///
+/// Return `Result<MessageRewrite, ParserError>`.
+///
+/// # Examples
+///
+/// ## Drop a decoded protobuf message
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::CDotaUserMsgChatMessage;
+/// # use source2_demo::writer::*;
+/// # struct MyRewriter;
+/// # impl MyRewriter {
+/// #[rewrite_packet_message]
+/// fn remove_chat(&mut self, _msg: CDotaUserMsgChatMessage) -> Result<MessageRewrite, ParserError> {
+///     Ok(MessageRewrite::Drop)
+/// }
+/// # }
+/// ```
+///
+/// ## Mutate a decoded protobuf message
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::CDotaUserMsgChatMessage;
+/// # use source2_demo::writer::*;
+/// # struct MyRewriter;
+/// # impl MyRewriter {
+/// #[rewrite_packet_message]
+/// fn redact_chat(
+///     &mut self,
+///     msg: &mut CDotaUserMsgChatMessage,
+/// ) -> Result<MessageRewrite, ParserError> {
+///     msg.message_text = Some("[redacted]".to_string());
+///     Ok(MessageRewrite::Rewrite)
+/// }
+/// # }
+/// ```
+#[proc_macro_attribute]
+pub fn rewrite_packet_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Mutates the decoded packet message list after per-message rewrites.
+///
+/// Use this when the rewrite needs packet-wide context, such as appending a new
+/// `PacketMessage`, removing several messages together, or reordering messages
+/// within one packet.
+///
+/// The handler can receive `ctx: &Context`, `tick: u32`, and
+/// `messages: &mut Vec<PacketMessage>` in any order. Return
+/// `Result<(), ParserError>`.
+#[proc_macro_attribute]
+pub fn rewrite_packet_messages(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Rewrites a decoded `CDemoStringTables` outer demo message.
+///
+/// This callback sees the full demo string-table message. Return
+/// `MessageRewrite::Rewrite` after mutating the decoded message, or
+/// `MessageRewrite::Replace(bytes)` to provide encoded bytes directly.
+///
+/// The handler can receive `ctx: &Context`, `tick: u32`, and
+/// `message: &mut CDemoStringTables` in any order. Return
+/// `Result<MessageRewrite, ParserError>`.
+#[proc_macro_attribute]
+pub fn rewrite_demo_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Rewrites one decoded string table entry update.
+///
+/// Use this for targeted string-table edits such as rewriting `userinfo` rows.
+/// The handler can receive `ctx: &Context`, `tick: u32`, `table_name: &str`,
+/// and `entry: &mut StringTableEntryUpdate` in any order. Return
+/// `Result<(), ParserError>`.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::proto::CMsgPlayerInfo;
+/// # use source2_demo::writer::*;
+/// # struct MyRewriter;
+/// # impl MyRewriter {
+/// #[rewrite_string_table_entry]
+/// fn anonymize_userinfo(
+///     &mut self,
+///     table_name: &str,
+///     entry: &mut StringTableEntryUpdate,
+/// ) -> Result<(), ParserError> {
+///     if table_name == "userinfo" {
+///         if let Some(value) = entry.value_mut() {
+///             let mut player = CMsgPlayerInfo::decode(value.as_slice())?;
+///             player.name = Some("Anonymous".to_string());
+///             *value = player.encode_to_vec();
+///         }
+///     }
+///     Ok(())
+/// }
+/// # }
+/// ```
+#[proc_macro_attribute]
+pub fn rewrite_string_table_entry(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Rewrites a decoded `svc_CreateStringTable` packet message.
+///
+/// Return `MessageRewrite::Rewrite` after mutating the decoded
+/// `CSvcMsgCreateStringTable`, or return `Replace` / `Drop` for explicit output
+/// control.
+///
+/// The handler can receive `ctx: &Context`, `tick: u32`, and
+/// `message: &mut CSvcMsgCreateStringTable` in any order. Return
+/// `Result<MessageRewrite, ParserError>`.
+#[proc_macro_attribute]
+pub fn rewrite_svc_create_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Rewrites a decoded `svc_UpdateStringTable` packet message.
+///
+/// This is useful for incremental string-table updates that arrive inside
+/// packet data. Return `MessageRewrite::Rewrite` after mutating the decoded
+/// `CSvcMsgUpdateStringTable`.
+///
+/// The handler can receive `ctx: &Context`, `tick: u32`, and
+/// `message: &mut CSvcMsgUpdateStringTable` in any order. Return
+/// `Result<MessageRewrite, ParserError>`.
+#[proc_macro_attribute]
+pub fn rewrite_svc_update_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Replaces decoded entity field values with custom logic.
+///
+/// This low-level form receives the current field as `&FieldValue` and returns
+/// `Option<FieldValue>`. Return `Some` to replace the value; return `None` to
+/// leave it unchanged or let later generated checks continue.
+///
+/// The handler can receive `ctx: &Context`, `event: EntityEvents`,
+/// `entity: &Entity`, `field_name: &str`, and `value: &FieldValue` in any
+/// order.
+#[proc_macro_attribute]
+pub fn replace_entity_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Replaces decoded entity field values with class and field filters.
+///
+/// # Attribute Arguments
+///
+/// - `class = ...` is required.
+/// - `field = ...` is optional.
+///
+/// Both filters accept an exact string literal or the `exact`, `starts_with`,
+/// `ends_with`, `contains`, `any`, `all`, and `not` predicates.
+///
+/// Field-specific handlers may use typed values such as `u64`, `bool`, or
+/// `String`. Class-only handlers must use `FieldValue` or `&FieldValue`
+/// because there is no field predicate to determine one concrete value type.
+///
+/// # Handler Parameters
+///
+/// A handler must receive one field value parameter. Field-specific handlers
+/// support `&str`, `String`, `&String`, `bool`, `f32`, `i8`, `i16`, `i32`,
+/// `i64`, `u8`, `u16`, `u32`, `u64`, `[f32; 2]`, `[f32; 3]`, `[f32; 4]`,
+/// `FieldValue`, and `&FieldValue`. Class-only handlers must use `FieldValue`
+/// or `&FieldValue`.
+///
+/// A handler can also receive any of these optional parameters:
+///
+/// - `ctx: &Context`
+/// - `event: EntityEvents`
+/// - `entity: &Entity`
+/// - `field_name: &str`
+///
+/// Parameters can appear in any order except that `field_name: &str` must come
+/// before the field value parameter. This matters because `&str` can itself be
+/// the field value type.
+///
+/// # Return Values
+///
+/// Return a replacement value directly to always rewrite the field. Return
+/// `Option<T>` to rewrite with `Some(value)` or leave the field unchanged with
+/// `None`. The replacement must convert into `FieldValue`.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// # use source2_demo::writer::*;
+/// # struct MyRewriter;
+/// # impl MyRewriter {
+/// #[rewrite_field(class = "CDOTA_PlayerResource", field = ends_with("m_iPlayerSteamID"))]
+/// fn remove_steam_id(&mut self, _value: u64) -> u64 {
+///     0
+/// }
+/// # }
+/// ```
+#[proc_macro_attribute]
+pub fn rewrite_field(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Filters which entities enter the entity field rewrite path.
+///
+/// Return `false` to skip all entity-field replacement callbacks for that
+/// entity. Use this to keep broad `#[rewrite_field]` handlers from forcing the
+/// writer to decode and re-encode unrelated entity classes.
+///
+/// The handler can receive `ctx: &Context`, `event: EntityEvents`, and
+/// `entity: &Entity` in any order. Return `bool`.
+#[proc_macro_attribute]
+pub fn should_rewrite_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// Filters which entities retain decoded field state while rewriting.
+///
+/// Return `false` to skip state decoding when the entity also does not enter
+/// the rewrite path. The default is `true`, preserving complete entity state.
+///
+/// The handler can receive `ctx: &Context`, `event: EntityEvents`, and
+/// `entity: &Entity` in any order. Return `bool`.
+#[proc_macro_attribute]
+pub fn should_track_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
@@ -884,6 +878,8 @@ pub fn on_message(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state including tick number
+///
+/// Return `ObserverResult`.
 ///
 /// # When It's Called
 ///
@@ -936,6 +932,8 @@ pub fn on_tick_start(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
 ///
+/// Return `ObserverResult`.
+///
 /// # When It's Called
 ///
 /// Called after all events for the current tick have been processed.
@@ -974,8 +972,10 @@ pub fn on_tick_end(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
-/// - `event: EntityEvents` (optional) - Type of entity event (Created, Updated, Deleted)
-/// - `entity: &Entity` - The entity that changed
+/// - `event: EntityEvents` or `event: &EntityEvents` (optional) - Type of entity event
+/// - `entity: &Entity` (optional) - The entity that changed
+///
+/// Parameters can appear in any order. Return `ObserverResult`.
 ///
 /// # Filtering
 ///
@@ -1072,7 +1072,9 @@ pub fn on_entity_properties_changed(_attr: TokenStream, item: TokenStream) -> To
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
-/// - `ge: &GameEvent` - The game event
+/// - `ge: &GameEvent` (optional) - The game event
+///
+/// Parameters can appear in any order. Return `ObserverResult`.
 ///
 /// # Filtering
 ///
@@ -1135,8 +1137,10 @@ pub fn on_game_event(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
-/// - `table: &StringTable` - The updated string table
-/// - `modified: &[i32]` - Indices of rows that were modified
+/// - `table: &StringTable` (optional) - The updated string table
+/// - `modified: &[i32]` (optional) - Indices of rows that were modified
+///
+/// Parameters can appear in any order. Return `ObserverResult`.
 ///
 /// # Filtering
 ///
@@ -1197,6 +1201,8 @@ pub fn on_string_table(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Final replay state
 ///
+/// Return `ObserverResult`.
+///
 /// # Examples
 ///
 /// ## Output final statistics
@@ -1243,7 +1249,9 @@ pub fn on_stop(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// The handler can receive:
 /// - `ctx: &Context` (optional) - Current replay state
-/// - `cle: &CombatLogEntry` - The combat log entry
+/// - `cle: &CombatLogEntry` (optional) - The combat log entry
+///
+/// Parameters can appear in any order. Return `ObserverResult`.
 ///
 /// # Requires Feature
 ///
@@ -1296,10 +1304,29 @@ pub fn on_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
+/// Marks the impl block or individual method to enable all tracking.
+///
+/// This is equivalent to `#[observer(all)]`.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use source2_demo::prelude::*;
+/// #[observer]
+/// #[uses_all]
+/// impl MyObs {
+/// # fn dummy(&mut self) -> ObserverResult { Ok(()) }
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn uses_all(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
 /// Marks the impl block to enable entity tracking.
 ///
 /// When applied to an impl block or individual method, automatically enables
-/// the `ENABLE_ENTITY` interest flag so entities are tracked during parsing.
+/// the `ENTITY_STATE` interest flag so entities are tracked during parsing.
 ///
 /// # Examples
 ///
@@ -1313,12 +1340,14 @@ pub fn on_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
 
 /// Marks the impl block to enable string table tracking.
 ///
 /// When applied to an impl block or individual method, automatically enables
-/// the `ENABLE_STRINGTAB` interest flag so string tables are tracked during parsing.
+/// the `STRING_TABLE_STATE` interest flag so string tables are tracked during parsing.
 ///
 /// # Examples
 ///
@@ -1332,12 +1361,14 @@ pub fn uses_entities(_attr: TokenStream, item: TokenStream) -> TokenStream { ite
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
 
 /// Marks the impl block to enable game event tracking.
 ///
 /// When applied to an impl block or individual method, automatically enables
-/// the `BASE_GE` interest flag so game events are tracked during parsing.
+/// the `BASE_GAME_EVENT` interest flag so game events are tracked during parsing.
 ///
 /// # Examples
 ///
@@ -1351,12 +1382,15 @@ pub fn uses_string_tables(_attr: TokenStream, item: TokenStream) -> TokenStream 
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
 
 /// Marks the impl block to enable combat log tracking (Dota 2 only).
 ///
-/// When applied to an impl block, automatically enables the `COMBAT_LOG` and
-/// `ENABLE_STRINGTAB` interest flags for combat log parsing.
+/// When applied to an impl block or individual method, automatically enables
+/// the `COMBAT_LOG_ENTRIES` and `STRING_TABLE_STATE` interest flags for combat
+/// log parsing.
 ///
 /// # Requires Feature
 ///
@@ -1375,4 +1409,6 @@ pub fn uses_game_events(_attr: TokenStream, item: TokenStream) -> TokenStream { 
 /// ```
 #[cfg(feature = "dota")]
 #[proc_macro_attribute]
-pub fn uses_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream { item }
+pub fn uses_combat_log(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}

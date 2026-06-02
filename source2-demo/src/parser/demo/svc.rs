@@ -24,9 +24,11 @@ pub trait SvcMsg {
         packet_entities: CSvcMsgPacketEntities,
     ) -> Result<(), ParserError>;
 
-    fn entity_created(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError>;
+    fn entity_created(&mut self, reader: &mut SliceReader, index: usize)
+        -> Result<(), ParserError>;
 
-    fn entity_updated(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError>;
+    fn entity_updated(&mut self, reader: &mut SliceReader, index: usize)
+        -> Result<(), ParserError>;
 
     fn entity_deleted(&mut self, index: usize) -> Result<(), ParserError>;
 }
@@ -98,7 +100,7 @@ where
 
         try_observers!(
             self,
-            TRACK_STRINGTAB,
+            STRING_TABLE_ENTRIES,
             on_string_table(
                 &self.context,
                 &self.context.string_tables.tables[table_index],
@@ -125,7 +127,7 @@ where
 
         try_observers!(
             self,
-            TRACK_STRINGTAB,
+            STRING_TABLE_ENTRIES,
             on_string_table(
                 &self.context,
                 &self.context.string_tables.tables[string_table.table_id() as usize],
@@ -163,7 +165,11 @@ where
         Ok(())
     }
 
-    fn entity_created(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError> {
+    fn entity_created(
+        &mut self,
+        reader: &mut SliceReader,
+        index: usize,
+    ) -> Result<(), ParserError> {
         let class_id = reader.read_bits_unchecked(self.context.classes.class_id_size) as i32;
         let serial = reader.read_bits_unchecked(17);
         let _ = reader.read_var_u32();
@@ -204,7 +210,7 @@ where
 
         try_observers!(
             self,
-            TRACK_ENTITY,
+            ENTITY_EVENTS,
             on_entity(
                 &self.context,
                 EntityEvents::Created,
@@ -215,7 +221,7 @@ where
         let field_paths = self.context.entities.entities_vec[index]
             .class()
             .serializer
-            .get_field_paths(&mut FieldPath::default(), &self.context.entities.entities_vec[index].state);
+            .get_paths(&mut FieldPath::default(), &self.context.entities.entities_vec[index].state);
 
         try_observers!(
             self,
@@ -230,7 +236,11 @@ where
         Ok(())
     }
 
-    fn entity_updated(&mut self, reader: &mut SliceReader, index: usize) -> Result<(), ParserError> {
+    fn entity_updated(
+        &mut self,
+        reader: &mut SliceReader,
+        index: usize,
+    ) -> Result<(), ParserError> {
         let entity = &mut self.context.entities.entities_vec[index];
 
         let changed_count = self
@@ -239,7 +249,7 @@ where
 
         try_observers!(
             self,
-            TRACK_ENTITY,
+            ENTITY_EVENTS,
             on_entity(
                 &self.context,
                 EntityEvents::Updated,
@@ -264,7 +274,7 @@ where
     fn entity_deleted(&mut self, index: usize) -> Result<(), ParserError> {
         try_observers!(
             self,
-            TRACK_ENTITY,
+            ENTITY_EVENTS,
             on_entity(
                 &self.context,
                 EntityEvents::Deleted,

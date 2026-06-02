@@ -22,11 +22,20 @@
 //!
 //! impl Observer for TableReader {
 //!     fn interests(&self) -> Interests {
-//!         Interests::ENABLE_STRINGTAB | Interests::TRACK_STRINGTAB
+//!         Interests::STRING_TABLE_STATE | Interests::STRING_TABLE_ENTRIES
 //!     }
 //!
-//!     fn on_string_table(&mut self, ctx: &Context, st: &StringTable, modified: &[i32]) -> ObserverResult {
-//!         println!("Table '{}' updated: {} rows modified", st.name(), modified.len());
+//!     fn on_string_table(
+//!         &mut self,
+//!         ctx: &Context,
+//!         st: &StringTable,
+//!         modified: &[i32],
+//!     ) -> ObserverResult {
+//!         println!(
+//!             "Table '{}' updated: {} rows modified",
+//!             st.name(),
+//!             modified.len()
+//!         );
 //!
 //!         // Iterate all rows
 //!         for row in st.iter() {
@@ -49,16 +58,23 @@
 //! println!("Active modifiers: {}", modifiers.iter().count());
 //!
 //! // Get by index
-//! let table = ctx.string_tables().get_by_index(0)?;
+//! let table = ctx.string_tables().get_by_id(0)?;
 //! # Ok(())
 //! # }
 //! ```
 
 mod container;
+mod rewrite;
 mod row;
 
 pub use container::*;
+pub use rewrite::StringTableEntryUpdate;
 pub use row::*;
+
+pub(crate) use rewrite::{
+    rewrite_create_string_table, rewrite_demo_string_table_items, rewrite_update_string_table,
+    PackedStringTableFormat, PackedStringTableState,
+};
 
 use crate::entity::BaselineContainer;
 use crate::error::StringTableError;
@@ -154,7 +170,8 @@ impl StringTable {
         self.items.iter()
     }
 
-    /// See [`get_row`](StringTable::get_row) - this method is deprecated in favor of the more clearly named `get_row`.
+    /// See [`get_row`](StringTable::get_row) - this method is deprecated in
+    /// favor of the more clearly named `get_row`.
     #[deprecated]
     pub fn get_row_by_index(&self, idx: usize) -> Result<&StringTableRow, StringTableError> {
         self.get_row(idx)
@@ -171,7 +188,8 @@ impl StringTable {
     ///
     /// # Errors
     ///
-    /// Returns [`StringTableError::RowNotFoundByIndex`] if the index is out of bounds.
+    /// Returns [`StringTableError::RowNotFoundByIndex`] if the index is out of
+    /// bounds.
     ///
     /// # Examples
     ///
@@ -187,7 +205,6 @@ impl StringTable {
     /// # Ok(())
     /// # }
     /// ```
-    ///
     pub fn get_row(&self, idx: usize) -> Result<&StringTableRow, StringTableError> {
         self.items
             .get(idx)
@@ -268,7 +285,8 @@ impl StringTable {
                 });
 
                 if self.name == "instancebaseline" {
-                    baselines.add_baseline(key.as_ref().unwrap().parse().unwrap_or(-1), value.clone());
+                    baselines
+                        .add_baseline(key.as_ref().unwrap().parse().unwrap_or(-1), value.clone());
                 }
 
                 value

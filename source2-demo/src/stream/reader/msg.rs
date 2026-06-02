@@ -4,29 +4,10 @@ use crate::proto::{
     CCitadelUserMsgPostMatchDetails, CDemoPacket, CMsgMatchMetaDataContents, CitadelUserMessageIds,
 };
 use crate::proto::{CDemoFileInfo, EDemoCommands, Message};
-use crate::reader::bits::BitsReader;
-use crate::reader::seekable::SeekableReader;
-use crate::reader::slice::SliceReader;
+use crate::stream::bits::BitsReader;
+use crate::stream::msg::{MessageReader, OuterMessage, ReplayInfoReader};
+use crate::stream::reader::{SeekableReader, SliceReader};
 use std::io::{Read, Seek};
-
-#[doc(hidden)]
-pub struct OuterMessage {
-    pub msg_type: EDemoCommands,
-    pub tick: u32,
-    pub buf: Vec<u8>,
-}
-
-#[doc(hidden)]
-pub trait MessageReader {
-    fn read_next_message(&mut self) -> Result<Option<OuterMessage>, ParserError>;
-}
-
-#[doc(hidden)]
-pub trait ReplayInfoReader: MessageReader {
-    fn read_replay_info(&mut self) -> Result<CDemoFileInfo, ParserError>;
-    #[cfg(feature = "deadlock")]
-    fn read_deadlock_match_details(&mut self) -> Result<CMsgMatchMetaDataContents, ParserError>;
-}
 
 impl MessageReader for SliceReader<'_> {
     #[inline]
@@ -54,6 +35,7 @@ impl MessageReader for SliceReader<'_> {
             msg_type,
             tick,
             buf,
+            compressed: msg_compressed,
         }))
     }
 }
@@ -62,7 +44,12 @@ impl<R: Read + Seek> ReplayInfoReader for SeekableReader<R> {
     fn read_replay_info(&mut self) -> Result<CDemoFileInfo, ParserError> {
         self.seek(8);
         let offset_bytes = self.read_bytes(4);
-        let offset = u32::from_le_bytes([offset_bytes[0], offset_bytes[1], offset_bytes[2], offset_bytes[3]]) as usize;
+        let offset = u32::from_le_bytes([
+            offset_bytes[0],
+            offset_bytes[1],
+            offset_bytes[2],
+            offset_bytes[3],
+        ]) as usize;
 
         self.seek(offset);
 
@@ -167,9 +154,7 @@ impl<R: Read + Seek> MessageReader for SeekableReader<R> {
 
         let buf = if msg_compressed {
             let mut decoder = snap::raw::Decoder::new();
-            let decompressed = decoder.decompress_vec(&raw_bytes)?;
-
-            decompressed
+            decoder.decompress_vec(&raw_bytes)?
         } else {
             raw_bytes
         };
@@ -178,7 +163,7 @@ impl<R: Read + Seek> MessageReader for SeekableReader<R> {
             msg_type,
             tick,
             buf,
+            compressed: msg_compressed,
         }))
     }
 }
-

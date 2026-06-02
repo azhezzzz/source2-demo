@@ -9,11 +9,11 @@ pub(crate) struct FieldState {
 impl FieldState {
     #[inline]
     pub(crate) fn get_value(&self, fp: &FieldPath) -> Option<&FieldValue> {
-        self.get_field_state(fp).and_then(|x| x.value.as_ref())
+        self.get_state(fp).and_then(|x| x.value.as_ref())
     }
 
     #[inline]
-    pub(crate) fn get_field_state(&self, fp: &FieldPath) -> Option<&FieldState> {
+    pub(crate) fn get_state(&self, fp: &FieldPath) -> Option<&FieldState> {
         let mut current_state = self;
         for i in 0..=fp.last {
             current_state = current_state.vec.get(fp.path[i] as usize)?;

@@ -36,7 +36,8 @@
 //!
 //! # fn example(ctx: &Context) -> anyhow::Result<()> {
 //! // Find all heroes on Radiant team
-//! let radiant_heroes: Vec<&Entity> = ctx.entities()
+//! let radiant_heroes: Vec<&Entity> = ctx
+//!     .entities()
 //!     .iter()
 //!     .filter(|e| {
 //!         e.class().name().starts_with("CDOTA_Unit_Hero_")
@@ -81,8 +82,13 @@ use std::rc::Rc;
 ///
 /// #[observer]
 /// #[uses_entities]
-/// impl Observer for EntityTracker {
-///     fn on_entity(&mut self, ctx: &Context, event: EntityEvents, entity: &Entity) -> ObserverResult {
+/// impl EntityTracker {
+///     fn on_entity(
+///         &mut self,
+///         ctx: &Context,
+///         event: EntityEvents,
+///         entity: &Entity,
+///     ) -> ObserverResult {
 ///         match event {
 ///             EntityEvents::Created => self.created += 1,
 ///             EntityEvents::Updated => self.updated += 1,
@@ -116,8 +122,8 @@ impl EntityEvents {
 
 /// Represents a game entity with its properties and state.
 ///
-/// Entities are the fundamental objects in Source 2 games, representing everything
-/// from players and heroes to items and buildings. Each entity has:
+/// Entities are the fundamental objects in Source 2 games, representing
+/// everything from players and heroes to items and buildings. Each entity has:
 /// - An index (position in the entity list)
 /// - A serial number (for handle-based lookups)
 /// - A class (defines what type of entity it is)
@@ -159,11 +165,7 @@ impl EntityEvents {
 /// # fn example(entity: &Entity) -> anyhow::Result<()> {
 /// // Access array element using formatting
 /// let player_id = 3;
-/// let name: String = property!(
-///     entity,
-///     "m_vecPlayerData.{:04}.m_iszPlayerName",
-///     player_id
-/// );
+/// let name: String = property!(entity, "m_vecPlayerData.{:04}.m_iszPlayerName", player_id);
 /// # Ok(())
 /// # }
 /// ```
@@ -200,6 +202,15 @@ impl Default for Entity {
 }
 
 impl Entity {
+    pub(crate) fn new(index: u32, serial: u32, class: Rc<Class>, state: FieldState) -> Self {
+        Entity {
+            index,
+            serial,
+            class,
+            state,
+        }
+    }
+
     /// Returns the entity's index in the entity list.
     ///
     /// The index is the position of this entity in the internal entity array.
@@ -227,8 +238,9 @@ impl Entity {
 
     /// Returns a reference to the entity's class.
     ///
-    /// The class defines what type of entity this is (e.g., "CDOTA_Unit_Hero_Axe").
-    /// It also contains the serializer that defines what properties the entity has.
+    /// The class defines what type of entity this is (e.g.,
+    /// "CDOTA_Unit_Hero_Axe"). It also contains the serializer that defines
+    /// what properties the entity has.
     ///
     /// # Examples
     ///
@@ -250,10 +262,11 @@ impl Entity {
         &self.class
     }
 
-    /// See [`get_property`](Entity::get_property) - this method is deprecated in favor of the more clearly named `get_property`.
+    /// See [`get_property`](Entity::get_property) - this method is deprecated
+    /// in favor of the more clearly named `get_property`.
     #[deprecated]
     pub fn get_property_by_name(&self, name: &str) -> Result<&FieldValue, EntityError> {
-        self.get_property_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)
+        self.get_property_by_path(&self.class.serializer.get_path(name)?)
     }
 
     /// Gets the value of an entity property by its name.
@@ -267,7 +280,8 @@ impl Entity {
     /// Property names use dot notation for nested properties:
     /// - Simple: `"m_iHealth"`, `"m_flMana"`
     /// - Nested: `"CBodyComponent.m_cellX"`
-    /// - Arrays: `"m_vecPlayerData.0000.m_iszPlayerName"` (use formatting for indices)
+    /// - Arrays: `"m_vecPlayerData.0000.m_iszPlayerName"` (use formatting for
+    ///   indices)
     ///
     /// # Recommended Alternatives
     ///
@@ -284,7 +298,8 @@ impl Entity {
     ///
     /// # Arguments
     ///
-    /// * `name` - The property name in dot notation (e.g., "CBodyComponent.m_cellX")
+    /// * `name` - The property name in dot notation (e.g.,
+    ///   "CBodyComponent.m_cellX")
     ///
     /// # Returns
     ///
@@ -294,8 +309,8 @@ impl Entity {
     ///
     /// # Errors
     ///
-    /// Returns [`EntityError::PropertyNameNotFound`] if the property doesn't exist
-    /// on this entity or if the name is invalid.
+    /// Returns [`EntityError::PropertyNameNotFound`] if the property doesn't
+    /// exist on this entity or if the name is invalid.
     ///
     /// # Examples
     ///
@@ -309,14 +324,10 @@ impl Entity {
     /// let health: i32 = entity.get_property("m_iHealth")?.try_into()?;
     ///
     /// // Get nested property
-    /// let cell_x: u8 = entity
-    ///     .get_property("CBodyComponent.m_cellX")?
-    ///     .try_into()?;
+    /// let cell_x: u8 = entity.get_property("CBodyComponent.m_cellX")?.try_into()?;
     ///
     /// // Get vector property
-    /// let position: i32 = entity
-    ///     .get_property("m_iHealth")?
-    ///     .try_into()?;
+    /// let position: i32 = entity.get_property("m_iHealth")?.try_into()?;
     /// # Ok(())
     /// # }
     /// ```
@@ -339,9 +350,7 @@ impl Entity {
     ///         entity: &Entity,
     ///     ) -> ObserverResult {
     ///         // Manual conversion with get_property
-    ///         let health: i32 = entity
-    ///             .get_property("m_iHealth")?
-    ///             .try_into()?;
+    ///         let health: i32 = entity.get_property("m_iHealth")?.try_into()?;
     ///
     ///         // Recommended: using property! macro instead
     ///         let max_health: i32 = property!(entity, "m_iMaxHealth");
@@ -372,14 +381,16 @@ impl Entity {
     ///
     /// # See Also
     ///
-    /// - [`property!`] - Macro for concise property access with automatic conversion
-    /// - [`try_property!`] - Macro for optional property access (returns `Option`)
+    /// - [`property!`] - Macro for concise property access with automatic
+    ///   conversion
+    /// - [`try_property!`] - Macro for optional property access (returns
+    ///   `Option`)
     /// - [`FieldValue`] - The type returned by this method
     ///
     /// [`property!`]: crate::property
     /// [`try_property!`]: crate::try_property
     pub fn get_property(&self, name: &str) -> Result<&FieldValue, EntityError> {
-        self.get_property_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)
+        self.get_property_by_path(&self.class.serializer.get_path(name)?)
     }
 
     /// Gets the value of an entity property by its decoded field path.
@@ -387,9 +398,13 @@ impl Entity {
     /// This is primarily useful inside `on_entity_properties_changed` callbacks,
     /// where the parser already provides the updated [`FieldPath`].
     pub fn get_property_by_field_path(&self, fp: &FieldPath) -> Result<&FieldValue, EntityError> {
+        self.get_property_by_path(fp)
+    }
+
+    pub(crate) fn get_property_by_path(&self, fp: &FieldPath) -> Result<&FieldValue, EntityError> {
         self.state.get_value(fp).ok_or_else(|| {
             EntityError::PropertyNameNotFound(
-                self.class.serializer.get_name_for_field_path(fp),
+                self.class.serializer.get_name(fp),
                 self.class.name().to_string(),
                 format!("{}", fp),
             )
@@ -403,13 +418,13 @@ impl Entity {
     pub fn field_paths(&self) -> Vec<FieldPath> {
         self.class
             .serializer
-            .get_field_paths(&mut FieldPath::default(), &self.state)
+            .get_paths(&mut FieldPath::default(), &self.state)
     }
 
     /// Returns an iterator over the values inside a vector-like entity property.
     ///
-    /// This is useful for properties that contain multiple field states, such as
-    /// handle arrays like `"m_hItems"`. Each element is returned as an
+    /// This is useful for properties that contain multiple field states, such
+    /// as handle arrays like `"m_hItems"`. Each element is returned as an
     /// `Option<&FieldValue>` because some entries may not have a value.
     ///
     /// # Arguments
@@ -422,8 +437,8 @@ impl Entity {
     ///
     /// # Errors
     ///
-    /// Returns [`EntityError::PropertyNameNotFound`] if the property name is invalid
-    /// or the entity does not contain this field.
+    /// Returns [`EntityError::PropertyNameNotFound`] if the property name is
+    /// invalid or the entity does not contain this field.
     ///
     /// # Examples
     ///
@@ -438,22 +453,21 @@ impl Entity {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_iter(&self, name: &str) -> Result<impl Iterator<Item = Option<&FieldValue>>, EntityError> {
+    pub fn get_iter(
+        &self,
+        name: &str,
+    ) -> Result<impl Iterator<Item = Option<&FieldValue>>, EntityError> {
         Ok(self
-            .get_state_by_field_path(&self.class.serializer.get_field_path_for_name(name)?)?
+            .get_state(&self.class.serializer.get_path(name)?)?
             .vec
             .iter()
-            .map(|fs| fs.value.as_ref())
-        )
+            .map(|fs| fs.value.as_ref()))
     }
 
-    pub(crate) fn get_state_by_field_path(
-        &self,
-        fp: &FieldPath,
-    ) -> Result<&FieldState, EntityError> {
-        self.state.get_field_state(fp).ok_or_else(|| {
+    pub(crate) fn get_state(&self, fp: &FieldPath) -> Result<&FieldState, EntityError> {
+        self.state.get_state(fp).ok_or_else(|| {
             EntityError::PropertyNameNotFound(
-                self.class.serializer.get_name_for_field_path(fp),
+                self.class.serializer.get_name(fp),
                 self.class.name().to_string(),
                 format!("{}", fp),
             )

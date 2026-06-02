@@ -1,7 +1,8 @@
 //! Game event system for handling in-game events.
 //!
 //! This module provides types for working with game events - structured events
-//! that occur during gameplay like player kills, item purchases, ability uses, etc.
+//! that occur during gameplay like player kills, item purchases, ability uses,
+//! etc.
 //!
 //! # Overview
 //!
@@ -20,7 +21,7 @@
 //!
 //! #[observer]
 //! #[uses_game_events]
-//! impl EventLogger{
+//! impl EventLogger {
 //!     #[on_game_event]
 //!     fn on_game_event(&mut self, ctx: &Context, ge: &GameEvent) -> ObserverResult {
 //!         println!("Event: {}", ge.name());
@@ -58,7 +59,8 @@ use crate::proto::CSvcMsgGameEvent;
 
 /// Represents a game event with its name and values.
 ///
-/// Game events are structured in-game occurrences. Each event has a name and a set of named values.
+/// Game events are structured in-game occurrences. Each event has a name and a
+/// set of named values.
 ///
 /// # Examples
 ///
@@ -150,7 +152,8 @@ impl<'a> GameEvent<'a> {
     ///
     /// # Errors
     ///
-    /// Returns [`GameEventError::UnknownKey`] if the key doesn't exist for this event.
+    /// Returns [`GameEventError::UnknownKey`] if the key doesn't exist for this
+    /// event.
     ///
     /// # Examples
     ///

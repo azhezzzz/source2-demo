@@ -67,12 +67,13 @@ impl Classes {
     ///
     /// # Errors
     ///
-    /// Returns [`ClassError::ClassNotFoundById`] if no class with the given ID exists.
+    /// Returns [`ClassError::ClassNotFoundById`] if no class with the given ID
+    /// exists.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// use source2_demo::prelude::*;
+    /// use source2_demo::Context;
     ///
     /// # fn example(ctx: &Context) -> anyhow::Result<()> {
     /// let class = ctx.classes().get_by_id(42)?;
@@ -104,7 +105,7 @@ impl Classes {
     /// # Examples
     ///
     /// ```no_run
-    /// use source2_demo::prelude::*;
+    /// use source2_demo::Context;
     ///
     /// # fn example(ctx: &Context) -> anyhow::Result<()> {
     /// // Find hero class
@@ -166,7 +167,8 @@ impl Classes {
 ///
 /// # fn example(ctx: &Context) -> anyhow::Result<()> {
 /// // Find all heroes
-/// let heroes: Vec<&Entity> = ctx.entities()
+/// let heroes: Vec<&Entity> = ctx
+///     .entities()
 ///     .iter()
 ///     .filter(|e| e.class().name().starts_with("CDOTA_Unit_Hero_"))
 ///     .collect();
@@ -196,7 +198,7 @@ impl Class {
     /// # Examples
     ///
     /// ```no_run
-    /// use source2_demo::prelude::*;
+    /// use source2_demo::Class;
     ///
     /// # fn example(class: &Class) {
     /// match class.name() {
@@ -218,7 +220,7 @@ impl Class {
     /// # Examples
     ///
     /// ```no_run
-    /// use source2_demo::prelude::*;
+    /// use source2_demo::Class;
     ///
     /// # fn example(class: &Class) {
     /// println!("Class ID: {}", class.id());
@@ -233,6 +235,6 @@ impl Class {
     /// This is useful in property-change callbacks where the parser provides a
     /// [`FieldPath`] rather than the preformatted string name.
     pub fn field_name_for_path(&self, field_path: &crate::FieldPath) -> String {
-        self.serializer.get_name_for_field_path(field_path)
+        self.serializer.get_name(field_path)
     }
 }

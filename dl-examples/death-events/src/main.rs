@@ -1,4 +1,5 @@
 use source2_demo::prelude::*;
+use std::io::BufReader;
 
 #[derive(Default)]
 struct DeathEvents;
@@ -46,7 +47,8 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     };
 
-    let mut parser = Parser::from_reader(std::fs::File::open(filepath)?)?;
+    let input = BufReader::new(std::fs::File::open(filepath)?);
+    let mut parser = Parser::from_reader(input)?;
 
     parser.register_observer::<DeathEvents>();
 

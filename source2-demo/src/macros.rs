@@ -50,8 +50,8 @@ macro_rules! property {
     }};
 }
 
-/// Same as [`crate::property`] but returns `None` if property doesn't exist for given
-/// [`crate::Entity`] or cannot be converted into given type.
+/// Same as [`crate::property`] but returns `None` if property doesn't exist for
+/// given [`crate::Entity`] or cannot be converted into given type.
 ///
 /// # Examples
 /// ```no_compile

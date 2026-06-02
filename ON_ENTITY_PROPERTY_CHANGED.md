@@ -21,6 +21,25 @@
 4. `Entity::field_paths()` 与 `FieldReader::field_paths(count)`
    用于枚举创建时的全部字段路径，以及更新时本次 packet 的变更字段路径。
 
+### 当前新增的公开 API
+
+相对 `origin/master`，当前分支新增或额外公开的 API 只有这些：
+
+- `Interests::TRACK_ENTITY_PROPERTY`
+- `#[on_entity_properties_changed]`
+- `FieldPath`
+  当前已对外可见，并从 `source2_demo::prelude::*` 可直接导入
+- `Entity::get_property_by_field_path(&FieldPath) -> Result<&FieldValue, EntityError>`
+- `Entity::field_paths() -> Vec<FieldPath>`
+- `Class::field_name_for_path(&FieldPath) -> String`
+
+说明：
+
+- `FieldReader::field_paths(count)` 仍然只是库内部辅助接口，不属于公开 API
+- 上面这些公开 API 里，后续最可能继续收缩的是：
+  - `Entity::field_paths()`
+  - `Class::field_name_for_path(&FieldPath)`
+
 ### 当前改动原则
 
 - 优先通过“新增”实现能力，尽量避免直接修改上游现有源码
@@ -48,16 +67,19 @@
 - 实体更新时：一次回调返回本次 packet 中全部变更字段路径
 - 实体删除时：不触发属性级回调
 
-### 与 `origin/master` 相比的最小改动文件
+### 与 `origin/master` 相比的当前最小改动文件
 
 - `source2-demo/src/parser/observer.rs`
 - `source2-demo/src/parser/demo/svc.rs`
 - `source2-demo-macros/src/lib.rs`
+- `source2-demo-macros/src/observer_impl.rs`
+- `source2-demo-macros/src/type_utils.rs`
 - `source2-demo/src/entity/mod.rs`
 - `source2-demo/src/entity/class.rs`
 - `source2-demo/src/entity/field/mod.rs`
 - `source2-demo/src/entity/field/path.rs`
-- `source2-demo/src/reader/field/mod.rs`
+- `source2-demo/src/lib.rs`
+- `source2-demo/src/stream/reader/field.rs`
 
 下面保留的历史分析主要记录这条分支过去的单字段实现、上游同步过程和比较口径；如果与本节冲突，以本节为准。
 

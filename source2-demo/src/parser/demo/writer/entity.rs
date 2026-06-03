@@ -15,6 +15,14 @@ struct FieldReplacement {
     value_end: usize,
 }
 
+struct DecodedEntityField {
+    fp: FieldPath,
+    name: Rc<str>,
+    value: FieldValue,
+    value_start: usize,
+    value_end: usize,
+}
+
 impl<'a, R, W> DemoWriter<'a, R, W>
 where
     R: BitsReader + MessageReader,
@@ -48,6 +56,7 @@ where
         let mut reader = SliceReader::new(entity_data);
         let mut replacements = Vec::new();
         let mut paths = Vec::new();
+        let mut decoded_fields = Vec::new();
         let mut index = usize::MAX;
         let mut path_reader = FieldPathCodec::default();
 
@@ -67,6 +76,7 @@ where
                         &mut reader,
                         &mut path_reader,
                         &mut paths,
+                        &mut decoded_fields,
                         &mut replacements,
                         index,
                     )?;
@@ -76,6 +86,7 @@ where
                         &mut reader,
                         &mut path_reader,
                         &mut paths,
+                        &mut decoded_fields,
                         &mut replacements,
                         index,
                     )?;
@@ -122,6 +133,7 @@ where
         reader: &mut SliceReader<'_>,
         path_reader: &mut FieldPathCodec,
         paths: &mut Vec<FieldPath>,
+        decoded_fields: &mut Vec<DecodedEntityField>,
         replacements: &mut Vec<FieldReplacement>,
         index: usize,
     ) -> Result<(), ParserError> {
@@ -148,6 +160,7 @@ where
                 reader,
                 path_reader,
                 paths,
+                decoded_fields,
                 replacements,
                 EntityEvents::Created,
                 &mut entity,
@@ -169,10 +182,23 @@ where
         reader: &mut SliceReader<'_>,
         path_reader: &mut FieldPathCodec,
         paths: &mut Vec<FieldPath>,
+        decoded_fields: &mut Vec<DecodedEntityField>,
         replacements: &mut Vec<FieldReplacement>,
         index: usize,
     ) -> Result<(), ParserError> {
-        let mut entity = std::mem::take(&mut self.parser.context.entities.entities_vec[index]);
+        let class = self.parser.context.entities.entities_vec[index]
+            .class
+            .clone();
+        let placeholder = Entity {
+            index: u32::MAX,
+            serial: 0,
+            class,
+            state: FieldState::default(),
+        };
+        let mut entity = std::mem::replace(
+            &mut self.parser.context.entities.entities_vec[index],
+            placeholder,
+        );
         let track = self.should_track_entity(EntityEvents::Updated, &entity);
         let rewrite = self.should_rewrite_entity(EntityEvents::Updated, &entity);
         if track || rewrite {
@@ -180,6 +206,7 @@ where
                 reader,
                 path_reader,
                 paths,
+                decoded_fields,
                 replacements,
                 EntityEvents::Updated,
                 &mut entity,
@@ -225,6 +252,7 @@ where
         reader: &mut SliceReader<'_>,
         path_reader: &mut FieldPathCodec,
         paths: &mut Vec<FieldPath>,
+        decoded_fields: &mut Vec<DecodedEntityField>,
         replacements: &mut Vec<FieldReplacement>,
         event: EntityEvents,
         entity: &mut Entity,
@@ -243,14 +271,6 @@ where
             paths.push(fp);
         }
 
-        struct DecodedField {
-            fp: FieldPath,
-            name: Rc<str>,
-            value: FieldValue,
-            value_start: usize,
-            value_end: usize,
-        }
-
         if !rewrite {
             for fp in paths.iter().copied() {
                 let decoder = entity.class.serializer.get_decoder(&fp);
@@ -260,7 +280,8 @@ where
             return Ok(());
         }
 
-        let mut decoded_fields = Vec::with_capacity(paths.len());
+        decoded_fields.clear();
+        decoded_fields.reserve(paths.len());
         for fp in paths.iter().copied() {
             let name = entity.class.serializer.get_name(&fp);
             let decoder = entity.class.serializer.get_decoder(&fp);
@@ -268,7 +289,7 @@ where
             let value = decoder.decode(reader);
             let value_end = bit_position(reader);
             entity.state.set(&fp, value.clone());
-            decoded_fields.push(DecodedField {
+            decoded_fields.push(DecodedEntityField {
                 fp,
                 name,
                 value,
@@ -277,7 +298,7 @@ where
             });
         }
 
-        for field in decoded_fields {
+        for field in decoded_fields.drain(..) {
             let replacement = self.replace_entity_field(event, entity, &field.name, &field.value);
 
             if let Some(next_value) = replacement {

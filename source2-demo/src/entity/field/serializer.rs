@@ -21,6 +21,7 @@ impl<T> CacheCell<T> {
 pub(crate) struct Serializer {
     pub(crate) fields: Vec<Rc<Field>>,
     fp_cache: Rc<CacheCell<HashMap<Box<str>, FieldPath>>>,
+    name_cache: Rc<CacheCell<HashMap<FieldPath, Rc<str>>>>,
 }
 
 impl Default for Serializer {
@@ -28,13 +29,18 @@ impl Default for Serializer {
         Self {
             fields: Vec::new(),
             fp_cache: Rc::new(CacheCell::new(HashMap::default())),
+            name_cache: Rc::new(CacheCell::new(HashMap::default())),
         }
     }
 }
 
 impl Serializer {
     #[inline]
-    pub(crate) fn get_name(&self, fp: &FieldPath) -> String {
+    pub(crate) fn get_name(&self, fp: &FieldPath) -> Rc<str> {
+        if let Some(name) = self.name_cache.get().get(fp) {
+            return name.clone();
+        }
+
         let mut i = 0;
         let mut current_serializer = self;
         let mut current_field = &current_serializer.fields[fp.path[i] as usize];
@@ -75,6 +81,10 @@ impl Serializer {
                 FieldModel::Value => break,
             }
             current_field = &current_serializer.fields[fp.path[i] as usize];
+        }
+        let name = Rc::<str>::from(name);
+        unsafe {
+            (*self.name_cache.0.get()).insert(*fp, name.clone());
         }
         name
     }
@@ -198,7 +208,9 @@ impl Serializer {
         }
 
         unsafe {
-            (*self.fp_cache.0.get()).insert(name.into(), fp);
+            let name: Box<str> = name.into();
+            (*self.name_cache.0.get()).insert(fp, Rc::from(name.as_ref()));
+            (*self.fp_cache.0.get()).insert(name, fp);
         }
 
         Ok(fp)

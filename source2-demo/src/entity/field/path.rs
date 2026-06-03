@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct FieldPath {
     pub(crate) path: [u16; 7],
     pub(crate) last: usize,

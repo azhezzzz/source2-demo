@@ -5,6 +5,7 @@ use crate::reader::{FieldPathCodec, SliceReader};
 use crate::stream::copy::{bit_position, copy_original_bits, copy_remaining_bits};
 use crate::stream::field_path::FieldOp;
 use crate::writer::{BitsWriter, BitstreamWriter};
+use std::rc::Rc;
 
 impl<'a, R, W> DemoWriter<'a, R, W>
 where
@@ -94,7 +95,7 @@ where
 
         struct DecodedField {
             fp: FieldPath,
-            name: String,
+            name: Rc<str>,
             value: FieldValue,
             value_start: usize,
             value_end: usize,

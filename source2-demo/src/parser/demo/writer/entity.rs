@@ -245,7 +245,7 @@ where
 
         struct DecodedField {
             fp: FieldPath,
-            name: String,
+            name: Rc<str>,
             value: FieldValue,
             value_start: usize,
             value_end: usize,

@@ -1,5 +1,5 @@
 use super::*;
-use crate::entity::field::{Decode, Encode, FieldPath, FieldValue};
+use crate::entity::field::{Decode, Encode, FieldPath};
 use crate::proto::{c_demo_string_tables::ItemsT, CDemoStringTables};
 use crate::reader::SliceReader;
 use crate::stream::copy::{bit_position, copy_original_bits, copy_remaining_bits};
@@ -96,7 +96,6 @@ where
         struct DecodedField {
             fp: FieldPath,
             name: Rc<str>,
-            value: FieldValue,
             value_start: usize,
             value_end: usize,
         }
@@ -108,11 +107,10 @@ where
             let value_start = bit_position(&reader);
             let value = decoder.decode(&mut reader);
             let value_end = bit_position(&reader);
-            entity.state.set(&fp, value.clone());
+            entity.state.set(&fp, value);
             decoded_fields.push(DecodedField {
                 fp,
                 name,
-                value,
                 value_start,
                 value_end,
             });
@@ -125,7 +123,10 @@ where
                 EntityEvents::Created,
                 &entity,
                 &field.name,
-                &field.value,
+                entity
+                    .state
+                    .get_value(&field.fp)
+                    .expect("decoded field value"),
             );
 
             if let Some(next_value) = replacement {

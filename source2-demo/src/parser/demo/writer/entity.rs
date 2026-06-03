@@ -18,7 +18,6 @@ struct FieldReplacement {
 struct DecodedEntityField {
     fp: FieldPath,
     name: Rc<str>,
-    value: FieldValue,
     value_start: usize,
     value_end: usize,
 }
@@ -288,18 +287,20 @@ where
             let value_start = bit_position(reader);
             let value = decoder.decode(reader);
             let value_end = bit_position(reader);
-            entity.state.set(&fp, value.clone());
+            entity.state.set(&fp, value);
             decoded_fields.push(DecodedEntityField {
                 fp,
                 name,
-                value,
                 value_start,
                 value_end,
             });
         }
 
         for field in decoded_fields.drain(..) {
-            let replacement = self.replace_entity_field(event, entity, &field.name, &field.value);
+            let Some(value) = entity.state.get_value(&field.fp) else {
+                continue;
+            };
+            let replacement = self.replace_entity_field(event, entity, &field.name, value);
 
             if let Some(next_value) = replacement {
                 entity.state.set(&field.fp, next_value.clone());

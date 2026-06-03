@@ -1,7 +1,7 @@
 use super::*;
 use crate::entity::field::{Decode, Encode, FieldPath, FieldValue};
 use crate::proto::{c_demo_string_tables::ItemsT, CDemoStringTables};
-use crate::reader::{FieldPathCodec, SliceReader};
+use crate::reader::SliceReader;
 use crate::stream::copy::{bit_position, copy_original_bits, copy_remaining_bits};
 use crate::stream::field_path::FieldOp;
 use crate::writer::{BitsWriter, BitstreamWriter};
@@ -77,7 +77,7 @@ where
         let mut reader = SliceReader::new(data);
         let mut out = Vec::with_capacity(data.len());
         let mut writer = BitstreamWriter::new(&mut out);
-        let path_reader = FieldPathCodec::default();
+        let path_reader = self.field_path_codec.clone();
 
         let paths_start = bit_position(&reader);
         let mut paths = Vec::new();

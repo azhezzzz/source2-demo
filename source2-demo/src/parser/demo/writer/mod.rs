@@ -12,7 +12,7 @@ use crate::entity::field::FieldValue;
 use crate::entity::{Entity, EntityEvents};
 use crate::error::ParserError;
 use crate::parser::Parser;
-use crate::reader::{BitsReader, MessageReader, SeekableReader, SliceReader};
+use crate::reader::{BitsReader, FieldPathCodec, MessageReader, SeekableReader, SliceReader};
 use crate::string_table::PackedStringTableState;
 use std::cell::RefCell;
 use std::io::{Seek, Write};
@@ -41,6 +41,7 @@ where
     string_table_rewrite_states: Vec<Option<PackedStringTableState>>,
     rewriters: Vec<Box<dyn DemoRewriter + 'a>>,
     rewriter_interests: RewriteInterests,
+    field_path_codec: FieldPathCodec,
     bytes_written: u64,
     file_info_offset: Option<u64>,
 }
@@ -58,6 +59,7 @@ where
             string_table_rewrite_states: Vec::new(),
             rewriters: Vec::new(),
             rewriter_interests: RewriteInterests::empty(),
+            field_path_codec: FieldPathCodec::default(),
             bytes_written: 0,
             file_info_offset: None,
         }

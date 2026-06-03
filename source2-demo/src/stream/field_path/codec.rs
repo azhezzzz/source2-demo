@@ -2,17 +2,26 @@ use crate::reader::{BitsReader, SliceReader};
 use crate::stream::field_path::{FieldOp, FIELD_OPS};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use std::rc::Rc;
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct FieldPathCodec {
-    tree: FieldPathTree,
+    tree: Rc<FieldPathTree>,
+}
+
+impl Default for FieldPathCodec {
+    fn default() -> Self {
+        Self {
+            tree: Rc::new(FieldPathTree::default()),
+        }
+    }
 }
 
 impl FieldPathCodec {
     #[inline]
     pub(crate) fn read_op(&self, reader: &mut SliceReader) -> FieldOp {
         reader.refill();
-        let mut node = &self.tree;
+        let mut node = self.tree.as_ref();
         loop {
             node = if reader.read_bool() {
                 node.right()

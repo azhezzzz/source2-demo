@@ -58,7 +58,7 @@ where
         let mut paths = Vec::new();
         let mut decoded_fields = Vec::new();
         let mut index = usize::MAX;
-        let mut path_reader = FieldPathCodec::default();
+        let path_reader = self.field_path_codec.clone();
 
         for _ in 0..updated_entries {
             let delta = reader.read_ubit_var();
@@ -74,7 +74,7 @@ where
                 EntityEvents::Created => {
                     self.rewrite_entity_created(
                         &mut reader,
-                        &mut path_reader,
+                        &path_reader,
                         &mut paths,
                         &mut decoded_fields,
                         &mut replacements,
@@ -84,7 +84,7 @@ where
                 EntityEvents::Updated => {
                     self.rewrite_entity_updated(
                         &mut reader,
-                        &mut path_reader,
+                        &path_reader,
                         &mut paths,
                         &mut decoded_fields,
                         &mut replacements,
@@ -131,7 +131,7 @@ where
     fn rewrite_entity_created(
         &mut self,
         reader: &mut SliceReader<'_>,
-        path_reader: &mut FieldPathCodec,
+        path_reader: &FieldPathCodec,
         paths: &mut Vec<FieldPath>,
         decoded_fields: &mut Vec<DecodedEntityField>,
         replacements: &mut Vec<FieldReplacement>,
@@ -180,7 +180,7 @@ where
     fn rewrite_entity_updated(
         &mut self,
         reader: &mut SliceReader<'_>,
-        path_reader: &mut FieldPathCodec,
+        path_reader: &FieldPathCodec,
         paths: &mut Vec<FieldPath>,
         decoded_fields: &mut Vec<DecodedEntityField>,
         replacements: &mut Vec<FieldReplacement>,
@@ -225,7 +225,7 @@ where
 
     fn skip_original_fields(
         reader: &mut SliceReader<'_>,
-        path_reader: &mut FieldPathCodec,
+        path_reader: &FieldPathCodec,
         paths: &mut Vec<FieldPath>,
         entity: &Entity,
     ) {
@@ -250,7 +250,7 @@ where
     fn rewrite_fields(
         &mut self,
         reader: &mut SliceReader<'_>,
-        path_reader: &mut FieldPathCodec,
+        path_reader: &FieldPathCodec,
         paths: &mut Vec<FieldPath>,
         decoded_fields: &mut Vec<DecodedEntityField>,
         replacements: &mut Vec<FieldReplacement>,

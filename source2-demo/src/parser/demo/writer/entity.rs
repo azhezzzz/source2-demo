@@ -7,7 +7,9 @@ use crate::stream::field_path::FieldOp;
 use crate::writer::{BitsWriter, BitstreamWriter};
 use std::rc::Rc;
 
-struct FieldReplacement {
+pub(super) const ENTITY_REWRITE_BUFFER_LEN: usize = 8192;
+
+pub(super) struct FieldReplacement {
     serializer: Rc<crate::entity::field::Serializer>,
     fp: FieldPath,
     value: FieldValue,
@@ -15,11 +17,67 @@ struct FieldReplacement {
     value_end: usize,
 }
 
-struct DecodedEntityField {
+pub(super) struct DecodedEntityField {
     fp: FieldPath,
     name: Rc<str>,
     value_start: usize,
     value_end: usize,
+}
+
+impl<'a, R, W> DemoWriter<'a, R, W>
+where
+    R: BitsReader + MessageReader,
+    W: Write + Seek,
+{
+    #[inline]
+    fn clear_entity_paths(&mut self) {
+        self.entity_rewrite_paths_len = 0;
+    }
+
+    #[inline]
+    fn push_entity_path(&mut self, fp: FieldPath) {
+        debug_assert!(
+            self.entity_rewrite_paths_len < self.entity_rewrite_paths.len(),
+            "entity rewrite path buffer length exceeded"
+        );
+        self.entity_rewrite_paths[self.entity_rewrite_paths_len].write(fp);
+        self.entity_rewrite_paths_len += 1;
+    }
+
+    #[inline]
+    fn entity_paths(&self) -> &[FieldPath] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.entity_rewrite_paths.as_ptr() as *const FieldPath,
+                self.entity_rewrite_paths_len,
+            )
+        }
+    }
+
+    #[inline]
+    fn clear_decoded_fields(&mut self) {
+        self.entity_decoded_fields_len = 0;
+    }
+
+    #[inline]
+    fn push_decoded_field(&mut self, field: DecodedEntityField) {
+        debug_assert!(
+            self.entity_decoded_fields_len < self.entity_decoded_fields.len(),
+            "entity decoded field buffer length exceeded"
+        );
+        self.entity_decoded_fields[self.entity_decoded_fields_len].write(field);
+        self.entity_decoded_fields_len += 1;
+    }
+
+    #[inline]
+    fn push_field_replacement(&mut self, replacement: FieldReplacement) {
+        debug_assert!(
+            self.entity_replacements_len < self.entity_replacements.len(),
+            "entity replacement buffer length exceeded"
+        );
+        self.entity_replacements[self.entity_replacements_len].write(replacement);
+        self.entity_replacements_len += 1;
+    }
 }
 
 impl<'a, R, W> DemoWriter<'a, R, W>
@@ -53,9 +111,7 @@ where
         updated_entries: i32,
     ) -> Result<(Vec<u8>, bool), ParserError> {
         let mut reader = SliceReader::new(entity_data);
-        let mut replacements = Vec::new();
-        let mut paths = Vec::new();
-        let mut decoded_fields = Vec::new();
+        self.entity_replacements_len = 0;
         let mut index = usize::MAX;
         let path_reader = self.field_path_codec.clone();
 
@@ -71,24 +127,10 @@ where
 
             match EntityEvents::from_cmd(cmd) {
                 EntityEvents::Created => {
-                    self.rewrite_entity_created(
-                        &mut reader,
-                        &path_reader,
-                        &mut paths,
-                        &mut decoded_fields,
-                        &mut replacements,
-                        index,
-                    )?;
+                    self.rewrite_entity_created(&mut reader, &path_reader, index)?;
                 }
                 EntityEvents::Updated => {
-                    self.rewrite_entity_updated(
-                        &mut reader,
-                        &path_reader,
-                        &mut paths,
-                        &mut decoded_fields,
-                        &mut replacements,
-                        index,
-                    )?;
+                    self.rewrite_entity_updated(&mut reader, &path_reader, index)?;
                 }
                 EntityEvents::Deleted => {
                     self.parser.context.entities.entities_vec[index].index = u32::MAX;
@@ -96,14 +138,17 @@ where
             }
         }
 
-        if replacements.is_empty() {
+        if self.entity_replacements_len == 0 {
             return Ok((Vec::new(), false));
         }
 
         let mut out = Vec::with_capacity(entity_data.len());
         let mut writer = BitstreamWriter::new(&mut out);
         let mut copy_start = 0;
-        for replacement in replacements {
+        let replacements_len = self.entity_replacements_len;
+        self.entity_replacements_len = 0;
+        for i in 0..replacements_len {
+            let replacement = unsafe { self.entity_replacements[i].assume_init_read() };
             copy_original_bits(
                 entity_data,
                 copy_start,
@@ -131,9 +176,6 @@ where
         &mut self,
         reader: &mut SliceReader<'_>,
         path_reader: &FieldPathCodec,
-        paths: &mut Vec<FieldPath>,
-        decoded_fields: &mut Vec<DecodedEntityField>,
-        replacements: &mut Vec<FieldReplacement>,
         index: usize,
     ) -> Result<(), ParserError> {
         let class_id = reader.read_bits(self.parser.context.classes.class_id_size) as i32;
@@ -158,15 +200,12 @@ where
             self.rewrite_fields(
                 reader,
                 path_reader,
-                paths,
-                decoded_fields,
-                replacements,
                 EntityEvents::Created,
                 &mut entity,
                 rewrite,
             )?;
         } else {
-            Self::skip_original_fields(reader, path_reader, paths, &entity);
+            self.skip_original_fields(reader, path_reader, &entity);
         }
         if !track {
             entity.state = FieldState::default();
@@ -180,9 +219,6 @@ where
         &mut self,
         reader: &mut SliceReader<'_>,
         path_reader: &FieldPathCodec,
-        paths: &mut Vec<FieldPath>,
-        decoded_fields: &mut Vec<DecodedEntityField>,
-        replacements: &mut Vec<FieldReplacement>,
         index: usize,
     ) -> Result<(), ParserError> {
         let class = self.parser.context.entities.entities_vec[index]
@@ -204,15 +240,12 @@ where
             self.rewrite_fields(
                 reader,
                 path_reader,
-                paths,
-                decoded_fields,
-                replacements,
                 EntityEvents::Updated,
                 &mut entity,
                 rewrite,
             )?;
         } else {
-            Self::skip_original_fields(reader, path_reader, paths, &entity);
+            self.skip_original_fields(reader, path_reader, &entity);
         }
         if !track {
             entity.state = FieldState::default();
@@ -223,12 +256,12 @@ where
     }
 
     fn skip_original_fields(
+        &mut self,
         reader: &mut SliceReader<'_>,
         path_reader: &FieldPathCodec,
-        paths: &mut Vec<FieldPath>,
         entity: &Entity,
     ) {
-        paths.clear();
+        self.clear_entity_paths();
         let mut fp = FieldPath::default();
 
         loop {
@@ -238,10 +271,10 @@ where
                 break;
             }
             op.execute(reader, &mut fp);
-            paths.push(fp);
+            self.push_entity_path(fp);
         }
 
-        for fp in paths.iter().copied() {
+        for fp in self.entity_paths().iter().copied() {
             entity.class.serializer.get_decoder(&fp).skip(reader);
         }
     }
@@ -250,14 +283,11 @@ where
         &mut self,
         reader: &mut SliceReader<'_>,
         path_reader: &FieldPathCodec,
-        paths: &mut Vec<FieldPath>,
-        decoded_fields: &mut Vec<DecodedEntityField>,
-        replacements: &mut Vec<FieldReplacement>,
         event: EntityEvents,
         entity: &mut Entity,
         rewrite: bool,
     ) -> Result<(), ParserError> {
-        paths.clear();
+        self.clear_entity_paths();
         let mut fp = FieldPath::default();
 
         loop {
@@ -267,11 +297,11 @@ where
                 break;
             }
             op.execute(reader, &mut fp);
-            paths.push(fp);
+            self.push_entity_path(fp);
         }
 
         if !rewrite {
-            for fp in paths.iter().copied() {
+            for fp in self.entity_paths().iter().copied() {
                 let decoder = entity.class.serializer.get_decoder(&fp);
                 let value = decoder.decode(reader);
                 entity.state.set(&fp, value);
@@ -279,16 +309,16 @@ where
             return Ok(());
         }
 
-        decoded_fields.clear();
-        decoded_fields.reserve(paths.len());
-        for fp in paths.iter().copied() {
+        self.clear_decoded_fields();
+        for i in 0..self.entity_rewrite_paths_len {
+            let fp = unsafe { self.entity_rewrite_paths[i].assume_init_read() };
             let name = entity.class.serializer.get_name(&fp);
             let decoder = entity.class.serializer.get_decoder(&fp);
             let value_start = bit_position(reader);
             let value = decoder.decode(reader);
             let value_end = bit_position(reader);
             entity.state.set(&fp, value);
-            decoded_fields.push(DecodedEntityField {
+            self.push_decoded_field(DecodedEntityField {
                 fp,
                 name,
                 value_start,
@@ -296,7 +326,10 @@ where
             });
         }
 
-        for field in decoded_fields.drain(..) {
+        let decoded_fields_len = self.entity_decoded_fields_len;
+        self.entity_decoded_fields_len = 0;
+        for i in 0..decoded_fields_len {
+            let field = unsafe { self.entity_decoded_fields[i].assume_init_read() };
             let Some(value) = entity.state.get_value(&field.fp) else {
                 continue;
             };
@@ -304,7 +337,7 @@ where
 
             if let Some(next_value) = replacement {
                 entity.state.set(&field.fp, next_value.clone());
-                replacements.push(FieldReplacement {
+                self.push_field_replacement(FieldReplacement {
                     serializer: entity.class.serializer.clone(),
                     fp: field.fp,
                     value: next_value,

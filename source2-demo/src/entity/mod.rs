@@ -441,7 +441,7 @@ impl Entity {
     ) -> Result<impl Iterator<Item = Option<&FieldValue>>, EntityError> {
         Ok(self
             .get_state(&self.class.serializer.get_path(name)?)?
-            .vec
+            .children()
             .iter()
             .map(|fs| fs.value.as_ref()))
     }

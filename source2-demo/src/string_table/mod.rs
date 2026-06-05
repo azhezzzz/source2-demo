@@ -285,8 +285,12 @@ impl StringTable {
                 });
 
                 if self.name == "instancebaseline" {
-                    baselines
-                        .add_baseline(key.as_ref().unwrap().parse().unwrap_or(-1), value.clone());
+                    let baseline_key = key
+                        .as_deref()
+                        .or_else(|| items.get(index as usize).map(|item| item.key.as_str()));
+                    if let Some(baseline_key) = baseline_key {
+                        baselines.add_baseline(baseline_key.parse().unwrap_or(-1), value.clone());
+                    }
                 }
 
                 value

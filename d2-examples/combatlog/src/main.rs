@@ -10,65 +10,64 @@ struct CombatLog;
 impl CombatLog {
     #[on_combat_log]
     fn handle_cle(&mut self, combat_log: &CombatLogEntry) -> ObserverResult {
-        let time = combat_log.timestamp()?;
+        let time = combat_log.timestamp().unwrap_or_default();
+        let attacker = combat_log.attacker_name().unwrap_or("UNKNOWN");
+        let target = combat_log.target_name().unwrap_or("UNKNOWN");
+        let inflictor = combat_log.inflictor_name().unwrap_or_default();
+
         match combat_log.r#type() {
             DotaCombatlogTypes::DotaCombatlogDamage => {
                 println!(
                     "{} {} hits {}{} for {} damage ({}->{})",
                     time,
-                    combat_log.attacker_name()?,
-                    combat_log.target_name()?,
-                    combat_log
-                        .inflictor_name()
-                        .map(|x| format!(" with {x}"))
-                        .unwrap_or_default(),
-                    combat_log.value()?,
-                    combat_log.health()? as u32 + combat_log.value()?,
-                    combat_log.health()?
+                    attacker,
+                    target,
+                    if inflictor.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" with {inflictor}")
+                    },
+                    combat_log.value().unwrap_or_default(),
+                    combat_log.health().unwrap_or_default() as u32
+                        + combat_log.value().unwrap_or_default(),
+                    combat_log.health().unwrap_or_default()
                 )
             }
             DotaCombatlogTypes::DotaCombatlogHeal => {
                 println!(
                     "{} {}'s {} heals {} for {} health ({}->{})",
                     time,
-                    combat_log.attacker_name().unwrap_or("UNKNOWN"),
-                    combat_log.inflictor_name().unwrap_or_default(),
-                    combat_log.target_name()?,
-                    combat_log.value()?,
-                    combat_log.health()? as u32 - combat_log.value()?,
-                    combat_log.health()?
+                    attacker,
+                    inflictor,
+                    target,
+                    combat_log.value().unwrap_or_default(),
+                    combat_log.health().unwrap_or_default() as u32
+                        - combat_log.value().unwrap_or_default(),
+                    combat_log.health().unwrap_or_default()
                 )
             }
             DotaCombatlogTypes::DotaCombatlogModifierAdd => {
                 println!(
                     "{} {} receives {} buff/debuff from {}",
                     time,
-                    combat_log.target_name()?,
-                    combat_log.inflictor_name()?,
-                    combat_log.attacker_name().unwrap_or("UNKNOWN")
+                    target, inflictor, attacker
                 );
             }
             DotaCombatlogTypes::DotaCombatlogModifierRemove => {
                 println!(
                     "{} {} loses {} buff/debuff",
                     time,
-                    combat_log.target_name()?,
-                    combat_log.inflictor_name()?
+                    target, inflictor
                 );
             }
             DotaCombatlogTypes::DotaCombatlogDeath => {
-                println!(
-                    "{} {} is killed by {}",
-                    time,
-                    combat_log.target_name()?,
-                    combat_log.attacker_name().unwrap_or("UNKNOWN")
-                );
+                println!("{} {} is killed by {}", time, target, attacker);
             }
             DotaCombatlogTypes::DotaCombatlogAbility => {
                 println!(
                     "{} {} {} ability {} (lvl {}){}{}",
                     time,
-                    combat_log.attacker_name()?,
+                    attacker,
                     if combat_log.is_ability_toggle_on().is_ok()
                         || combat_log.is_ability_toggle_off().is_ok()
                     {
@@ -76,8 +75,8 @@ impl CombatLog {
                     } else {
                         "casts"
                     },
-                    combat_log.inflictor_name()?,
-                    combat_log.ability_level()?,
+                    inflictor,
+                    combat_log.ability_level().unwrap_or_default(),
                     if combat_log.is_ability_toggle_on().is_ok() {
                         " on"
                     } else if combat_log.is_ability_toggle_off().is_ok() {
@@ -85,7 +84,7 @@ impl CombatLog {
                     } else {
                         ""
                     },
-                    if let Ok(target) = combat_log.target_name() {
+                    if combat_log.target_name().is_ok() {
                         format!(" on {}", target)
                     } else {
                         "".to_string()
@@ -96,8 +95,7 @@ impl CombatLog {
                 println!(
                     "{} {} uses item {}",
                     time,
-                    combat_log.attacker_name()?,
-                    combat_log.inflictor_name()?,
+                    attacker, inflictor,
                 )
             }
             _ => {}

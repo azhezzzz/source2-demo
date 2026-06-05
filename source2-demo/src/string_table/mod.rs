@@ -271,7 +271,7 @@ impl StringTable {
                     if self.var_int_bit_counts {
                         reader.read_ubit_var() * 8
                     } else {
-                        reader.read_bits_unchecked(17) * 8
+                        reader.read_bits(17) * 8
                     }
                 };
 

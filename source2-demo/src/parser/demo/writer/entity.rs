@@ -202,6 +202,7 @@ where
                 path_reader,
                 EntityEvents::Created,
                 &mut entity,
+                track,
                 rewrite,
             )?;
         } else {
@@ -242,6 +243,7 @@ where
                 path_reader,
                 EntityEvents::Updated,
                 &mut entity,
+                track,
                 rewrite,
             )?;
         } else {
@@ -285,6 +287,7 @@ where
         path_reader: &FieldPathCodec,
         event: EntityEvents,
         entity: &mut Entity,
+        track: bool,
         rewrite: bool,
     ) -> Result<(), ParserError> {
         self.clear_entity_paths();
@@ -301,10 +304,33 @@ where
         }
 
         if !rewrite {
-            for fp in self.entity_paths().iter().copied() {
-                let decoder = entity.class.serializer.get_decoder(&fp);
+            for fp in self.entity_paths().iter() {
+                let decoder = entity.class.serializer.get_decoder(fp);
                 let value = decoder.decode(reader);
-                entity.state.set(&fp, value);
+                entity.state.set(fp, value);
+            }
+            return Ok(());
+        }
+
+        if !track {
+            for i in 0..self.entity_rewrite_paths_len {
+                let fp = unsafe { self.entity_rewrite_paths[i].assume_init_read() };
+                let name = entity.class.serializer.get_name(&fp);
+                let decoder = entity.class.serializer.get_decoder(&fp);
+                let value_start = bit_position(reader);
+                let value = decoder.decode(reader);
+                let value_end = bit_position(reader);
+
+                if let Some(next_value) = self.replace_entity_field(event, entity, &name, &value) {
+                    entity.state.set(&fp, next_value.clone());
+                    self.push_field_replacement(FieldReplacement {
+                        serializer: entity.class.serializer.clone(),
+                        fp,
+                        value: next_value,
+                        value_start,
+                        value_end,
+                    });
+                }
             }
             return Ok(());
         }

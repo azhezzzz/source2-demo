@@ -3,11 +3,12 @@
 ## 2026-06-08 最新状态
 
 - 已在 `2026-06-08` 将最新 `origin/master` 合并进当前分支
-- 当前本地分支头提交：`6f0d66e902d1da42eacda05bd4ec03b01480e4a4`
+- 当前本地分支头提交：`56fa66ef67f99c08f82e110fc2ace39011cce439`
 - 当前 `origin/master` 提交：`1eb90381d063eb0feef10110322d303b6e02d01c`
-- 当前相对 `origin/master` 状态：`ahead_by = 21`，`behind_by = 0`
+- 当前相对 `origin/master` 状态：`ahead_by = 22`，`behind_by = 0`
 - 本次 merge 提交：`1b14ca5 Merge remote-tracking branch 'origin/master' into on_entity_property_changed`
 - 本次 merge 后兼容修复：`6f0d66e Fix field_name_for_path after merging origin/master`
+- 本次最小化收缩提交：`56fa66e Minimize property observer branch surface`
 
 ### 本次同步纳入的上游范围
 
@@ -53,6 +54,22 @@
 2. `Class::field_name_for_path(&FieldPath) -> String`
    目前仍被主仓库用于把 `FieldPath` 还原成字段名，以维持 `changedFields` 和相关缓存逻辑
 
+### 后续默认规则
+
+后续这条分支继续同步上游或新增能力时，默认按下面规则约束改动面：
+
+1. 只保留主流程和下游当前真实需要的功能改动
+2. 说明文档优先写在当前仓库自建文档里，不把大段用法说明塞进上游源码
+3. 原仓库源码中的新增注释尽量压到最薄，只保留函数/类型级别的必要备注
+4. 下游如只是为了“使用方便”而需要额外导出，优先修改下游显式导入，而不是继续扩大上游 `prelude` 或公共 re-export
+5. 如果一个需求既能通过改下游实现，也能通过扩大 parser 公共 API 实现，优先选择改下游
+
+本次 `56fa66e` 已按这套规则做了一轮收缩：
+
+- 移除了 `source2-demo-macros/src/lib.rs` 中 `on_entity_properties_changed` 的大段说明
+- 不再从 `source2_demo::prelude::*` 额外导出 `FieldPath`
+- 下游改为显式导入 `source2_demo::FieldPath`
+
 ### 当前验证结果
 
 - `cargo check`：通过
@@ -91,7 +108,7 @@
 - `Interests::TRACK_ENTITY_PROPERTY`
 - `#[on_entity_properties_changed]`
 - `FieldPath`
-  当前已对外可见，并从 `source2_demo::prelude::*` 可直接导入
+  当前已对外可见，但不再从 `source2_demo::prelude::*` 额外导出
 - `Entity::get_property_by_field_path(&FieldPath) -> Result<&FieldValue, EntityError>`
 - `Entity::field_paths() -> Vec<FieldPath>`
 - `Class::field_name_for_path(&FieldPath) -> String`

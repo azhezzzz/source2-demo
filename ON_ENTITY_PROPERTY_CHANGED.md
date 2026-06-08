@@ -1,5 +1,65 @@
 # `on_entity_property_changed` 分支改动整理
 
+## 2026-06-08 最新状态
+
+- 已在 `2026-06-08` 将最新 `origin/master` 合并进当前分支
+- 当前本地分支头提交：`6f0d66e902d1da42eacda05bd4ec03b01480e4a4`
+- 当前 `origin/master` 提交：`1eb90381d063eb0feef10110322d303b6e02d01c`
+- 当前相对 `origin/master` 状态：`ahead_by = 21`，`behind_by = 0`
+- 本次 merge 提交：`1b14ca5 Merge remote-tracking branch 'origin/master' into on_entity_property_changed`
+- 本次 merge 后兼容修复：`6f0d66e Fix field_name_for_path after merging origin/master`
+
+### 本次同步纳入的上游范围
+
+本次合并吸收了此前当前分支相对 `origin/master` 落后的 12 个提交，主要包括：
+
+1. `1eb9038` `Don't track all fields of rewrite-only entities`
+2. `3961fba` `Use bitter's write_bytes`
+3. `6aa501b` `0.5.2`
+4. `28ba38a` `Use checked reads for string table value lengths (#14)`
+5. `7f7ee6b` `Fix instance baseline updates without keys (#14)`
+6. 一组 writer / field path codec / allocation 优化提交
+
+### 本次实际影响到当前分支的点
+
+- 实际内容冲突只有一个文件：
+  - `source2-demo/src/entity/field/path.rs`
+- 冲突本质只有一个：
+  - 上游把 `FieldPath` 收回成 `pub(crate)`
+  - 当前分支仍需把 `FieldPath` 作为公开 API 暴露给下游 observer / helper
+- 处理结果：
+  - 保留上游其余实现
+  - 继续保持 `pub struct FieldPath`
+
+除此之外，本次合并后还出现了一个直接编译影响：
+
+- 上游把 `serializer.get_name(field_path)` 的返回类型改成了 `Rc<str>`
+- 当前分支保留的公开 API `Class::field_name_for_path(&FieldPath) -> String` 因此编译失败
+- 处理方式是只在公开 API 边界做一次 `.to_string()`，继续保持当前分支对外语义不变
+
+### 本次对“最小改动”判断的最新结论
+
+按 `/Volumes/SamsungExtra/dota_dem_parser_rust` 当前真实使用情况看，下面这些能力现在仍然属于主流程必需：
+
+1. `Interests::TRACK_ENTITY_PROPERTY`
+2. `#[on_entity_properties_changed]`
+3. `FieldPath` 的对外可见性
+4. `Entity::get_property_by_field_path(&FieldPath)`
+
+下面这些能力当前还不能直接回退到上游，但更像是下一轮优先收缩对象：
+
+1. `Entity::field_paths()`
+   目前仍被主仓库用于 `onStart` / create 时的全量实体快照链路
+2. `Class::field_name_for_path(&FieldPath) -> String`
+   目前仍被主仓库用于把 `FieldPath` 还原成字段名，以维持 `changedFields` 和相关缓存逻辑
+
+### 当前验证结果
+
+- `cargo check`：通过
+- `cargo test --lib`：通过
+
+下面保留的 `2026-05-20`、`2026-05-18` 等小节主要作为历史记录；如果与本节冲突，以本节为准。
+
 ## 2026-05-20 最新状态
 
 - 当前目标已收敛为：相对 `origin/master` 只保留当前仓库主流程必需的最小功能增量

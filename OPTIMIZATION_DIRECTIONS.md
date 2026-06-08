@@ -2,6 +2,33 @@
 
 本文档只记录当前这条 `on_entity_property_changed` 分支后续应优先推进的优化方向，便于和 `ON_ENTITY_PROPERTY_CHANGED.md` 中的功能说明分离维护。
 
+## 2026-06-08 基线更新
+
+在 `2026-06-08` 合并最新 `origin/master` 后，已确认：
+
+- 上游这次更新没有改变当前分支的属性变更语义
+- 当前真正受影响的只有两处：
+  - `FieldPath` 的可见性：上游希望收回成 `pub(crate)`，当前分支仍需继续公开
+  - `field_name_for_path(...)` 的返回值边界：上游内部返回类型变为 `Rc<str>`，当前分支继续对外返回 `String`
+
+同时也重新确认了主仓库 `/Volumes/SamsungExtra/dota_dem_parser_rust` 的真实依赖：
+
+- 现在还不能直接退掉：
+  - `TRACK_ENTITY_PROPERTY`
+  - `#[on_entity_properties_changed]`
+  - `FieldPath` 的对外可见性
+  - `Entity::get_property_by_field_path(&FieldPath)`
+- 现在还不适合立刻删，但应作为下一轮优先收缩目标：
+  - `Entity::field_paths()`
+  - `Class::field_name_for_path(&FieldPath)`
+
+原因不是 parser fork 自己需要这些附加 API，而是主仓库当前仍然保留：
+
+- `onStart.Extra.LastTickEntities` 的全量实体快照链路
+- `changedFields` 仍按字段名导出的协议
+
+因此后续“最小化改动”的重点，仍应优先放在主仓库侧收缩依赖，而不是先继续压缩 parser fork 的底层实现。
+
 ## 当前原则
 
 - 优先通过“新增”实现能力，尽量避免直接修改上游现有源码
@@ -94,6 +121,7 @@
 
 按当前主仓库和 Node 侧实现来看：
 
+- `LastTickEntities` 仍在被真实消费，不只是历史文档残留
 - `Entity::field_paths()` 不是 Node 侧直接需要的，而是主仓库自己的全量实体快照链路还在用
 - `field_name_for_path(...)` 主要是当前增量导出协议还在用
 

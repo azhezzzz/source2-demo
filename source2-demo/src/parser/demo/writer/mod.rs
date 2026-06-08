@@ -8,14 +8,15 @@ mod rewriter;
 mod run;
 mod string_table;
 
-use crate::entity::field::FieldValue;
+use crate::entity::field::{FieldPath, FieldValue};
 use crate::entity::{Entity, EntityEvents};
 use crate::error::ParserError;
 use crate::parser::Parser;
-use crate::reader::{BitsReader, MessageReader, SeekableReader, SliceReader};
+use crate::reader::{BitsReader, FieldPathCodec, MessageReader, SeekableReader, SliceReader};
 use crate::string_table::PackedStringTableState;
 use std::cell::RefCell;
 use std::io::{Seek, Write};
+use std::mem::MaybeUninit;
 use std::rc::Rc;
 
 use input::RawDemoMessage;
@@ -24,6 +25,10 @@ pub use rewriter::{
 };
 
 const INSTANCE_BASELINE_TABLE: &str = "instancebaseline";
+
+fn uninit_array_box<T, const N: usize>() -> Box<[MaybeUninit<T>; N]> {
+    unsafe { Box::<[MaybeUninit<T>; N]>::new_uninit().assume_init() }
+}
 
 /// Demo writer that reads demo messages and writes a rewritten stream.
 ///
@@ -41,6 +46,15 @@ where
     string_table_rewrite_states: Vec<Option<PackedStringTableState>>,
     rewriters: Vec<Box<dyn DemoRewriter + 'a>>,
     rewriter_interests: RewriteInterests,
+    field_path_codec: FieldPathCodec,
+    entity_rewrite_paths: Box<[MaybeUninit<FieldPath>; entity::ENTITY_REWRITE_BUFFER_LEN]>,
+    entity_rewrite_paths_len: usize,
+    entity_decoded_fields:
+        Box<[MaybeUninit<entity::DecodedEntityField>; entity::ENTITY_REWRITE_BUFFER_LEN]>,
+    entity_decoded_fields_len: usize,
+    entity_replacements:
+        Box<[MaybeUninit<entity::FieldReplacement>; entity::ENTITY_REWRITE_BUFFER_LEN]>,
+    entity_replacements_len: usize,
     bytes_written: u64,
     file_info_offset: Option<u64>,
 }
@@ -58,6 +72,13 @@ where
             string_table_rewrite_states: Vec::new(),
             rewriters: Vec::new(),
             rewriter_interests: RewriteInterests::empty(),
+            field_path_codec: FieldPathCodec::default(),
+            entity_rewrite_paths: uninit_array_box(),
+            entity_rewrite_paths_len: 0,
+            entity_decoded_fields: uninit_array_box(),
+            entity_decoded_fields_len: 0,
+            entity_replacements: uninit_array_box(),
+            entity_replacements_len: 0,
             bytes_written: 0,
             file_info_offset: None,
         }

@@ -38,7 +38,7 @@ impl Field {
             FieldModel::Array | FieldModel::ValueVector(_) => {
                 if let Some(s) = st.get_state(fp) {
                     fp.last += 1;
-                    for i in 0..s.vec.len() {
+                    for i in 0..s.children().len() {
                         fp.path[fp.last] = i as u16;
                         field_paths.push(*fp);
                     }
@@ -48,7 +48,7 @@ impl Field {
             FieldModel::Vector(serializer) => {
                 if let Some(x) = st.get_state(fp) {
                     fp.last += 2;
-                    for i in 0..x.vec.len() {
+                    for i in 0..x.children().len() {
                         fp.path[fp.last - 1] = i as u16;
                         field_paths.extend(serializer.get_paths(fp, st));
                     }

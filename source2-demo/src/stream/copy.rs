@@ -24,16 +24,10 @@ pub(crate) fn copy_original_bits(
     }
 
     let aligned_end = end_bit & !7;
-    let mut byte_index = aligned_start / 8;
+    let byte_index = aligned_start / 8;
     let end_byte = aligned_end / 8;
-    while byte_index + 8 <= end_byte {
-        let value = u64::from_le_bytes(source[byte_index..byte_index + 8].try_into().unwrap());
-        writer.write_bits(64, value)?;
-        byte_index += 8;
-    }
-    while byte_index < end_byte {
-        writer.write_bits(8, source[byte_index] as u64)?;
-        byte_index += 1;
+    if byte_index < end_byte {
+        writer.write_bytes(&source[byte_index..end_byte])?;
     }
 
     for bit_index in aligned_end.max(aligned_start)..end_bit {

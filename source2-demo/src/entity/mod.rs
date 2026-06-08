@@ -404,7 +404,7 @@ impl Entity {
     pub(crate) fn get_property_by_path(&self, fp: &FieldPath) -> Result<&FieldValue, EntityError> {
         self.state.get_value(fp).ok_or_else(|| {
             EntityError::PropertyNameNotFound(
-                self.class.serializer.get_name(fp),
+                self.class.serializer.get_name(fp).to_string(),
                 self.class.name().to_string(),
                 format!("{}", fp),
             )
@@ -459,7 +459,7 @@ impl Entity {
     ) -> Result<impl Iterator<Item = Option<&FieldValue>>, EntityError> {
         Ok(self
             .get_state(&self.class.serializer.get_path(name)?)?
-            .vec
+            .children()
             .iter()
             .map(|fs| fs.value.as_ref()))
     }
@@ -467,7 +467,7 @@ impl Entity {
     pub(crate) fn get_state(&self, fp: &FieldPath) -> Result<&FieldState, EntityError> {
         self.state.get_state(fp).ok_or_else(|| {
             EntityError::PropertyNameNotFound(
-                self.class.serializer.get_name(fp),
+                self.class.serializer.get_name(fp).to_string(),
                 self.class.name().to_string(),
                 format!("{}", fp),
             )

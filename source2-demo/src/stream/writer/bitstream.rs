@@ -39,10 +39,7 @@ impl BitsWriter for BitstreamWriter<'_> {
 
     #[inline]
     fn write_bytes(&mut self, bytes: &[u8]) -> io::Result<()> {
-        for &byte in bytes {
-            self.write_bits(8, byte as u64)?;
-        }
-        Ok(())
+        BitWriter::write_bytes(&mut self.bit_writer, bytes)
     }
 
     #[inline]

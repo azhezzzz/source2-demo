@@ -140,7 +140,6 @@
 //! - `#[on_tick_start]` - Called at tick start
 //! - `#[on_tick_end]` - Called at tick end
 //! - `#[on_entity]` - Called for entity changes
-//! - `#[on_entity_properties_changed]` - Called for batched changed entity properties on updates
 //! - `#[on_game_event]` - Called for game events
 //! - `#[on_string_table]` - Called for string table updates
 //! - `#[on_stop]` - Called when replay ends
@@ -251,7 +250,6 @@ use proc_macro::TokenStream;
 /// - `#[on_tick_end]` - Called at the end of each tick
 /// - `#[on_entity]` - Called when entities change
 /// - `#[on_entity("ClassName")]` - Only for specific entity classes
-/// - `#[on_entity_properties_changed]` - Observe batched property changes for entity updates
 /// - `#[on_message]` - Called for protobuf messages (type inferred from param)
 /// - `#[on_game_event]` - Called for all game events
 /// - `#[on_game_event("event_name")]` - Only for specific events
@@ -279,7 +277,6 @@ use proc_macro::TokenStream;
 /// - Specific parameters depending on the handler:
 ///   - `event: EntityEvents` or `event: &EntityEvents` (on_entity)
 ///   - `entity: &Entity` (on_entity)
-///   - `entity: &Entity` and `field_paths: &[FieldPath]` (on_entity_properties_changed)
 ///   - `ge: &GameEvent` (on_game_event)
 ///   - `table: &StringTable` (on_string_table)
 ///   - `modified: &[i32]` (on_string_table)
@@ -1030,34 +1027,6 @@ pub fn on_entity(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
-/// Marks a method as a batched entity property change handler.
-///
-/// This handler is called once for entity creation with all present properties,
-/// and once for each entity update with all changed properties.
-///
-/// Supported forms:
-/// - `#[on_entity_properties_changed]`
-///
-/// # Parameters
-///
-/// The handler can receive:
-/// - `ctx: &Context` (optional) - Current replay state
-/// - `entity: &Entity` - The entity that changed
-/// - `field_paths: &[FieldPath]` - The changed property paths
-///
-/// # Filtering
-///
-/// ```no_run
-/// # use source2_demo::prelude::*;
-/// # struct MyObs;
-/// # impl MyObs {
-/// #[on_entity_properties_changed]
-/// fn on_hero_health(&mut self, entity: &Entity, field_paths: &[FieldPath]) -> ObserverResult {
-///     let _name = entity.class().field_name_for_path(&field_paths[0]);
-///     Ok(())
-/// }
-/// # }
-/// ```
 #[proc_macro_attribute]
 pub fn on_entity_properties_changed(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item

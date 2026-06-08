@@ -359,11 +359,6 @@ pub trait Observer {
     }
 
     /// Called with entity properties changed by an update.
-    ///
-    /// Updated entities trigger one callback containing all changed properties. Created and
-    /// deleted entities do not trigger this callback.
-    ///
-    /// Requires [`Interests::TRACK_ENTITY_PROPERTY`] and [`Interests::ENTITY_STATE`] to be set.
     #[cold]
     #[inline(never)]
     fn on_entity_properties_changed(

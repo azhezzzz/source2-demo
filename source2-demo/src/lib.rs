@@ -82,7 +82,7 @@ pub mod proto {
 /// [`crate::writer`] instead.
 pub mod prelude {
     pub use crate::entity::field::FieldValue;
-    pub use crate::entity::{Entity, EntityEvents, FieldPath};
+    pub use crate::entity::{Entity, EntityEvents};
     pub use crate::error::ParserError;
     pub use crate::event::{EventValue, GameEvent, GameEventList};
     pub use crate::parser::{Context, DemoRunner, Interests, Observer, ObserverResult, Parser};

@@ -394,9 +394,6 @@ impl Entity {
     }
 
     /// Gets the value of an entity property by its decoded field path.
-    ///
-    /// This is primarily useful inside `on_entity_properties_changed` callbacks,
-    /// where the parser already provides the updated [`FieldPath`].
     pub fn get_property_by_field_path(&self, fp: &FieldPath) -> Result<&FieldValue, EntityError> {
         self.get_property_by_path(fp)
     }
@@ -412,9 +409,6 @@ impl Entity {
     }
 
     /// Returns all populated field paths currently present on this entity.
-    ///
-    /// This is useful for callers that need to materialize the entity into an
-    /// external format while preserving the parser's current state.
     pub fn field_paths(&self) -> Vec<FieldPath> {
         self.class
             .serializer

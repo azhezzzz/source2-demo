@@ -235,6 +235,6 @@ impl Class {
     /// This is useful in property-change callbacks where the parser provides a
     /// [`FieldPath`] rather than the preformatted string name.
     pub fn field_name_for_path(&self, field_path: &crate::FieldPath) -> String {
-        self.serializer.get_name(field_path)
+        self.serializer.get_name(field_path).to_string()
     }
 }

@@ -234,4 +234,9 @@ impl Class {
     pub fn field_name_for_path(&self, field_path: &crate::FieldPath) -> String {
         self.serializer.get_name(field_path).to_string()
     }
+
+    /// Resolves a decoded field path into the property's declared schema type.
+    pub fn field_type_for_path(&self, field_path: &crate::FieldPath) -> String {
+        self.serializer.get_type(field_path).to_string()
+    }
 }

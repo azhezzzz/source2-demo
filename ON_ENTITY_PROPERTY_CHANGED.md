@@ -100,6 +100,9 @@
    在已知字段路径时读取当前字段值。
 4. `Entity::field_paths()` 与 `FieldReader::field_paths(count)`
    用于枚举实体当前全量字段路径，以及更新时本次 packet 的变更字段路径。
+5. `Class::field_type_for_path(&FieldPath)`
+   用于在已知字段路径时读取声明层 schema type，供下游按 `FieldPath`
+   构建类型映射缓存，而不是在高频 entity payload 中重复发送类型字符串。
 
 ### 当前新增的公开 API
 
@@ -112,6 +115,7 @@
 - `Entity::get_property_by_field_path(&FieldPath) -> Result<&FieldValue, EntityError>`
 - `Entity::field_paths() -> Vec<FieldPath>`
 - `Class::field_name_for_path(&FieldPath) -> String`
+- `Class::field_type_for_path(&FieldPath) -> String`
 
 说明：
 

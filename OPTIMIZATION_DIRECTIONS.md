@@ -2,6 +2,32 @@
 
 本文档只记录当前这条 `on_entity_property_changed` 分支后续应优先推进的优化方向，便于和 `ON_ENTITY_PROPERTY_CHANGED.md` 中的功能说明分离维护。
 
+## 2026-06-16 基线更新
+
+在 `2026-06-16` 合并最新 `origin/master` 后，已确认：
+
+- 上游新增 3 个提交：
+  - `f0416aa` `0.5.3`
+  - `f93bd96` `Implement rewrite_demo_message macro`
+  - `5dd12b5` `0.5.4`
+- 本次更新主要集中在版本号、demo message rewriter 宏和对应测试
+- 本次 merge 没有内容冲突，也没有改变当前分支的属性变更语义
+- 本次不需要新增兼容修复
+
+因此当前优化方向不变：
+
+- 继续保留主流程仍需的属性变更能力：
+  - `TRACK_ENTITY_PROPERTY`
+  - `#[on_entity_properties_changed]`
+  - `FieldPath` 的对外可见性
+  - `Entity::get_property_by_field_path(&FieldPath)`
+- 下一轮优先收缩目标仍然是主仓库侧依赖：
+  - `onStart.Extra.LastTickEntities` 的全量实体快照链路
+  - `changedFields` 按字段名导出的协议
+- 只有当主仓库不再依赖这些链路后，才继续评估移除：
+  - `Entity::field_paths()`
+  - `Class::field_name_for_path(&FieldPath)`
+
 ## 2026-06-08 基线更新
 
 在 `2026-06-08` 合并最新 `origin/master` 后，已确认：
@@ -65,6 +91,7 @@
 - `Entity::field_paths()`
 - `FieldReader::field_paths(count)`
 - `Class::field_name_for_path(&FieldPath)`
+- `Class::field_type_for_path(&FieldPath)`
 - `FieldPath` 的对外可见性
 
 其中对外公开 API 目前是：
@@ -75,6 +102,7 @@
 - `Entity::get_property_by_field_path(&FieldPath)`
 - `Entity::field_paths()`
 - `Class::field_name_for_path(&FieldPath)`
+- `Class::field_type_for_path(&FieldPath)`
 
 其中内部辅助接口目前是：
 

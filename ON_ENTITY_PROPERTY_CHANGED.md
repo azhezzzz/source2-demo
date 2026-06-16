@@ -1,5 +1,57 @@
 # `on_entity_property_changed` 分支改动整理
 
+## 2026-06-16 最新状态
+
+- 已在 `2026-06-16` 将最新 `origin/master` 合并进当前分支
+- 当前本地分支头提交：`2a2c903b1aa60ca9b174358c3c5d8978c7d29a56`
+- 当前 `origin/master` 提交：`5dd12b587c0653a96f1c844103fd13d9aea34ace`
+- 当前 `origin/on_entity_property_changed` 提交：`5e9a8610afdc0d9194e8926526c51bd44b916aee`
+- 当前相对 `origin/master` 状态：`ahead_by = 26`，`behind_by = 0`
+- 本次 merge 提交：`2a2c903 Merge remote-tracking branch 'origin/master' into on_entity_property_changed`
+
+### 本次同步纳入的上游范围
+
+本次合并吸收了此前当前分支相对 `origin/master` 落后的 3 个提交：
+
+1. `f0416aa` `0.5.3`
+2. `f93bd96` `Implement rewrite_demo_message macro`
+3. `5dd12b5` `0.5.4`
+
+主要影响范围：
+
+- workspace / crate 版本更新到 `0.5.4`
+- `source2-demo-macros/src/rewriter_impl.rs` 增加 demo message rewriter 宏能力
+- `source2-demo/src/tests.rs` 增加对应 writer / rewriter 覆盖测试
+
+### 本次实际影响到当前分支的点
+
+- 本次 merge 没有内容冲突
+- 上游新增改动没有触碰当前分支的属性变更核心链路：
+  - `source2-demo/src/parser/observer.rs`
+  - `source2-demo/src/parser/demo/svc.rs`
+  - `source2-demo/src/entity/field/path.rs`
+  - `source2-demo/src/entity/mod.rs`
+  - `source2-demo/src/entity/class.rs`
+  - `source2-demo/src/stream/reader/field.rs`
+- 因此本次不需要额外兼容修复
+
+当前分支仍继续保留这些相对 `origin/master` 的必要增量：
+
+1. `Interests::TRACK_ENTITY_PROPERTY`
+2. `#[on_entity_properties_changed]`
+3. `FieldPath` 的对外可见性
+4. `Entity::get_property_by_field_path(&FieldPath)`
+5. `Entity::field_paths()`
+6. `Class::field_name_for_path(&FieldPath) -> String`
+7. `Class::field_type_for_path(&FieldPath) -> String`
+
+### 当前验证结果
+
+- `cargo check`：通过
+- `cargo test --lib`：通过，`31 passed`
+
+下面保留的 `2026-06-08`、`2026-05-20`、`2026-05-18` 等小节主要作为历史记录；如果与本节冲突，以本节为准。
+
 ## 2026-06-08 最新状态
 
 - 已在 `2026-06-08` 将最新 `origin/master` 合并进当前分支

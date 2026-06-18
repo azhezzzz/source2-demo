@@ -63,8 +63,8 @@
 scripts/release-tag.sh
 ```
 
-脚本会从远端 `origin` 读取最新的 `vX.Y.Z` tag，默认 bump patch。
-例如远端最新 tag 是 `v1.0.0` 时，默认会准备创建 `v1.0.1`。
+脚本会从远端 `origin` 读取最新的 `vX.Y.Z` tag，默认 bump minor。
+例如远端最新 tag 是 `v1.0.0` 时，默认会准备创建 `v1.1.0`。
 
 也可以手动指定 tag：
 
@@ -76,6 +76,7 @@ scripts/release-tag.sh v1.1.0
 
 ```bash
 scripts/release-tag.sh --bump minor
+scripts/release-tag.sh --bump patch
 scripts/release-tag.sh --bump major
 scripts/release-tag.sh --yes
 scripts/release-tag.sh --remote origin v1.1.0

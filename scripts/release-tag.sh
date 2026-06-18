@@ -4,7 +4,7 @@ set -euo pipefail
 
 REMOTE="origin"
 BRANCH="on_entity_property_changed"
-BUMP="patch"
+BUMP="minor"
 TAG=""
 YES="false"
 
@@ -18,12 +18,13 @@ Creates and pushes a release tag from the on_entity_property_changed branch.
 Options:
   -r, --remote <name>   Remote to read tags from and push to. Default: origin
   -b, --branch <name>   Required current branch. Default: on_entity_property_changed
-  --bump <part>         Version part to increment when tag is omitted: patch, minor, major. Default: patch
+  --bump <part>         Version part to increment when tag is omitted: patch, minor, major. Default: minor
   -y, --yes             Do not prompt before creating and pushing the tag
   -h, --help            Show this help
 
 Examples:
   scripts/release-tag.sh
+  scripts/release-tag.sh --bump patch
   scripts/release-tag.sh --bump minor
   scripts/release-tag.sh v1.1.0
   scripts/release-tag.sh --remote origin --yes v1.1.0

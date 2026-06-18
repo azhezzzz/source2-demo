@@ -52,6 +52,43 @@
 
 下面保留的 `2026-06-08`、`2026-05-20`、`2026-05-18` 等小节主要作为历史记录；如果与本节冲突，以本节为准。
 
+## 发布 tag 脚本
+
+当前分支新增 `scripts/release-tag.sh`，用于从 `on_entity_property_changed`
+分支创建并推送 release tag，避免每次都去 GitHub release 页面手动创建。
+
+默认用法：
+
+```bash
+scripts/release-tag.sh
+```
+
+脚本会从远端 `origin` 读取最新的 `vX.Y.Z` tag，默认 bump patch。
+例如远端最新 tag 是 `v1.0.0` 时，默认会准备创建 `v1.0.1`。
+
+也可以手动指定 tag：
+
+```bash
+scripts/release-tag.sh v1.1.0
+```
+
+其他常用用法：
+
+```bash
+scripts/release-tag.sh --bump minor
+scripts/release-tag.sh --bump major
+scripts/release-tag.sh --yes
+scripts/release-tag.sh --remote origin v1.1.0
+```
+
+脚本的保护规则：
+
+- 只能在 `on_entity_property_changed` 分支运行
+- 工作区必须干净
+- 目标 tag 不能已存在于本地或远端
+- 推送前默认会展示即将执行的命令并要求确认
+- 实际执行顺序是先推送当前分支，再创建并推送 tag
+
 ## 2026-06-08 最新状态
 
 - 已在 `2026-06-08` 将最新 `origin/master` 合并进当前分支

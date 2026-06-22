@@ -1,5 +1,81 @@
 # `on_entity_property_changed` 分支改动整理
 
+## 2026-06-22 最新状态
+
+- 已在 `2026-06-22` 将最新 `origin/master` 合并进当前分支
+- 当前本地分支头提交：`00d4f60befc7fb914a79b8d8a5cca26adb79674f`
+- 当前 `origin/master` 提交：`4be471b1cc7bb4731e403367ddcacf94dd5a38df`
+- 当前 `origin/on_entity_property_changed` 提交：`a9942a8e6c96aaa98a662d7e428619e1c6077920`
+- 当前相对 `origin/master` 状态：`ahead_by = 30`，`behind_by = 0`
+- 当前相对 `origin/on_entity_property_changed` 状态：`ahead_by = 7`，`behind_by = 0`
+- 本次 merge 提交：`00d4f60 Merge remote-tracking branch 'origin/master' into on_entity_property_changed`
+
+### 本次同步纳入的上游范围
+
+本次合并吸收了此前当前分支相对 `origin/master` 落后的 6 个提交：
+
+1. `6404241` `Fix DemoWriter stack overflow error in windows build`
+2. `36d64cd` `Clean up writer code`
+3. `c6a32d7` `0.5.5`
+4. `150338d` `Update readme`
+5. `805c976` `Include send nodes in field path names`
+6. `4be471b` `Ignore (root) send node prefix`
+
+主要影响范围：
+
+- workspace / crate 版本更新到 `0.5.5`
+- DemoWriter 内部缓冲从固定栈数组改为 `Vec`，避免 Windows build 栈溢出
+- field path name 生成开始包含非空、非 `(root)` 的 send node 前缀
+- field name 反查 `FieldPath` 时同时支持 send-node-qualified 字段名
+
+### send node 字段名语义
+
+上游现在在 `Serializer::get_name(&FieldPath)` 生成字段名时，会把字段上的
+send node 作为前缀拼入输出名。例如：
+
+- `m_hItems.[x]` 可能变为 `m_Inventory.m_hItems.[x]`
+- `m_iParity` 可能变为 `m_Inventory.m_iParity`
+- `m_nCollisionFunctionMask` 可能变为 `m_Collision.m_collisionAttribute.m_nCollisionFunctionMask`
+- `m_flRoshanPhaseStartTime` 可能变为 `m_roshanSpawnInfo.m_flRoshanPhaseStartTime`
+
+这会影响当前分支新增的 `Class::field_name_for_path(&FieldPath) -> String`：
+
+- `FieldPath` 本身不变
+- `Entity::get_property_by_field_path(&FieldPath)` 不变
+- `on_entity_properties_changed(..., field_paths: &[FieldPath])` 回调不变
+- 依赖字段名字符串的下游协议、统计、过滤和派生事件需要兼容新旧字段名
+
+当前分支选择保留上游新语义，不在 `source2-demo` 内加开关回退旧字段名。
+如果后续需要回撤，应优先在下游对 `m_hItems` / `m_Inventory.m_hItems` 等字段名做兼容，
+而不是再扩大底层 fork 差异。
+
+### 本次实际影响到当前分支的点
+
+- 本次 merge 没有内容冲突
+- 唯一自动合并的当前分支重叠文件：
+  - `source2-demo/src/entity/field/mod.rs`
+- 合并后该文件同时保留：
+  - 当前分支要求的 `pub use path::FieldPath`
+  - 上游新增的 `Field::send_node`、`Field::append_name`、`Field::name_match_len`
+
+当前分支仍继续保留这些相对 `origin/master` 的必要增量：
+
+1. `Interests::TRACK_ENTITY_PROPERTY`
+2. `#[on_entity_properties_changed]`
+3. `FieldPath` 的对外可见性
+4. `Entity::get_property_by_field_path(&FieldPath)`
+5. `Entity::field_paths()`
+6. `Class::field_name_for_path(&FieldPath) -> String`
+7. `Class::field_type_for_path(&FieldPath) -> String`
+
+### 当前验证结果
+
+- `cargo check`：待本次下游兼容调整后重新验证
+- `cargo test`：待本次下游兼容调整后重新验证
+- `/Volumes/SamsungExtra/dota_dem_parser_rust` 的 `cargo run --release --manifest-path core_rust/Cargo.toml -- 8810452708`：待运行并记录 send node 字段名差异
+
+下面保留的 `2026-06-16`、`2026-06-08`、`2026-05-20`、`2026-05-18` 等小节主要作为历史记录；如果与本节冲突，以本节为准。
+
 ## 2026-06-16 最新状态
 
 - 已在 `2026-06-16` 将最新 `origin/master` 合并进当前分支

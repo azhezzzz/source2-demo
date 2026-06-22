@@ -35,6 +35,8 @@ send node 作为前缀拼入输出名。例如：
 
 - `m_hItems.[x]` 可能变为 `m_Inventory.m_hItems.[x]`
 - `m_iParity` 可能变为 `m_Inventory.m_iParity`
+- `CBodyComponent.m_cellX` 可能变为 `CBodyComponent.m_skeletonInstance.m_vecOrigin.m_cellX`
+- `CBodyComponent.m_vecX` 可能变为 `CBodyComponent.m_skeletonInstance.m_vecOrigin.m_vecX`
 - `m_nCollisionFunctionMask` 可能变为 `m_Collision.m_collisionAttribute.m_nCollisionFunctionMask`
 - `m_flRoshanPhaseStartTime` 可能变为 `m_roshanSpawnInfo.m_flRoshanPhaseStartTime`
 
@@ -46,7 +48,8 @@ send node 作为前缀拼入输出名。例如：
 - 依赖字段名字符串的下游协议、统计、过滤和派生事件需要兼容新旧字段名
 
 当前分支选择保留上游新语义，不在 `source2-demo` 内加开关回退旧字段名。
-如果后续需要回撤，应优先在下游对 `m_hItems` / `m_Inventory.m_hItems` 等字段名做兼容，
+如果后续需要回撤，应优先在下游对 `m_hItems` / `m_Inventory.m_hItems`、
+`CBodyComponent.m_cellX` / `CBodyComponent.m_skeletonInstance.m_vecOrigin.m_cellX` 等字段名做兼容，
 而不是再扩大底层 fork 差异。
 
 ### 本次实际影响到当前分支的点
@@ -70,9 +73,69 @@ send node 作为前缀拼入输出名。例如：
 
 ### 当前验证结果
 
-- `cargo check`：待本次下游兼容调整后重新验证
-- `cargo test`：待本次下游兼容调整后重新验证
-- `/Volumes/SamsungExtra/dota_dem_parser_rust` 的 `cargo run --release --manifest-path core_rust/Cargo.toml -- 8810452708`：待运行并记录 send node 字段名差异
+- `cargo test`：通过，source2-demo 单元测试 `31 passed`，doc tests `61 passed / 12 ignored`
+- `/Volumes/SamsungExtra/dota_dem_parser_rust` 的 `cargo check --manifest-path core_rust/Cargo.toml`：通过
+- `/Volumes/SamsungExtra/dota_dem_parser_rust/core_node` 的 `npm run check`：通过
+- `/Volumes/SamsungExtra/dota_dem_parser_js` 的 `npx tsc --noEmit`：通过
+- `/Volumes/SamsungExtra/dota_dem_parser_rust` 的 `cargo run --release --manifest-path core_rust/Cargo.toml -- 8810452708`：通过
+
+### `8810452708` send node 对比结果
+
+对比口径：
+
+- 旧语义：`a9942a8`，即本次合并前的 `source2-demo 0.5.4`
+- 新语义：当前分支合并 `origin/master` 后的 `source2-demo 0.5.5`
+- 输入：`/Volumes/SamsungExtra/dota_dem_parser_rust/8810452708.dem`
+- runtime config：`/Volumes/SamsungExtra/dota_dem_parser_rust/configs/node_parser_config.json`
+
+运行耗时：
+
+- 旧语义：`durationMs=10933`
+- 新语义首次对比运行：`durationMs=10849`
+- 新语义最终刷新基线运行：`durationMs=10877`
+
+完整字段频次统计：
+
+- class 数：`360 -> 360`
+- 字段 key 数：`2733 -> 2733`
+- 总更新次数：`10095978 -> 10095978`
+- 字段名变化 class 数：`41`
+- 新增字段名 key：`382`
+- 消失字段名 key：`382`
+- 可识别为 send node 前缀替换的字段名：`79`
+
+runtime filtered 统计：
+
+- class 数：`342 -> 342`
+- 字段 key 数：`1680 -> 1680`
+- 总更新次数：`9959853 -> 9959853`
+- 字段名变化 class 数：`31`
+- 新增字段名 key：`238`
+- 消失字段名 key：`238`
+- 可识别为 send node 前缀替换的字段名：`52`
+
+主要 send node 前缀：
+
+1. `m_Inventory`
+   - `m_hItems.[x] -> m_Inventory.m_hItems.[x]`
+   - `m_iParity -> m_Inventory.m_iParity`
+   - `m_hTransientCastItem -> m_Inventory.m_hTransientCastItem`
+2. `CBodyComponent.m_skeletonInstance.m_vecOrigin`
+   - `CBodyComponent.m_cellX -> CBodyComponent.m_skeletonInstance.m_vecOrigin.m_cellX`
+   - `CBodyComponent.m_vecX -> CBodyComponent.m_skeletonInstance.m_vecOrigin.m_vecX`
+3. `m_Collision.m_collisionAttribute`
+   - `m_nCollisionFunctionMask -> m_Collision.m_collisionAttribute.m_nCollisionFunctionMask`
+   - filtered 后也可见少量 `m_nOwnerId`、`m_nHierarchyId` 改名
+4. `m_roshanSpawnInfo`
+   - `m_flRoshanPhaseStartTime -> m_roshanSpawnInfo.m_flRoshanPhaseStartTime`
+   - `m_eRoshanPhase -> m_roshanSpawnInfo.m_eRoshanPhase`
+   - `m_flRoshanPhaseEndTime -> m_roshanSpawnInfo.m_flRoshanPhaseEndTime`
+
+新旧统计备份：
+
+- `/private/tmp/dota_send_node_8810452708_old`
+- `/private/tmp/dota_send_node_8810452708_new`
+- 汇总 diff：`/private/tmp/dota_send_node_8810452708_diff.json`
 
 下面保留的 `2026-06-16`、`2026-06-08`、`2026-05-20`、`2026-05-18` 等小节主要作为历史记录；如果与本节冲突，以本节为准。
 

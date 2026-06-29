@@ -1,5 +1,52 @@
 # `on_entity_property_changed` 分支改动整理
 
+## 2026-06-29 最新状态
+
+- 已在 `2026-06-29` 将最新 `origin/master` 合并进当前分支
+- 当前本地分支头提交：`c74d1fe234ff4b6af344d8e1ca2f775cefca6900`
+- 当前 `origin/master` 提交：`12a5bb1547220e20f01995fc1cbeffb89f8c501c`
+- 当前 `origin/on_entity_property_changed` 提交：`04a42ebc27865a87b954c5bc0da1516c4248458d`
+- 当前相对 `origin/master` 状态：`ahead_by = 32`，`behind_by = 0`
+- 当前相对 `origin/on_entity_property_changed` 状态：`ahead_by = 2`，`behind_by = 0`
+- 本次 merge 提交：`c74d1fe Merge remote-tracking branch 'origin/master' into on_entity_property_changed`
+
+### 本次同步纳入的上游范围
+
+本次合并吸收了此前当前分支相对 `origin/master` 落后的 1 个提交：
+
+1. `12a5bb1` `Use checked read for entity cmd (#15)`
+
+主要影响范围：
+
+- `source2-demo/src/parser/demo/svc.rs` 中读取 entity cmd 的逻辑由 `read_bits_unchecked(2)` 改为 `read_bits(2)`
+- 本次更新属于 reader 边界检查收紧，目标是避免 entity cmd 读取路径绕过 checked read
+- 没有改变当前分支的属性变更语义，也没有新增当前分支侧兼容修复
+
+### 本次实际影响到当前分支的点
+
+- 本次 merge 没有内容冲突
+- 唯一自动合并的当前分支重叠文件：
+  - `source2-demo/src/parser/demo/svc.rs`
+- 变更点只在 `packet_entities.updated_entries()` 循环内读取 `cmd` 的这一行：
+  - `let cmd = reader.read_bits_unchecked(2);`
+  - `let cmd = reader.read_bits(2);`
+
+当前分支仍继续保留这些相对 `origin/master` 的必要增量：
+
+1. `Interests::TRACK_ENTITY_PROPERTY`
+2. `#[on_entity_properties_changed]`
+3. `FieldPath` 的对外可见性
+4. `Entity::get_property_by_field_path(&FieldPath)`
+5. `Entity::field_paths()`
+6. `Class::field_name_for_path(&FieldPath) -> String`
+7. `Class::field_type_for_path(&FieldPath) -> String`
+
+### 当前验证结果
+
+- `cargo test`：通过，source2-demo 单元测试 `31 passed`，doc tests `61 passed / 12 ignored`
+
+下面保留的 `2026-06-22`、`2026-06-16`、`2026-06-08`、`2026-05-20`、`2026-05-18` 等小节主要作为历史记录；如果与本节冲突，以本节为准。
+
 ## 2026-06-22 最新状态
 
 - 已在 `2026-06-22` 将最新 `origin/master` 合并进当前分支

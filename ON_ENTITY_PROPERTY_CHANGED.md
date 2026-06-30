@@ -1,5 +1,58 @@
 # `on_entity_property_changed` 分支改动整理
 
+## 2026-06-30 最新状态
+
+- 已在 `2026-06-30` 抓取远端后，将最新 `origin/master` 合并进当前分支
+- 当前本地分支头提交：`e4d0dc8797379ef45881a0aba3dd9e2eb875ed25`
+- 当前 `origin/master` 提交：`9909e369e6f308291ea15ef9e9dfd1206f86956c`
+- 当前 `origin/on_entity_property_changed` 提交：`82edd5450812a43f45dba268e708e01aa5e7860f`
+- 当前相对 `origin/master` 状态：`ahead_by = 35`，`behind_by = 0`
+- 当前相对 `origin/on_entity_property_changed` 状态：`ahead_by = 3`，`behind_by = 0`
+- 本次 merge 提交：`e4d0dc8 Merge remote-tracking branch 'origin/master' into on_entity_property_changed`
+
+### 本次同步纳入的上游范围
+
+本次合并吸收了此前当前分支相对 `origin/master` 落后的 2 个提交：
+
+1. `28dd239` `Update protobufs`
+2. `9909e36` `0.5.6`
+
+主要影响范围：
+
+- workspace / crate 版本更新到 `0.5.6`
+- protobuf 生成物和 proto 定义整体更新，主要集中在 `source2-demo-protobufs` 与 `source2-demo-macros`
+- 新增 `source2-demo-protobufs/protos/dota/events.proto`
+- 删除 `source2-demo-protobufs/protos/citadel/citadel_usermessages.proto`
+- 没有触碰当前分支属性变更语义对应的热点文件，也没有新增当前分支侧兼容修复
+
+### 本次实际影响到当前分支的点
+
+- 本次 merge 没有内容冲突
+- 自动合并文件主要集中在：
+  - `Cargo.toml`
+  - `source2-demo/Cargo.toml`
+  - `source2-demo-macros/src/protobuf_map.rs`
+  - `source2-demo-protobufs/build.rs`
+  - `source2-demo-protobufs/*.rs`
+  - `source2-demo-protobufs/protos/**/*`
+- 当前分支自定义能力涉及的热点文件，如 `source2-demo/src/parser/demo/svc.rs`、`source2-demo/src/parser/observer.rs`、`source2-demo/src/reader/field/mod.rs`，本次都没有被上游改动命中
+
+当前分支仍继续保留这些相对 `origin/master` 的必要增量：
+
+1. `Interests::TRACK_ENTITY_PROPERTY`
+2. `#[on_entity_properties_changed]`
+3. `FieldPath` 的对外可见性
+4. `Entity::get_property_by_field_path(&FieldPath)`
+5. `Entity::field_paths()`
+6. `Class::field_name_for_path(&FieldPath) -> String`
+7. `Class::field_type_for_path(&FieldPath) -> String`
+
+### 当前验证结果
+
+- `cargo test`：通过，source2-demo 单元测试 `31 passed`，doc tests `61 passed / 12 ignored`
+
+下面保留的 `2026-06-29`、`2026-06-22`、`2026-06-16`、`2026-06-08`、`2026-05-20`、`2026-05-18` 等小节主要作为历史记录；如果与本节冲突，以本节为准。
+
 ## 2026-06-29 最新状态
 
 - 已在 `2026-06-29` 将最新 `origin/master` 合并进当前分支

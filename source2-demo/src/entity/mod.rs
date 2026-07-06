@@ -54,9 +54,9 @@ mod container;
 
 pub(crate) use baseline::*;
 pub(crate) mod field;
-pub use field::FieldPath;
 pub use class::*;
 pub use container::*;
+pub use field::FieldPath;
 
 use crate::error::EntityError;
 use crate::field::FieldState;
@@ -450,13 +450,6 @@ impl Entity {
                 format!("{}", fp),
             )
         })
-    }
-
-    /// Returns all populated field paths currently present on this entity.
-    pub fn field_paths(&self) -> Vec<FieldPath> {
-        self.class
-            .serializer
-            .get_paths(&mut FieldPath::default(), &self.state)
     }
 
     /// Returns an iterator over the values inside a vector-like entity property.

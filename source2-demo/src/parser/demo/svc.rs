@@ -228,9 +228,9 @@ where
     ) -> Result<(), ParserError> {
         let entity = &mut self.context.entities.entities_vec[index];
 
-        let changed_count = self
-            .field_reader
-            .read_fields(reader, &entity.class.serializer, &mut entity.state);
+        let changed_count =
+            self.field_reader
+                .read_fields(reader, &entity.class.serializer, &mut entity.state);
 
         try_observers!(
             self,

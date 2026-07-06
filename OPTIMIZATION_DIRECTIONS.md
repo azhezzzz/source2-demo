@@ -2,6 +2,35 @@
 
 本文档只记录当前这条 `on_entity_property_changed` 分支后续应优先推进的优化方向，便于和 `ON_ENTITY_PROPERTY_CHANGED.md` 中的功能说明分离维护。
 
+## 2026-07-06 基线更新
+
+在 `2026-07-06` 抓取远端并合并最新 `origin/master` 后，已确认：
+
+- 上游这次新增 7 个提交，版本更新到 `0.5.7`
+- 上游新增 `Entity::fields()` / `EntityField`，已经覆盖“枚举实体当前全量字段、字段名、schema type、当前值”的通用检查场景
+- 上游新增 `FieldValue::type_name()`、baseline inspection helper、`Context::previous_tick()` 和 reader re-export
+- 本次 merge 没有内容冲突，也没有改变当前分支的属性变更语义
+
+本次已按“能用主 `master` 功能则优先用主 `master`”的原则完成一项收缩：
+
+- 删除本分支公开 API `Entity::field_paths()`
+- 全量实体字段枚举场景改用上游 `Entity::fields()`
+- 内部 `FieldReader::field_paths(count)` 继续保留，因为属性变更回调仍需要传递本次 packet 的变更 `FieldPath`
+
+因此当前仍应优先把精力放在主仓库侧依赖收缩，而不是继续扩大 parser fork 差异：
+
+- 继续保留主流程仍需的属性变更能力：
+  - `TRACK_ENTITY_PROPERTY`
+  - `#[on_entity_properties_changed]`
+  - `FieldPath` 的对外可见性
+  - `Entity::get_property_by_field_path(&FieldPath)`
+- 下一轮优先收缩目标仍然是主仓库侧依赖：
+  - `onStart.Extra.LastTickEntities` 的全量实体快照链路
+  - `changedFields` 按字段名导出的协议
+- 只有当主仓库不再依赖字段名导出后，才继续评估移除：
+  - `Class::field_name_for_path(&FieldPath)`
+  - `Class::field_type_for_path(&FieldPath)`
+
 ## 2026-06-30 基线更新
 
 在 `2026-06-30` 抓取远端并合并最新 `origin/master` 后，已确认：
@@ -142,7 +171,6 @@
 - `TRACK_ENTITY_PROPERTY`
 - `#[on_entity_properties_changed]`
 - `Entity::get_property_by_field_path(&FieldPath)`
-- `Entity::field_paths()`
 - `FieldReader::field_paths(count)`
 - `Class::field_name_for_path(&FieldPath)`
 - `Class::field_type_for_path(&FieldPath)`
@@ -154,7 +182,6 @@
 - `#[on_entity_properties_changed]`
 - `FieldPath`
 - `Entity::get_property_by_field_path(&FieldPath)`
-- `Entity::field_paths()`
 - `Class::field_name_for_path(&FieldPath)`
 - `Class::field_type_for_path(&FieldPath)`
 
@@ -175,14 +202,15 @@
 
 如果两边都不再需要，应优先删除这条链路。
 
-### 2. 如果可以删除 `LastTickEntities`，继续评估移除 `Entity::field_paths()`
+### 2. 如果需要保留 `LastTickEntities`，优先改用上游 `Entity::fields()`
 
-当前 `Entity::field_paths()` 主要被主仓库的全量实体快照路径使用。
+当前 `Entity::field_paths()` 已从本分支公开 API 中删除。
 
-如果 `LastTickEntities` 被删除，应继续评估：
+如果 `LastTickEntities` 仍需保留，应继续评估：
 
-- 主仓库是否还能完全去掉对 `Entity::field_paths()` 的依赖
-- 如果可以，则这项相对 `origin/master` 的新增 API 也可以继续回退
+- 主仓库是否能直接改用上游 `Entity::fields()`
+- 是否还能减少对 `Class::field_name_for_path(...)` / `Class::field_type_for_path(...)` 的依赖
+- 如果 `LastTickEntities` 最终可以删除，则优先删除整条快照链路
 
 ### 3. 暂时保留 `Class::field_name_for_path(...)`
 
@@ -208,18 +236,18 @@
 建议按下面顺序推进，而不是同时改多处：
 
 1. 检查并确认 `LastTickEntities` 是否可删除
-2. 如果可删除，收缩主仓库的全量实体快照路径
-3. 再判断 `Entity::field_paths()` 是否还能保留
-4. 最后才评估 `field_name_for_path(...)` 和更深层的导出协议调整
+2. 如果不能删除，优先把全量实体快照路径改到上游 `Entity::fields()`
+3. 再判断 `field_name_for_path(...)` / `field_type_for_path(...)` 是否还能移除
+4. 最后才评估更深层的导出协议调整
 
 ## 当前判断
 
 按当前主仓库和 Node 侧实现来看：
 
 - `LastTickEntities` 仍在被真实消费，不只是历史文档残留
-- `Entity::field_paths()` 不是 Node 侧直接需要的，而是主仓库自己的全量实体快照链路还在用
+- `Entity::field_paths()` 已被上游 `Entity::fields()` 覆盖并从本分支公开 API 中删除
 - `field_name_for_path(...)` 主要是当前增量导出协议还在用
 
 因此当前最值得优先验证的，不是继续改底层 observer，而是：
 
-- 先从主仓库侧确认 `LastTickEntities` 是否还能继续保留
+- 先从主仓库侧确认 `LastTickEntities` 是否还能继续保留；如果必须保留，优先改用上游 `Entity::fields()`

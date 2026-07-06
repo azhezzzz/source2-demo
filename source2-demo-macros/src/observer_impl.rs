@@ -727,10 +727,7 @@ fn observer_game_event_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2
     Ok(quote! { #(#args),* })
 }
 
-fn observer_entity_properties_changed_args(
-    method: &syn::ImplItemFn,
-    attr: &syn::Attribute,
-) -> syn::Result<proc_macro2::TokenStream> {
+fn observer_entity_properties_changed_args(method: &syn::ImplItemFn, attr: &syn::Attribute) -> syn::Result<proc_macro2::TokenStream> {
     if !matches!(&attr.meta, syn::Meta::Path(_)) {
         return Err(syn::Error::new_spanned(
             attr,
@@ -751,10 +748,7 @@ fn observer_entity_properties_changed_args(
         } else if is_field_paths_type(&type_string) {
             quote! { field_paths }
         } else {
-            return Err(syn::Error::new_spanned(
-                pat_type,
-                "unsupported #[on_entity_properties_changed] argument",
-            ));
+            return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_entity_properties_changed] argument"));
         };
         args.push(arg);
     }

@@ -1,5 +1,73 @@
 # `on_entity_property_changed` 分支改动整理
 
+## `更新合并上游` 默认规则
+
+后续如果用户只下达：
+
+```text
+更新合并上游
+```
+
+默认按下面流程执行；本节优先级高于后面保留的历史同步说明。
+
+1. 先 fetch
+
+- 必须先执行 `git fetch origin`
+- 目的只是刷新远端引用，避免在没获取到 GitHub 最新同步结果的情况下做判断
+- 不应在 fetch 后立刻 merge / rebase
+
+2. 以 `origin/master` 作为本分支的上游基线
+
+- 用户会在 GitHub 侧主动把 fork 的 `master` 同步到真正上游
+- 因此本仓库后续默认以 `origin/master` 作为“待合并上游”
+- 每次合并更新完成后，文档必须记录当次使用的 `origin/master` commit
+- 下一次分析时，以上一次文档记录的 `origin/master` commit 作为“基线 commit”，以当前 fetch 后的 `origin/master` 作为“目标 commit”
+
+3. 先分析基线与当前 `origin/master` 的差异
+
+- 对比范围：`<上次记录的 origin/master commit>..origin/master`
+- 先列出新增提交、主要改动文件和功能影响
+- 需要总结这批上游更新解决了什么、改了什么行为、是否只是版本/生成物刷新
+
+4. 按当前分支目标判断影响
+
+这条分支是最小化入侵式修改分支，默认原则是：
+
+- 能用主 `master` 的功能，就优先用主 `master`
+- 上游已有等价能力时，优先考虑回退本地补丁或收缩本地公开 API
+- 上游只是相似能力时，优先评估能否把本地实现靠拢到上游设计
+- 只有当前分支目的仍未被上游覆盖时，才继续保留本地改动
+
+影响分析必须结合当前分支目的：
+
+- 是否影响 `TRACK_ENTITY_PROPERTY`
+- 是否影响 `#[on_entity_properties_changed]`
+- 是否影响 `FieldPath`、`Entity::get_property_by_field_path(...)`、`Entity::field_paths()`
+- 是否影响 `Class::field_name_for_path(...)` / `Class::field_type_for_path(...)`
+- 是否触碰当前分支热点文件，并判断改动大不大
+
+5. 先给出分析结果，再询问是否合并
+
+- 在用户明确确认前，不执行 `git merge origin/master`
+- 分析结果至少包含：
+  - 上次记录的 `origin/master` commit
+  - 当前 fetch 后的 `origin/master` commit
+  - 新增提交摘要
+  - 影响当前分支的风险判断
+  - 是否建议合并，以及建议理由
+- 只有用户确认后，才继续执行合并、冲突处理、验证和文档更新
+
+合并完成后的文档记录必须包含：
+
+- 本次日期
+- 合并前基线 `origin/master` commit
+- 合并时使用的当前 `origin/master` commit
+- 本地分支合并后 head commit
+- 如有 merge commit，记录 merge commit
+- 本次纳入的上游提交摘要
+- 对当前分支最小化改动原则的影响判断
+- 验证命令和结果
+
 ## 2026-06-30 最新状态
 
 - 已在 `2026-06-30` 抓取远端后，将最新 `origin/master` 合并进当前分支
@@ -695,28 +763,26 @@ scripts/release-tag.sh --remote origin v1.1.0
 3. `11c6684` Remove unnecessary comments
 4. `d6d5482` Remove rustdoc html_root_url
 5. `a00a78c` add Entity::field_paths and document entity snapshot tradeoffs
-6. `174704a` Add upstream sync helper script
-7. `e3da6f7` Add on_entity_property_changed observer support
-8. `16c7fa3` Update hashbrown version
+6. `e3da6f7` Add on_entity_property_changed observer support
+7. `16c7fa3` Update hashbrown version
 
 其中真正围绕 `on_entity_property_changed` 的核心功能主要集中在：
 
 - `e3da6f7`
 - `a00a78c`
 
-其余提交多为上游同步、依赖调整、辅助脚本和小规模清理。
+其余提交多为上游同步、依赖调整和小规模清理。
 
 ## 基于 GitHub 分支页口径的分叉情况（本次合并前）
 
 按 `Rupas1k/source2-demo:master...azhezzzz:on_entity_property_changed` 计算：
 
-### 当前分支领先上游的 5 个提交
+### 当前分支领先上游的功能相关提交
 
 1. `e3da6f7` Add on_entity_property_changed observer support
-2. `174704a` Add upstream sync helper script
-3. `a00a78c` add Entity::field_paths and document entity snapshot tradeoffs
-4. `0400de7` Merge branch 'Rupas1k:master' into on_entity_property_changed
-5. `c273b4e` Use checked slice reader refill
+2. `a00a78c` add Entity::field_paths and document entity snapshot tradeoffs
+3. `0400de7` Merge branch 'Rupas1k:master' into on_entity_property_changed
+4. `c273b4e` Use checked slice reader refill
 
 ### 当前分支落后上游的 5 个提交
 
@@ -826,6 +892,10 @@ scripts/release-tag.sh --remote origin v1.1.0
 ## 以后分析“对比上游最新 master”时的默认流程
 
 如果后续你只说“对比上游最新 master”，默认按下面流程执行：
+
+注意：这只是分析口令，不自动合并。若用户下达“更新合并上游”，按本文开头的
+`更新合并上游` 默认规则执行：先 `git fetch origin`，对比上次记录的
+`origin/master` commit 与当前 `origin/master`，输出影响分析，并在用户确认后才合并。
 
 1. 先确认比较口径
 
@@ -1067,21 +1137,16 @@ fn on_entity_property_changed(
 
 这里保留了一个很重要的语义：属性回调看到的始终是“更新后的实体状态”，而不是更新前状态。
 
-### 7. 依赖和辅助维护能力有同步调整
+### 7. 依赖有同步调整
 
 涉及文件：
 
 - `source2-demo/Cargo.toml`
-- `scripts/sync-upstream.sh`
 
 改动内容：
 
 - `hashbrown` 从 `0.16` 升级到 `0.17`
 - 新增 `regex = "1.12"` 依赖，用于属性过滤
-- 新增 `scripts/sync-upstream.sh`
-  - 用于从上游抓取更新、rebase 当前功能分支，并执行 `cargo check` / `cargo test --lib`
-
-这个脚本本身也说明了该分支的维护方式：本地功能分支需要周期性与 upstream 对齐，而不是长期脱离上游。
 
 ### 8. 其他非功能性调整
 
@@ -1108,7 +1173,6 @@ fn on_entity_property_changed(
 `master...on_entity_property_changed` 范围内涉及：
 
 - `ON_ENTITY_PROPERTY_CHANGED.md`
-- `scripts/sync-upstream.sh`
 - `source2-demo-macros/src/lib.rs`
 - `source2-demo/Cargo.toml`
 - `source2-demo/src/entity/class.rs`
@@ -1155,4 +1219,4 @@ fn on_entity_property_changed(
 
 ## 一句话总结
 
-这条分支本质上是在 `source2-demo` 现有实体观察机制之上，补了一层“按属性粒度派发”的能力；为此不仅新增了 observer 宏和 trait 方法，还把 `FieldPath`、字段路径解码结果、实体属性访问接口、运行时过滤缓存和上游同步脚本一起补齐了。
+这条分支本质上是在 `source2-demo` 现有实体观察机制之上，补了一层“按属性粒度派发”的能力；为此不仅新增了 observer 宏和 trait 方法，还把 `FieldPath`、字段路径解码结果、实体属性访问接口和运行时过滤缓存一起补齐了。

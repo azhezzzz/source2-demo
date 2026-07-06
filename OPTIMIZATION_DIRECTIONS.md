@@ -13,8 +13,7 @@
 
 本次已按“能用主 `master` 功能则优先用主 `master`”的原则完成一项收缩：
 
-- 删除本分支公开 API `Entity::field_paths()`
-- 全量实体字段枚举场景改用上游 `Entity::fields()`
+- 全量实体快照/检查场景改用上游 `Entity::fields()`
 - 内部 `FieldReader::field_paths(count)` 继续保留，因为属性变更回调仍需要传递本次 packet 的变更 `FieldPath`
 
 因此当前仍应优先把精力放在主仓库侧依赖收缩，而不是继续扩大 parser fork 差异：
@@ -57,7 +56,6 @@
   - `onStart.Extra.LastTickEntities` 的全量实体快照链路
   - `changedFields` 按字段名导出的协议
 - 只有当主仓库不再依赖这些链路后，才继续评估移除：
-  - `Entity::field_paths()`
   - `Class::field_name_for_path(&FieldPath)`
 
 ## 2026-06-29 基线更新
@@ -82,7 +80,6 @@
   - `onStart.Extra.LastTickEntities` 的全量实体快照链路
   - `changedFields` 按字段名导出的协议
 - 只有当主仓库不再依赖这些链路后，才继续评估移除：
-  - `Entity::field_paths()`
   - `Class::field_name_for_path(&FieldPath)`
 
 ## 2026-06-16 基线更新
@@ -108,7 +105,6 @@
   - `onStart.Extra.LastTickEntities` 的全量实体快照链路
   - `changedFields` 按字段名导出的协议
 - 只有当主仓库不再依赖这些链路后，才继续评估移除：
-  - `Entity::field_paths()`
   - `Class::field_name_for_path(&FieldPath)`
 
 ## 2026-06-08 基线更新
@@ -128,7 +124,6 @@
   - `FieldPath` 的对外可见性
   - `Entity::get_property_by_field_path(&FieldPath)`
 - 现在还不适合立刻删，但应作为下一轮优先收缩目标：
-  - `Entity::field_paths()`
   - `Class::field_name_for_path(&FieldPath)`
 
 原因不是 parser fork 自己需要这些附加 API，而是主仓库当前仍然保留：
@@ -204,8 +199,6 @@
 
 ### 2. 如果需要保留 `LastTickEntities`，优先改用上游 `Entity::fields()`
 
-当前 `Entity::field_paths()` 已从本分支公开 API 中删除。
-
 如果 `LastTickEntities` 仍需保留，应继续评估：
 
 - 主仓库是否能直接改用上游 `Entity::fields()`
@@ -245,7 +238,7 @@
 按当前主仓库和 Node 侧实现来看：
 
 - `LastTickEntities` 仍在被真实消费，不只是历史文档残留
-- `Entity::field_paths()` 已被上游 `Entity::fields()` 覆盖并从本分支公开 API 中删除
+- 全量实体快照/检查场景已改用上游 `Entity::fields()`
 - `field_name_for_path(...)` 主要是当前增量导出协议还在用
 
 因此当前最值得优先验证的，不是继续改底层 observer，而是：

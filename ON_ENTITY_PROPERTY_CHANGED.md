@@ -42,7 +42,7 @@
 
 - 是否影响 `TRACK_ENTITY_PROPERTY`
 - 是否影响 `#[on_entity_properties_changed]`
-- 是否影响 `FieldPath`、`Entity::get_property_by_field_path(...)`、`Entity::field_paths()`
+- 是否影响 `FieldPath`、`Entity::get_property_by_field_path(...)`
 - 是否影响 `Class::field_name_for_path(...)` / `Class::field_type_for_path(...)`
 - 是否触碰当前分支热点文件，并判断改动大不大
 
@@ -109,8 +109,7 @@
 
 按“能用主 `master` 功能则优先用主 `master`”的原则，本次合并后已做一次收缩：
 
-- 删除本分支公开 API `Entity::field_paths()`
-- 全量实体字段枚举场景改用上游 `Entity::fields()`
+- 全量实体快照/检查场景改用上游 `Entity::fields()`
 - 保留内部 `FieldReader::field_paths(count)`，因为 `on_entity_properties_changed` 仍需要传递本次 packet 的变更 `FieldPath`
 - 继续保留 `Entity::get_property_by_field_path(&FieldPath)`，因为属性变更回调拿到的是 `FieldPath`
 - 继续保留 `Class::field_name_for_path(&FieldPath)` / `Class::field_type_for_path(&FieldPath)`，用于把变更 `FieldPath` 映射回字段名和 schema type
@@ -169,9 +168,8 @@
 2. `#[on_entity_properties_changed]`
 3. `FieldPath` 的对外可见性
 4. `Entity::get_property_by_field_path(&FieldPath)`
-5. `Entity::field_paths()`
-6. `Class::field_name_for_path(&FieldPath) -> String`
-7. `Class::field_type_for_path(&FieldPath) -> String`
+5. `Class::field_name_for_path(&FieldPath) -> String`
+6. `Class::field_type_for_path(&FieldPath) -> String`
 
 ### 当前验证结果
 
@@ -216,9 +214,8 @@
 2. `#[on_entity_properties_changed]`
 3. `FieldPath` 的对外可见性
 4. `Entity::get_property_by_field_path(&FieldPath)`
-5. `Entity::field_paths()`
-6. `Class::field_name_for_path(&FieldPath) -> String`
-7. `Class::field_type_for_path(&FieldPath) -> String`
+5. `Class::field_name_for_path(&FieldPath) -> String`
+6. `Class::field_type_for_path(&FieldPath) -> String`
 
 ### 当前验证结果
 
@@ -293,9 +290,8 @@ send node 作为前缀拼入输出名。例如：
 2. `#[on_entity_properties_changed]`
 3. `FieldPath` 的对外可见性
 4. `Entity::get_property_by_field_path(&FieldPath)`
-5. `Entity::field_paths()`
-6. `Class::field_name_for_path(&FieldPath) -> String`
-7. `Class::field_type_for_path(&FieldPath) -> String`
+5. `Class::field_name_for_path(&FieldPath) -> String`
+6. `Class::field_type_for_path(&FieldPath) -> String`
 
 ### 当前验证结果
 
@@ -406,9 +402,8 @@ runtime filtered 统计：
 2. `#[on_entity_properties_changed]`
 3. `FieldPath` 的对外可见性
 4. `Entity::get_property_by_field_path(&FieldPath)`
-5. `Entity::field_paths()`
-6. `Class::field_name_for_path(&FieldPath) -> String`
-7. `Class::field_type_for_path(&FieldPath) -> String`
+5. `Class::field_name_for_path(&FieldPath) -> String`
+6. `Class::field_type_for_path(&FieldPath) -> String`
 
 ### 当前验证结果
 
@@ -504,9 +499,7 @@ scripts/release-tag.sh --remote origin v1.1.0
 
 下面这些能力当前还不能直接回退到上游，但更像是下一轮优先收缩对象：
 
-1. `Entity::field_paths()`
-   目前仍被主仓库用于 `onStart` / create 时的全量实体快照链路
-2. `Class::field_name_for_path(&FieldPath) -> String`
+1. `Class::field_name_for_path(&FieldPath) -> String`
    目前仍被主仓库用于把 `FieldPath` 还原成字段名，以维持 `changedFields` 和相关缓存逻辑
 
 ### 后续默认规则
@@ -553,8 +546,8 @@ scripts/release-tag.sh --remote origin v1.1.0
    当前只支持无参写法：`#[on_entity_properties_changed]`
 3. `Entity::get_property_by_field_path(&FieldPath)`
    在已知字段路径时读取当前字段值。
-4. `Entity::field_paths()` 与 `FieldReader::field_paths(count)`
-   用于枚举实体当前全量字段路径，以及更新时本次 packet 的变更字段路径。
+4. `FieldReader::field_paths(count)`
+   用于记录更新时本次 packet 的变更字段路径，仍然只是库内部辅助接口。
 5. `Class::field_type_for_path(&FieldPath)`
    用于在已知字段路径时读取声明层 schema type，供下游按 `FieldPath`
    构建类型映射缓存，而不是在高频 entity payload 中重复发送类型字符串。
@@ -568,7 +561,6 @@ scripts/release-tag.sh --remote origin v1.1.0
 - `FieldPath`
   当前已对外可见，但不再从 `source2_demo::prelude::*` 额外导出
 - `Entity::get_property_by_field_path(&FieldPath) -> Result<&FieldValue, EntityError>`
-- `Entity::field_paths() -> Vec<FieldPath>`
 - `Class::field_name_for_path(&FieldPath) -> String`
 - `Class::field_type_for_path(&FieldPath) -> String`
 
@@ -576,7 +568,6 @@ scripts/release-tag.sh --remote origin v1.1.0
 
 - `FieldReader::field_paths(count)` 仍然只是库内部辅助接口，不属于公开 API
 - 上面这些公开 API 里，后续最可能继续收缩的是：
-  - `Entity::field_paths()`
   - `Class::field_name_for_path(&FieldPath)`
 
 ### 当前改动原则
@@ -592,7 +583,7 @@ scripts/release-tag.sh --remote origin v1.1.0
 - 优先从主仓库侧收缩依赖，而不是先继续扩展底层能力
 - 当前最值得优先验证的方向：
   - 检查 `LastTickEntities` 是否还能保留；如果主流程和 Node 侧都不再消费它，应优先删除
-  - 如果 `LastTickEntities` 可以删除，继续评估是否能移除主仓库对 `Entity::field_paths()` 的依赖
+  - 如果 `LastTickEntities` 需要保留，继续使用上游 `Entity::fields()` 枚举实体字段
   - 在不改变当前 `changedFields: { fieldName: value }` 导出协议前，暂时保留 `Class::field_name_for_path(...)`
   - 只有当主仓库不再依赖字段名导出时，才继续评估是否能移除 `field_name_for_path(...)`
 
@@ -820,7 +811,7 @@ scripts/release-tag.sh --remote origin v1.1.0
 2. `0400de7` Merge branch 'Rupas1k:master' into on_entity_property_changed
 3. `11c6684` Remove unnecessary comments
 4. `d6d5482` Remove rustdoc html_root_url
-5. `a00a78c` add Entity::field_paths and document entity snapshot tradeoffs
+5. `a00a78c` document entity snapshot tradeoffs
 6. `e3da6f7` Add on_entity_property_changed observer support
 7. `16c7fa3` Update hashbrown version
 
@@ -838,7 +829,7 @@ scripts/release-tag.sh --remote origin v1.1.0
 ### 当前分支领先上游的功能相关提交
 
 1. `e3da6f7` Add on_entity_property_changed observer support
-2. `a00a78c` add Entity::field_paths and document entity snapshot tradeoffs
+2. `a00a78c` document entity snapshot tradeoffs
 3. `0400de7` Merge branch 'Rupas1k:master' into on_entity_property_changed
 4. `c273b4e` Use checked slice reader refill
 
@@ -864,7 +855,7 @@ scripts/release-tag.sh --remote origin v1.1.0
 
 对当前分支的意义：
 
-- 与 `Entity::field_paths()` 的方向是互补的
+- 与上游实体字段遍历能力的方向是互补的
 - 即使不立即同步，也不会阻塞当前属性变更回调功能
 
 ### 2. `651a7a0` Add get_property method for Entity
@@ -1054,7 +1045,6 @@ scripts/release-tag.sh --remote origin v1.1.0
 
 - `on_entity_property_changed`
 - `FieldPath` 对外暴露后的按属性粒度通知链路
-- `Entity::field_paths()`
 - `Entity::get_property_by_field_path(...)`
 
 如果上游未来补了这些能力或提供了等价接口，应优先继续回退本地实现并迁移下游调用。
@@ -1151,15 +1141,11 @@ fn on_entity_property_changed(
 
 - `Class::field_name_for_path(&FieldPath) -> String`
 - `Entity::get_property_by_field_path(&FieldPath) -> Result<&FieldValue, EntityError>`
-- `Entity::field_paths() -> Vec<FieldPath>`
 
 作用分别是：
 
 - 把解码后的 `FieldPath` 转回点分隔属性名
 - 在已知 `FieldPath` 的情况下直接取属性值
-- 枚举当前实体状态里已经存在的全部字段路径
-
-其中 `Entity::field_paths()` 主要用于实体快照、调试或其它需要枚举全量字段路径的场景，不再作为创建时逐属性派发回调的基础。
 
 ### 5. 底层字段解码器开始保留“本次变更了哪些字段”
 

@@ -8,7 +8,7 @@ use crate::entity::field::*;
 use crate::entity::*;
 use crate::event::*;
 use crate::string_table::*;
-use crate::HashMap;
+use crate::{FieldValue, HashMap};
 use source2_demo_protobufs::CDemoFileInfo;
 use std::rc::Rc;
 
@@ -182,6 +182,13 @@ impl Context {
         self.tick
     }
 
+    /// Returns the previous tick number.
+    ///
+    /// This is the last tick observed before the current tick advanced.
+    pub fn previous_tick(&self) -> u32 {
+        self.previous_tick
+    }
+
     /// Returns the current network tick.
     ///
     /// The network tick from the last processed packet.
@@ -202,5 +209,55 @@ impl Context {
     /// info.
     pub fn replay_info(&self) -> &CDemoFileInfo {
         &self.replay_info
+    }
+
+    /// Returns the baseline entity classes currently known to the parser.
+    ///
+    /// Baselines are keyed by entity class id rather than live entity index.
+    /// This method is primarily useful for replay inspection and debugging
+    /// tools.
+    pub fn baseline_entities(&self) -> Vec<BaselineEntity> {
+        let mut entities = self
+            .baselines
+            .states
+            .keys()
+            .filter_map(|&class_id| {
+                self.classes
+                    .get_by_id(class_id as usize)
+                    .ok()
+                    .map(|class| BaselineEntity {
+                        class_id,
+                        class_name: class.name().to_string(),
+                    })
+            })
+            .collect::<Vec<_>>();
+
+        entities.sort_by_key(|entity| entity.class_id);
+        entities
+    }
+
+    /// Returns all fields for a baseline entity class id.
+    ///
+    /// Returns `None` if the baseline or matching class serializer is not
+    /// present in the current parser context.
+    pub fn baseline_fields(&self, class_id: i32) -> Option<Vec<EntityField<'_>>> {
+        let state = self.baselines.states.get(&class_id)?;
+        let class = self.classes.get_by_id(class_id as usize).ok()?;
+        class
+            .serializer
+            .get_paths(&mut FieldPath::default(), state)
+            .into_iter()
+            .map(|fp| {
+                let value = state.get_value(&fp);
+                EntityField {
+                    path: (0..=fp.last).map(|idx| fp.path[idx]).collect(),
+                    name: class.serializer.get_name(&fp).to_string(),
+                    field_type: class.serializer.get_type(&fp).to_string(),
+                    decoded_type: value.map(FieldValue::type_name),
+                    value,
+                }
+            })
+            .collect::<Vec<_>>()
+            .into()
     }
 }

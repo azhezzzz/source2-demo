@@ -68,6 +68,55 @@
 - 对当前分支最小化改动原则的影响判断
 - 验证命令和结果
 
+## 2026-07-13 最新状态
+
+- 已在 `2026-07-13` 抓取远端后，将最新 `origin/master` 合并进当前分支
+- 合并前基线 `origin/master` 提交：`71d1943908225687a906bd9b7cea3d3569995ade`
+- 合并时使用的当前 `origin/master` 提交：`c9f91d90c7a49fd3a19d7c3bd5963b6d0f634b9f`
+- 本地分支合并后 head 提交：`48824a0caea7e358257ef67a4141dd5a3f2a54ff`
+- 本次 merge 提交：`48824a0 Merge remote-tracking branch 'origin/master' into on_entity_property_changed`
+
+### 本次同步纳入的上游范围
+
+本次合并吸收了此前当前分支相对 `origin/master` 落后的 3 个提交：
+
+1. `b5901ac` `Export game event definitions`
+2. `a91f201` `Refactor demo writer`
+3. `c9f91d9` `0.5.8`
+
+主要影响范围：
+
+- workspace / crate 版本更新到 `0.5.8`
+- 上游导出 game event definitions，主要改动 `source2-demo/src/event/definition.rs`、`source2-demo/src/event/list.rs`、`source2-demo/src/event/mod.rs`
+- 上游重构 demo writer，将命令处理和运行逻辑拆分到 `writer/commands.rs`、`writer/runner.rs`，并删除旧的 `writer/run.rs`
+- `source2-demo/src/string_table/rewrite.rs` 和 writer 内部 string table rewrite 路径随 demo writer 重构调整
+- `source2-demo/src/stream/writer/varint.rs` 有小幅修正
+
+### 本次实际影响到当前分支的点
+
+- 本次 merge 没有内容冲突
+- 自动合并主要命中 demo writer、event definitions、版本号和 string table rewrite 相关文件
+- 没有触碰当前分支属性变更核心链路：
+  - `source2-demo/src/parser/demo/svc.rs`
+  - `source2-demo/src/parser/observer.rs`
+  - `source2-demo-macros/src/observer_impl.rs`
+- 没有覆盖当前分支保留的属性变更公开能力，也没有新增需要回退或收缩的本地补丁
+
+当前分支仍继续保留这些相对 `origin/master` 的必要增量：
+
+1. `Interests::TRACK_ENTITY_PROPERTY`
+2. `#[on_entity_properties_changed]`
+3. `FieldPath` 的对外可见性
+4. `Entity::get_property_by_field_path(&FieldPath)`
+5. `Class::field_name_for_path(&FieldPath) -> String`
+6. `Class::field_type_for_path(&FieldPath) -> String`
+
+### 当前验证结果
+
+- `cargo test`：通过，source2-demo 单元测试 `31 passed`，doc tests `61 passed / 12 ignored`，source2-demo-protobufs doc tests `0 passed / 3 ignored`
+
+下面保留的 `2026-07-06`、`2026-06-30`、`2026-06-29`、`2026-06-22`、`2026-06-16`、`2026-06-08`、`2026-05-20`、`2026-05-18` 等小节主要作为历史记录；如果与本节冲突，以本节为准。
+
 ## 2026-07-06 最新状态
 
 - 已在 `2026-07-06` 抓取远端后，将最新 `origin/master` 合并进当前分支

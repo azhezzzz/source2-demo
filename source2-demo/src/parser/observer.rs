@@ -108,7 +108,7 @@ bitflags::bitflags! {
         /// Interest in entity create/update/delete events.
         const ENTITY_EVENTS = 1 << 8;
         /// Interest in batched entity property change events.
-        const TRACK_ENTITY_PROPERTY = 1 << 18;
+        const TRACK_ENTITY_PROPERTY = 1 << 19;
         /// Maintain string table state while parsing.
         const STRING_TABLE_STATE = 1 << 9;
         /// Interest in string table update events.

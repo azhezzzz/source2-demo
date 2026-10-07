@@ -126,6 +126,15 @@ encoder 的 enum 或 handle 按 varint 解码，造成后续 bitstream 错位。
 5. `Class::field_name_for_path(&FieldPath) -> String`
 6. `Class::field_type_for_path(&FieldPath) -> String`
 
+合并复查时发现，上游新增的 `CITADEL_COMBAT_LOG_ENTRIES` 与本分支原有的
+`TRACK_ENTITY_PROPERTY` 都使用了 `1 << 18`。为避免启用 Deadlock feature 时两个
+interest 相互误判，本分支将自己的 `TRACK_ENTITY_PROPERTY` 调整到空闲的 `1 << 19`，
+上游 flag 保持不变。
+
+后续每次同步上游时，如果 `Interests` 有新增或调整，必须人工检查全部 flag 的 bit
+是否唯一，尤其要确认本分支私有的 `TRACK_ENTITY_PROPERTY` 未与上游 flag 重复；
+如发生冲突，应优先调整本分支私有 flag，不修改上游已有 flag。
+
 ### 当前验证结果
 
 - `cargo fmt --all -- --check`：通过

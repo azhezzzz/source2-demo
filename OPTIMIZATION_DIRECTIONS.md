@@ -11,6 +11,8 @@
 - 上游修复 CS2 `QAngleDecoder` 以及多类 `fixed8` 字段的编解码
 - `b1b1d50` 新增 enum 和 handle 的 `fixed8` 支持，可能修复新 Dota 2 录像因 bitstream 错位产生异常 entity index 的问题
 - 本次 merge 的两处内容冲突已按“保留必要属性变更能力、优先吸收上游通用实现”的原则解决
+- 本分支私有的 `TRACK_ENTITY_PROPERTY` 已从与上游 Deadlock combat log 冲突的 `1 << 18` 调整到 `1 << 19`
+- 后续同步上游如涉及 `Interests`，必须人工检查所有 flag 的 bit 唯一性；冲突时优先移动本分支私有 flag
 - 当前分支的属性变更语义和必要公开 API 均保持不变
 - 上游 workspace 的格式检查、单元测试和 doc tests 均通过
 - `9032881092.dem` 是否不再触发越界 panic，等待主仓库侧手动验证

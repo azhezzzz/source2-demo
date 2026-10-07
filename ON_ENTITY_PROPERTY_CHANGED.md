@@ -68,6 +68,72 @@
 - 对当前分支最小化改动原则的影响判断
 - 验证命令和结果
 
+## 2026-10-07 最新状态
+
+- 已在 `2026-10-07` 抓取远端后，将最新 `origin/master` 合并进当前分支
+- 合并前基线 `origin/master` 提交：`c9f91d90c7a49fd3a19d7c3bd5963b6d0f634b9f`
+- 合并时使用的当前 `origin/master` 提交：`b1b1d504a29267e15b4d925126ddfa1f1e6b746d`
+- 本次 merge 提交：`2b0e15c1117ca0226cf1917233eca56e6b249498`
+
+### 本次同步纳入的上游范围
+
+本次合并吸收了此前当前分支相对 `origin/master` 落后的 11 个提交：
+
+1. `0198cae` `Update protobufs`
+2. `490c439` `Merge pull request #16 from whiskeyo/master`
+3. `b9498bf` `Update protobuf_map`
+4. `c2c7e11` `Support Deadlock combat log`
+5. `afb6258` `Update opendota parser`
+6. `a28757b` `Update README`
+7. `88f80b1` `Fix QAngleDecoder for CS2 replays`
+8. `c045433` `Fix fixed8 field decoding in Deadlock replays`
+9. `9e5ffd3` `Add example release workflow`
+10. `ff072d0` `0.5.9`
+11. `b1b1d50` `Support fixed8 encoding for enums and handles`
+
+主要影响范围：
+
+- workspace / crate 版本更新到 `0.5.9`
+- protobuf 定义、生成物和 message map 更新
+- 新增 Deadlock combat log 支持
+- 修复 CS2 `QAngleDecoder`
+- 为 `int8`、`uint8`、enum 和 handle 等字段补充 `fixed8` 编解码支持
+- OpenDota 示例和 example release workflow 更新
+
+其中 `b1b1d50` 与 Dota 2 新录像解析最相关。旧实现可能把带 `fixed8`
+encoder 的 enum 或 handle 按 varint 解码，造成后续 bitstream 错位。主仓库解析
+`9032881092.dem` 时曾在 `svc.rs` 得到异常 entity index `4113655025` 并越界；
+本次更新没有直接修改该索引访问，但 fixed8 修复可能消除产生异常索引的上游解码错位。
+是否彻底修复仍需由主仓库使用该录像完成最终验证。
+
+### 冲突处理与当前分支影响
+
+本次 merge 有两处内容冲突：
+
+1. `source2-demo-macros/src/type_utils.rs`
+   - 保留本分支 `is_field_paths_type(...)`
+   - 吸收上游 Dota / Deadlock 共用的 combat log 类型判断 feature gate
+2. `source2-demo/src/lib.rs`
+   - 保留本分支经 `entity::*` 暴露的 `FieldPath` 能力
+   - 吸收上游 `CitadelCombatLogEntry` crate root 导出
+
+合并后已确认继续保留：
+
+1. `Interests::TRACK_ENTITY_PROPERTY`
+2. `#[on_entity_properties_changed]`
+3. `FieldPath` 的对外可见性
+4. `Entity::get_property_by_field_path(&FieldPath)`
+5. `Class::field_name_for_path(&FieldPath) -> String`
+6. `Class::field_type_for_path(&FieldPath) -> String`
+
+### 当前验证结果
+
+- `cargo fmt --all -- --check`：通过
+- `cargo test`：通过，source2-demo 单元测试 `31 passed`，doc tests `61 passed / 12 ignored`，source2-demo-protobufs doc tests `0 passed / 3 ignored`
+- `9032881092.dem`：等待主仓库侧手动验证
+
+下面保留的 `2026-07-13` 及更早小节主要作为历史记录；如果与本节冲突，以本节为准。
+
 ## 2026-07-13 最新状态
 
 - 已在 `2026-07-13` 抓取远端后，将最新 `origin/master` 合并进当前分支

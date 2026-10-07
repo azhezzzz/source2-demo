@@ -2,6 +2,33 @@
 
 本文档只记录当前这条 `on_entity_property_changed` 分支后续应优先推进的优化方向，便于和 `ON_ENTITY_PROPERTY_CHANGED.md` 中的功能说明分离维护。
 
+## 2026-10-07 基线更新
+
+在 `2026-10-07` 抓取远端并合并最新 `origin/master` 后，已确认：
+
+- 上游新增 11 个提交，版本更新到 `0.5.9`
+- 上游新增 Deadlock combat log 支持，并更新 protobuf、message map 和 OpenDota 示例
+- 上游修复 CS2 `QAngleDecoder` 以及多类 `fixed8` 字段的编解码
+- `b1b1d50` 新增 enum 和 handle 的 `fixed8` 支持，可能修复新 Dota 2 录像因 bitstream 错位产生异常 entity index 的问题
+- 本次 merge 的两处内容冲突已按“保留必要属性变更能力、优先吸收上游通用实现”的原则解决
+- 当前分支的属性变更语义和必要公开 API 均保持不变
+- 上游 workspace 的格式检查、单元测试和 doc tests 均通过
+- `9032881092.dem` 是否不再触发越界 panic，等待主仓库侧手动验证
+
+因此当前优化方向不变：
+
+- 继续保留主流程仍需的属性变更能力：
+  - `TRACK_ENTITY_PROPERTY`
+  - `#[on_entity_properties_changed]`
+  - `FieldPath` 的对外可见性
+  - `Entity::get_property_by_field_path(&FieldPath)`
+- 下一轮优先收缩目标仍然是主仓库侧依赖：
+  - `onStart.Extra.LastTickEntities` 的全量实体快照链路
+  - `changedFields` 按字段名导出的协议
+- 只有当主仓库不再依赖字段名导出后，才继续评估移除：
+  - `Class::field_name_for_path(&FieldPath)`
+  - `Class::field_type_for_path(&FieldPath)`
+
 ## 2026-07-13 基线更新
 
 在 `2026-07-13` 抓取远端并合并最新 `origin/master` 后，已确认：

@@ -58,7 +58,7 @@ pub(crate) fn is_field_paths_type(value: &str) -> bool {
     )
 }
 
-#[cfg(feature = "dota")]
+#[cfg(any(feature = "dota", feature = "citadel"))]
 pub(crate) fn is_combat_log_type(value: &str) -> bool {
     matches!(
         value,

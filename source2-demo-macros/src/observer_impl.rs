@@ -1,5 +1,5 @@
 use crate::protobuf_map::get_enum_from_struct;
-#[cfg(feature = "dota")]
+#[cfg(any(feature = "dota", feature = "citadel"))]
 use crate::type_utils::is_combat_log_type;
 use crate::type_utils::{
     canonical_message_type, is_context_type, is_entity_events_ref_type, is_entity_events_type, is_entity_type, is_field_paths_type,
@@ -43,10 +43,13 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
         if attr_is(a, "uses_game_events") {
             add_flag!(BASE_GAME_EVENT);
         }
-        #[cfg(feature = "dota")]
+        #[cfg(any(feature = "dota", feature = "citadel"))]
         if attr_is(a, "uses_combat_log") {
             add_flag!(STRING_TABLE_STATE);
+            #[cfg(feature = "dota")]
             add_flag!(COMBAT_LOG_ENTRIES);
+            #[cfg(feature = "citadel")]
+            add_flag!(CITADEL_COMBAT_LOG_ENTRIES);
         }
     }
 
@@ -72,6 +75,8 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
     #[cfg(feature = "citadel")]
     let mut has_cita_um = false;
     #[cfg(feature = "citadel")]
+    let mut has_citadel_combat_log = false;
+    #[cfg(feature = "citadel")]
     let mut has_cita_ge = false;
 
     #[cfg(feature = "cs2")]
@@ -86,6 +91,8 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
 
     #[cfg(feature = "citadel")]
     let mut on_citadel_user_message_body = quote!();
+    #[cfg(feature = "citadel")]
+    let mut on_citadel_combat_log_body = quote!();
     #[cfg(feature = "citadel")]
     let mut on_citadel_game_event_body = quote!();
 
@@ -122,10 +129,13 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
                 if attr_is(a, "uses_game_events") {
                     add_flag!(BASE_GAME_EVENT);
                 }
-                #[cfg(feature = "dota")]
+                #[cfg(any(feature = "dota", feature = "citadel"))]
                 if attr_is(a, "uses_combat_log") {
                     add_flag!(STRING_TABLE_STATE);
+                    #[cfg(feature = "dota")]
                     add_flag!(COMBAT_LOG_ENTRIES);
+                    #[cfg(feature = "citadel")]
+                    add_flag!(CITADEL_COMBAT_LOG_ENTRIES);
                 }
             }
 
@@ -161,14 +171,31 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
                                 Err(error) => errors.extend(error.to_compile_error()),
                             }
                         }
-                        #[cfg(feature = "dota")]
+                        #[cfg(any(feature = "dota", feature = "citadel"))]
                         "on_combat_log" => match observer_combat_log_args(method) {
-                            Ok(args) => {
-                                has_combat_log = true;
+                            Ok((citadel, args)) => {
                                 has_string_table = true;
-                                on_combat_log_body.extend(quote! {
-                                    self.#method_name(#args)?;
-                                });
+                                let call = quote! { self.#method_name(#args)?; };
+
+                                if citadel {
+                                    #[cfg(feature = "citadel")]
+                                    {
+                                        has_citadel_combat_log = true;
+                                        on_citadel_combat_log_body.extend(call);
+                                    }
+                                    #[cfg(not(feature = "citadel"))]
+                                    errors.extend(
+                                        syn::Error::new_spanned(method, "Citadel combat logs require the deadlock feature").to_compile_error(),
+                                    );
+                                } else {
+                                    #[cfg(feature = "dota")]
+                                    {
+                                        has_combat_log = true;
+                                        on_combat_log_body.extend(call);
+                                    }
+                                    #[cfg(not(feature = "dota"))]
+                                    errors.extend(syn::Error::new_spanned(method, "Dota combat logs require the dota feature").to_compile_error());
+                                }
                             }
                             Err(error) => errors.extend(error.to_compile_error()),
                         },
@@ -537,6 +564,15 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
 
     #[cfg(feature = "citadel")]
     obs_body.extend(quote! {
+        fn on_citadel_combat_log(
+            &mut self,
+            ctx: &Context,
+            cle: &::source2_demo::CitadelCombatLogEntry,
+        ) -> ObserverResult {
+            #on_citadel_combat_log_body
+            Ok(())
+        }
+
         fn on_citadel_user_message(
             &mut self,
             ctx: &Context,
@@ -610,6 +646,8 @@ pub(crate) fn expand_observer(attr: TokenStream, item: TokenStream) -> TokenStre
 
     #[cfg(feature = "citadel")]
     add_if!(has_cita_um, CITADEL_USER_MESSAGE);
+    #[cfg(feature = "citadel")]
+    add_if!(has_citadel_combat_log, CITADEL_COMBAT_LOG_ENTRIES);
     #[cfg(feature = "citadel")]
     add_if!(has_cita_ge, CITADEL_GAME_EVENT);
 
@@ -776,9 +814,10 @@ fn observer_string_table_args(method: &syn::ImplItemFn) -> syn::Result<proc_macr
     Ok(quote! { #(#args),* })
 }
 
-#[cfg(feature = "dota")]
-fn observer_combat_log_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2::TokenStream> {
+#[cfg(any(feature = "dota", feature = "citadel"))]
+fn observer_combat_log_args(method: &syn::ImplItemFn) -> syn::Result<(bool, proc_macro2::TokenStream)> {
     let mut args = Vec::new();
+    let mut citadel = None;
     for input in method.sig.inputs.iter().skip(1) {
         let FnArg::Typed(pat_type) = input else {
             continue;
@@ -786,14 +825,23 @@ fn observer_combat_log_args(method: &syn::ImplItemFn) -> syn::Result<proc_macro2
         let type_string = stringify_type(pat_type.ty.as_ref());
         let arg = if is_context_type(&type_string) {
             quote! { ctx }
-        } else if is_combat_log_type(&type_string) {
+        } else if is_combat_log_type(&type_string)
+            || matches!(
+                type_string.as_str(),
+                "& CitadelCombatLogEntry" | "& source2_demo :: CitadelCombatLogEntry" | "& :: source2_demo :: CitadelCombatLogEntry"
+            )
+        {
+            let is_citadel = type_string.contains("CitadelCombatLogEntry");
+            if citadel.replace(is_citadel).is_some() {
+                return Err(syn::Error::new_spanned(pat_type, "expected one combat log entry argument"));
+            }
             quote! { cle }
         } else {
             return Err(syn::Error::new_spanned(pat_type, "unsupported #[on_combat_log] argument"));
         };
         args.push(arg);
     }
-    Ok(quote! { #(#args),* })
+    Ok((citadel.unwrap_or(cfg!(not(feature = "dota"))), quote! { #(#args),* }))
 }
 
 fn observer_message_args(method: &syn::ImplItemFn) -> syn::Result<(ObserverMessageKind, Vec<ObserverArg>)> {
